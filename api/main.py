@@ -722,7 +722,7 @@ def get_iherb_products(
                 "in_stock": p.in_stock,
                 "product_form": p.product_form,
                 "count": p.count,
-                "badges": p.badges,
+                "badges": json.loads(p.badges) if isinstance(p.badges, str) else (p.badges or []),
                 "url": p.url,
             }
             for p in products
@@ -797,7 +797,7 @@ def get_iherb_product_detail(product_id: str, db: Session = Depends(get_db)):
             "shipping_weight": product.shipping_weight,
         },
         "certifications": {
-            "badges": product.badges,
+            "badges": json.loads(product.badges) if isinstance(product.badges, str) else (product.badges or []),
             "certifications": product.certifications,
             "best_by_date": product.best_by_date,
         },

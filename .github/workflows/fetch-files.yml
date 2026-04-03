@@ -1,0 +1,22 @@
+name: Fetch project files
+on: workflow_dispatch
+
+jobs:
+  fetch-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download project files
+        run: |
+          mkdir -p api scraper static
+          curl -sL https://files.catbox.moe/b1gjil.py -o api/main.py
+          curl -sL https://files.catbox.moe/ap4l5y.py -o scraper/ople_scraper.py
+          curl -sL https://files.catbox.moe/8ilrwh.py -o scraper/iherb_mapper.py
+          curl -sL https://files.catbox.moe/et6u6w.html -o static/index.html
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Add FastAPI backend, scraper, and dashboard UI"
+          git push

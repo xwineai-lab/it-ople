@@ -12,6 +12,7 @@ from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, case
 
@@ -20,6 +21,15 @@ from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduc
 # ── App Setup ────────────────────────────────────────────
 
 app = FastAPI(title="IT.OPLE", version="1.0.0", description="OPLE 상품 분석 & iHerb 매핑 인트라넷")
+
+# CORS middleware - allow iHerb scraping tabs to send data
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize DB on startup
 @app.on_event("startup")

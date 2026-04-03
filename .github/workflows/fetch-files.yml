@@ -13,6 +13,7 @@ jobs:
         run: |
           mkdir -p api scraper static
           curl -sL https://files.catbox.moe/b1gjil.py -o api/main.py
+                    curl -sL https://files.catbox.moe/48c5q8.py -o api/database.py
           curl -sL https://files.catbox.moe/ap4l5y.py -o scraper/ople_scraper.py
           curl -sL https://files.catbox.moe/8ilrwh.py -o scraper/iherb_mapper.py
           curl -sL https://files.catbox.moe/et6u6w.html -o static/index.html

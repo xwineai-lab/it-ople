@@ -574,7 +574,6 @@ class IHerbProductIn(BaseModel):
     sub_category: str = ""
     category_path: str = ""
     description: str = ""
-    description_ko: str = ""
     suggested_use: str = ""
     other_ingredients: str = ""
     warnings: str = ""
@@ -601,7 +600,7 @@ def bulk_save_iherb_products(data: BulkProductsIn, db: Session = Depends(get_db)
             for field in ['name', 'name_ko', 'brand', 'url', 'image_url', 'price_usd',
                          'price_krw', 'price_original', 'discount_pct', 'rating',
                          'review_count', 'category', 'sub_category', 'category_path',
-                         'description', 'description_ko', 'suggested_use',
+                         'description', 'suggested_use',
                          'other_ingredients', 'warnings', 'supplement_facts',
                          'product_form', 'count', 'weight', 'dimensions', 'badges', 'in_stock']:
                 val = getattr(p, field)
@@ -629,7 +628,6 @@ def bulk_save_iherb_products(data: BulkProductsIn, db: Session = Depends(get_db)
                 sub_category=p.sub_category,
                 category_path=p.category_path,
                 description=p.description,
-                description_ko=p.description_ko,
                 suggested_use=p.suggested_use,
                 other_ingredients=p.other_ingredients,
                 warnings=p.warnings,
@@ -640,7 +638,7 @@ def bulk_save_iherb_products(data: BulkProductsIn, db: Session = Depends(get_db)
                 dimensions=p.dimensions,
                 badges=p.badges,
                 in_stock=p.in_stock,
-                created_at=datetime.utcnow(),
+                scraped_at=datetime.utcnow(),
                 updated_at=datetime.utcnow(),
             )
             db.add(new_product)

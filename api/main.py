@@ -705,7 +705,7 @@ def get_iherb_products(
         "page": page,
         "per_page": per_page,
         "pages": (total + per_page - 1) // per_page,
-        "items": [
+        "products": [
             {
                 "iherb_id": p.iherb_id,
                 "product_id": p.product_id,

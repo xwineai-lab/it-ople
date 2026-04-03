@@ -90,15 +90,133 @@ class IHerbMapping(Base):
     product = relationship("Product", back_populates="mapping")
 
 
+# ── iHerb Full Product Model ────────────────────────────
+# 아이허브 상품 전체 정보를 저장하는 포괄적 모델
+
+class IHerbProduct(Base):
+    __tablename__ = "iherb_products"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # ── 기본 식별 정보 ──
+    iherb_id = Column(String(50), unique=True, index=True, nullable=False)  # e.g. "NOW-01652"
+    product_id = Column(String(20), index=True)  # iHerb numeric product ID
+    url = Column(Text)
+    slug = Column(String(500))  # URL slug
+
+    # ── 상품명 ──
+    name = Column(String(1000))
+    name_ko = Column(String(1000))  # 한국어 상품명 (있으면)
+    subtitle = Column(String(500))  # sub-title or tagline
+
+    # ── 브랜드 정보 ──
+    brand = Column(String(300), index=True)
+    brand_url = Column(Text)
+    manufacturer = Column(String(300))
+
+    # ── 가격 정보 ──
+    price_usd = Column(Float, default=0.0)
+    price_original = Column(Float, default=0.0)  # 할인 전 원래 가격
+    discount_pct = Column(Float, default=0.0)  # 할인율
+    price_krw = Column(Integer, default=0)
+    price_per_unit = Column(String(100))  # e.g. "₩250.00 / Count"
+    in_stock = Column(Boolean, default=True)
+    stock_status = Column(String(100))  # "In Stock", "Out of Stock", "Low Stock"
+    currency = Column(String(10), default="USD")
+
+    # ── 카테고리 ──
+    category = Column(String(300), index=True)
+    sub_category = Column(String(300))
+    category_path = Column(Text)  # 전체 카테고리 경로: "Supplements > Vitamins > Vitamin C"
+    category_ids = Column(JSON)  # [cat_id1, cat_id2, ...]
+
+    # ── 이미지 ──
+    image_url = Column(Text)  # 메인 이미지
+    image_urls = Column(JSON)  # 모든 이미지 URL 리스트 [url1, url2, ...]
+    thumbnail_url = Column(Text)
+
+    # ── 평점 & 리뷰 ──
+    rating = Column(Float, default=0.0)  # 평균 별점 (0-5)
+    review_count = Column(Integer, default=0)
+    rating_distribution = Column(JSON)  # {5: 1234, 4: 567, 3: 89, 2: 12, 1: 3}
+    top_positive_review = Column(Text)
+    top_critical_review = Column(Text)
+
+    # ── 상품 설명 ──
+    description = Column(Text)  # 메인 설명
+    description_html = Column(Text)  # HTML 원본
+    features = Column(JSON)  # 주요 특징 리스트 ["Non-GMO", "Vegan", ...]
+    warnings = Column(Text)  # 주의사항
+    suggested_use = Column(Text)  # 복용법/사용법
+    storage_info = Column(Text)  # 보관방법
+
+    # ── 성분 & 영양정보 ──
+    ingredients = Column(Text)  # 전체 성분 텍스트
+    ingredients_list = Column(JSON)  # 파싱된 성분 리스트
+    supplement_facts = Column(JSON)  # 영양성분표 [{name, amount, daily_value}, ...]
+    nutrition_facts = Column(JSON)  # 일반 영양정보 (식품용)
+    other_ingredients = Column(Text)  # 기타 성분
+    allergen_info = Column(Text)  # 알레르기 정보
+
+    # ── 상품 규격 ──
+    serving_size = Column(String(200))  # 1회 섭취량
+    servings_per_container = Column(String(100))  # 총 섭취 횟수
+    product_form = Column(String(100))  # 제형: Capsule, Tablet, Powder, Liquid...
+    count = Column(String(100))  # 총 수량: "180 Softgels", "250 Tablets"
+    weight = Column(String(100))  # 무게
+    dimensions = Column(String(200))  # 크기
+    upc_barcode = Column(String(50), index=True)  # UPC 바코드
+    sku = Column(String(50))  # SKU
+
+    # ── 인증 & 배지 ──
+    badges = Column(JSON)  # ["Non-GMO", "Vegan", "Gluten-Free", "GMP Certified", ...]
+    certifications = Column(JSON)  # 공식 인증 정보
+    best_by_date = Column(String(50))  # 유통기한
+    date_first_available = Column(String(50))  # 최초 출시일
+
+    # ── Q&A ──
+    qa_count = Column(Integer, default=0)
+    top_questions = Column(JSON)  # [{question, answer}, ...]
+
+    # ── 관련 상품 ──
+    related_products = Column(JSON)  # [{id, name, price, image}, ...]
+    also_bought = Column(JSON)  # 함께 구매한 상품
+    bundle_deals = Column(JSON)  # 번들 할인 정보
+
+    # ── 배송 정보 ──
+    shipping_weight = Column(String(100))
+    ships_from = Column(String(200))  # 출하지
+
+    # ── 메타 데이터 ──
+    page_title = Column(String(500))
+    meta_description = Column(Text)
+    tags = Column(JSON)  # 태그 리스트
+    popularity_rank = Column(Integer)  # 인기 순위
+
+    # ── 리뷰 상세 (상위 리뷰들) ──
+    reviews_data = Column(JSON)  # [{reviewer, rating, title, text, date, helpful_count}, ...]
+
+    # ── 타임스탬프 ──
+    scraped_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_iherb_brand_cat", "brand", "category"),
+        Index("idx_iherb_price", "price_usd"),
+        Index("idx_iherb_rating", "rating"),
+    )
+
+
 class ScrapeJob(Base):
     __tablename__ = "scrape_jobs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    job_type = Column(String(50))  # "ople_products", "ople_reviews", "iherb_mapping"
+    job_type = Column(String(50))  # "ople_products", "ople_reviews", "iherb_mapping", "iherb_full"
     status = Column(String(20), default="pending")  # pending, running, completed, failed
     total_items = Column(Integer, default=0)
     processed_items = Column(Integer, default=0)
     error_message = Column(Text)
+    config = Column(JSON)  # 스크래핑 설정 (카테고리, 페이지 수 등)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)

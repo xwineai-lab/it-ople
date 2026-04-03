@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, case
 
-from database import init_db, get_db, Product, Review, IHerbMapping, ScrapeJob
+from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob
 
 # ── App Setup ────────────────────────────────────────────
 
@@ -372,6 +372,400 @@ async def start_ople_scrape(background_tasks: BackgroundTasks, max_products: int
 
     # background_tasks.add_task(run_ople_scrape_job, job.id, max_products)
     return {"job_id": job.id, "status": "queued", "message": f"Scraping up to {max_products} products"}
+
+
+@app.post("/api/jobs/scrape-iherb")
+async def start_iherb_scrape(
+    background_tasks: BackgroundTasks,
+    categories: Optional[str] = None,
+    max_products: int = 50,
+    max_pages: int = 3,
+    db: Session = Depends(get_db),
+):
+    """Start iHerb full product scraping job.
+
+    Args:
+        categories: Comma-separated category keys (e.g. "vitamins,probiotics"). None=all.
+        max_products: Max products per category
+        max_pages: Max listing pages per category
+    """
+    cat_list = categories.split(",") if categories else None
+
+    job = ScrapeJob(
+        job_type="iherb_full",
+        status="running",
+        started_at=datetime.utcnow(),
+        config={"categories": cat_list, "max_products": max_products, "max_pages": max_pages},
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    background_tasks.add_task(run_iherb_scrape_job, job.id, cat_list, max_products, max_pages)
+    return {
+        "job_id": job.id,
+        "status": "running",
+        "message": f"iHerb scraping started: {len(cat_list) if cat_list else 'all'} categories, max {max_products}/cat, {max_pages} pages/cat",
+    }
+
+
+async def run_iherb_scrape_job(job_id: int, categories: list, max_products: int, max_pages: int):
+    """Background task to run iHerb scraping."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scraper"))
+
+    db = next(get_db())
+    try:
+        from iherb_scraper import run_iherb_scrape
+
+        async def progress_cb(processed, total, message):
+            job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
+            if job:
+                job.processed_items = processed
+                job.total_items = total
+                db.commit()
+
+        result = await run_iherb_scrape(
+            output_dir="data",
+            categories=categories,
+            max_products_per_category=max_products,
+            max_pages_per_category=max_pages,
+            scrape_details=True,
+            progress_callback=progress_cb,
+        )
+
+        # Save results to DB
+        data_file = Path("data/iherb_products.json")
+        if data_file.exists():
+            with open(data_file, encoding="utf-8") as f:
+                products_data = json.load(f)
+
+            saved = 0
+            for p in products_data:
+                pid = p.get("product_id") or p.get("iherb_id", "")
+                if not pid:
+                    continue
+
+                existing = db.query(IHerbProduct).filter(
+                    (IHerbProduct.product_id == pid) | (IHerbProduct.iherb_id == p.get("iherb_id", ""))
+                ).first()
+
+                if existing:
+                    # Update existing
+                    for key, val in p.items():
+                        if val and hasattr(existing, key):
+                            setattr(existing, key, val)
+                    existing.updated_at = datetime.utcnow()
+                else:
+                    # Create new
+                    product = IHerbProduct(
+                        iherb_id=p.get("iherb_id", pid),
+                        product_id=pid,
+                        url=p.get("url", ""),
+                        slug=p.get("slug", ""),
+                        name=p.get("name", ""),
+                        name_ko=p.get("name_ko", ""),
+                        subtitle=p.get("subtitle", ""),
+                        brand=p.get("brand", ""),
+                        brand_url=p.get("brand_url", ""),
+                        manufacturer=p.get("manufacturer", ""),
+                        price_usd=p.get("price_usd", 0),
+                        price_original=p.get("price_original", 0),
+                        discount_pct=p.get("discount_pct", 0),
+                        price_krw=p.get("price_krw", 0),
+                        price_per_unit=p.get("price_per_unit", ""),
+                        in_stock=p.get("in_stock", True),
+                        stock_status=p.get("stock_status", ""),
+                        category=p.get("category", ""),
+                        sub_category=p.get("sub_category", ""),
+                        category_path=p.get("category_path", ""),
+                        category_ids=p.get("category_ids"),
+                        image_url=p.get("image_url", ""),
+                        image_urls=p.get("image_urls"),
+                        thumbnail_url=p.get("thumbnail_url", ""),
+                        rating=p.get("rating", 0),
+                        review_count=p.get("review_count", 0),
+                        rating_distribution=p.get("rating_distribution"),
+                        top_positive_review=p.get("top_positive_review", ""),
+                        top_critical_review=p.get("top_critical_review", ""),
+                        description=p.get("description", ""),
+                        description_html=p.get("description_html", ""),
+                        features=p.get("features"),
+                        warnings=p.get("warnings", ""),
+                        suggested_use=p.get("suggested_use", ""),
+                        storage_info=p.get("storage_info", ""),
+                        ingredients=p.get("ingredients", ""),
+                        ingredients_list=p.get("ingredients_list"),
+                        supplement_facts=p.get("supplement_facts"),
+                        nutrition_facts=p.get("nutrition_facts"),
+                        other_ingredients=p.get("other_ingredients", ""),
+                        allergen_info=p.get("allergen_info", ""),
+                        serving_size=p.get("serving_size", ""),
+                        servings_per_container=p.get("servings_per_container", ""),
+                        product_form=p.get("product_form", ""),
+                        count=p.get("count", ""),
+                        weight=p.get("weight", ""),
+                        dimensions=p.get("dimensions", ""),
+                        upc_barcode=p.get("upc_barcode", ""),
+                        sku=p.get("sku", ""),
+                        badges=p.get("badges"),
+                        certifications=p.get("certifications"),
+                        best_by_date=p.get("best_by_date", ""),
+                        date_first_available=p.get("date_first_available", ""),
+                        qa_count=p.get("qa_count", 0),
+                        top_questions=p.get("top_questions"),
+                        related_products=p.get("related_products"),
+                        also_bought=p.get("also_bought"),
+                        bundle_deals=p.get("bundle_deals"),
+                        shipping_weight=p.get("shipping_weight", ""),
+                        ships_from=p.get("ships_from", ""),
+                        page_title=p.get("page_title", ""),
+                        meta_description=p.get("meta_description", ""),
+                        tags=p.get("tags"),
+                        popularity_rank=p.get("popularity_rank"),
+                        reviews_data=p.get("reviews_data"),
+                    )
+                    db.add(product)
+                    saved += 1
+
+            db.commit()
+
+        # Update job status
+        job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
+        if job:
+            job.status = "completed"
+            job.completed_at = datetime.utcnow()
+            job.processed_items = result.get("detailed_products", 0)
+            job.total_items = result.get("total_product_ids", 0)
+            db.commit()
+
+    except Exception as e:
+        job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
+        if job:
+            job.status = "failed"
+            job.error_message = str(e)[:500]
+            job.completed_at = datetime.utcnow()
+            db.commit()
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+# ── iHerb Products API ─────────────────────────────────
+
+@app.get("/api/iherb/products")
+def get_iherb_products(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    brand: Optional[str] = None,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    in_stock: Optional[bool] = None,
+    min_rating: Optional[float] = None,
+    sort: str = "review_count",
+    order: str = "desc",
+    db: Session = Depends(get_db),
+):
+    """iHerb product list with filtering and pagination."""
+    query = db.query(IHerbProduct)
+
+    if brand:
+        query = query.filter(IHerbProduct.brand.ilike(f"%{brand}%"))
+    if category:
+        query = query.filter(
+            (IHerbProduct.category.ilike(f"%{category}%")) |
+            (IHerbProduct.category_path.ilike(f"%{category}%"))
+        )
+    if search:
+        query = query.filter(
+            (IHerbProduct.name.ilike(f"%{search}%")) |
+            (IHerbProduct.brand.ilike(f"%{search}%")) |
+            (IHerbProduct.iherb_id.ilike(f"%{search}%"))
+        )
+    if in_stock is not None:
+        query = query.filter(IHerbProduct.in_stock == in_stock)
+    if min_rating:
+        query = query.filter(IHerbProduct.rating >= min_rating)
+
+    sort_col = getattr(IHerbProduct, sort, IHerbProduct.review_count)
+    if order == "desc":
+        query = query.order_by(desc(sort_col))
+    else:
+        query = query.order_by(sort_col)
+
+    total = query.count()
+    products = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return {
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": (total + per_page - 1) // per_page,
+        "items": [
+            {
+                "iherb_id": p.iherb_id,
+                "product_id": p.product_id,
+                "name": p.name,
+                "brand": p.brand,
+                "price_usd": p.price_usd,
+                "price_original": p.price_original,
+                "discount_pct": p.discount_pct,
+                "rating": p.rating,
+                "review_count": p.review_count,
+                "image_url": p.image_url,
+                "category": p.category,
+                "sub_category": p.sub_category,
+                "in_stock": p.in_stock,
+                "product_form": p.product_form,
+                "count": p.count,
+                "badges": p.badges,
+                "url": p.url,
+            }
+            for p in products
+        ],
+    }
+
+
+@app.get("/api/iherb/products/{product_id}")
+def get_iherb_product_detail(product_id: str, db: Session = Depends(get_db)):
+    """Full iHerb product detail with ALL collected information."""
+    product = db.query(IHerbProduct).filter(
+        (IHerbProduct.product_id == product_id) | (IHerbProduct.iherb_id == product_id)
+    ).first()
+
+    if not product:
+        raise HTTPException(404, "iHerb product not found")
+
+    return {
+        "basic": {
+            "iherb_id": product.iherb_id,
+            "product_id": product.product_id,
+            "name": product.name,
+            "name_ko": product.name_ko,
+            "subtitle": product.subtitle,
+            "brand": product.brand,
+            "brand_url": product.brand_url,
+            "url": product.url,
+        },
+        "pricing": {
+            "price_usd": product.price_usd,
+            "price_original": product.price_original,
+            "discount_pct": product.discount_pct,
+            "price_per_unit": product.price_per_unit,
+            "in_stock": product.in_stock,
+            "stock_status": product.stock_status,
+        },
+        "images": {
+            "main": product.image_url,
+            "thumbnail": product.thumbnail_url,
+            "all": product.image_urls or [],
+        },
+        "rating": {
+            "average": product.rating,
+            "count": product.review_count,
+            "distribution": product.rating_distribution,
+            "top_positive": product.top_positive_review,
+            "top_critical": product.top_critical_review,
+        },
+        "description": {
+            "text": product.description,
+            "features": product.features,
+            "suggested_use": product.suggested_use,
+            "warnings": product.warnings,
+            "storage": product.storage_info,
+        },
+        "nutrition": {
+            "supplement_facts": product.supplement_facts,
+            "ingredients": product.ingredients,
+            "ingredients_list": product.ingredients_list,
+            "other_ingredients": product.other_ingredients,
+            "allergen_info": product.allergen_info,
+            "serving_size": product.serving_size,
+            "servings_per_container": product.servings_per_container,
+        },
+        "specs": {
+            "product_form": product.product_form,
+            "count": product.count,
+            "weight": product.weight,
+            "dimensions": product.dimensions,
+            "upc_barcode": product.upc_barcode,
+            "sku": product.sku,
+            "shipping_weight": product.shipping_weight,
+        },
+        "certifications": {
+            "badges": product.badges,
+            "certifications": product.certifications,
+            "best_by_date": product.best_by_date,
+        },
+        "category": {
+            "category": product.category,
+            "sub_category": product.sub_category,
+            "path": product.category_path,
+        },
+        "social": {
+            "qa_count": product.qa_count,
+            "top_questions": product.top_questions,
+            "reviews": product.reviews_data,
+        },
+        "related": {
+            "related_products": product.related_products,
+            "also_bought": product.also_bought,
+            "bundle_deals": product.bundle_deals,
+        },
+        "meta": {
+            "tags": product.tags,
+            "popularity_rank": product.popularity_rank,
+            "scraped_at": product.scraped_at.isoformat() if product.scraped_at else None,
+            "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+        },
+    }
+
+
+@app.get("/api/iherb/stats")
+def get_iherb_stats(db: Session = Depends(get_db)):
+    """iHerb collection statistics."""
+    total = db.query(IHerbProduct).count()
+    in_stock = db.query(IHerbProduct).filter(IHerbProduct.in_stock == True).count()
+
+    # By category
+    by_category = db.query(
+        IHerbProduct.category,
+        func.count(IHerbProduct.id).label("count"),
+        func.avg(IHerbProduct.price_usd).label("avg_price"),
+        func.avg(IHerbProduct.rating).label("avg_rating"),
+    ).group_by(IHerbProduct.category).order_by(desc("count")).limit(20).all()
+
+    # By brand
+    by_brand = db.query(
+        IHerbProduct.brand,
+        func.count(IHerbProduct.id).label("count"),
+        func.avg(IHerbProduct.price_usd).label("avg_price"),
+        func.avg(IHerbProduct.rating).label("avg_rating"),
+    ).group_by(IHerbProduct.brand).order_by(desc("count")).limit(20).all()
+
+    # Top rated
+    top_rated = db.query(IHerbProduct).filter(
+        IHerbProduct.review_count >= 100,
+        IHerbProduct.rating > 0,
+    ).order_by(desc(IHerbProduct.rating)).limit(10).all()
+
+    return {
+        "total_products": total,
+        "in_stock": in_stock,
+        "by_category": [
+            {"category": c.category or "기타", "count": c.count, "avg_price": round(c.avg_price or 0, 2), "avg_rating": round(c.avg_rating or 0, 1)}
+            for c in by_category
+        ],
+        "by_brand": [
+            {"brand": b.brand or "Unknown", "count": b.count, "avg_price": round(b.avg_price or 0, 2), "avg_rating": round(b.avg_rating or 0, 1)}
+            for b in by_brand
+        ],
+        "top_rated": [
+            {"name": p.name, "brand": p.brand, "rating": p.rating, "review_count": p.review_count, "price_usd": p.price_usd, "image_url": p.image_url}
+            for p in top_rated
+        ],
+    }
 
 
 # ── Analytics API ────────────────────────────────────────

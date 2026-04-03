@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT.OPLE - OPLE.com 제품 분석 대시보드</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- React & ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1A2A4A 0%, #2d3f5a 100%);
+        }
+
+        .accent-green {
+            color: #00A651;
+        }
+
+        .accent-orange {
+            color: #E46728;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1A2A4A;
+            margin: 0.5rem 0;
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+        }
+
+        .kpi-change.positive {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .kpi-change.negative {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-button.active {
+            color: #00A651;
+            border-bottom-color: #00A651;
+        }
+
+        .tab-button:hover {
+            color: #1A2A4A;
+        }
+
+        .btn-primary {
+            background-color: #00A651;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #008c40;
+            box-shadow: 0 4px 12px rgba(0, 166, 81, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .table-row:hover {
+            background-color: #f9fafb;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .bar-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .bar {
+            background: linear-gradient(180deg, #00A651 0%, #008c40 100%);
+            border-radius: 4px 4px 0 0;
+            min-height: 40px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .bar:hover {
+            opacity: 0.8;
+        }
+
+        .bar-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .bar-value {
+            font-size: 0.875rem;
+            color: #1A2A4A;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .search-input {
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #00A651;
+            box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.1);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #00A651;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #00A651;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: #f0f9ff;
+            color: #0369a1;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin: 0.25rem;
+            border: 1px solid #bfdbfe;
+        }
+
+        .ople-accent {
+            color: #E46728;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tab-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #00A651;
+        }
+
+        .pagination button.active {
+            background: #00A651;
+            color: white;
+            border-color: #00A651;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .filter-section {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #00A651;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect, useCallback, createContext, useContext } = React;
+
+        // ============= DATA CONTEXT =============
+        const AppContext = createContext();
+
+        const AppProvider = ({ children }) => {
+            const [data, setData] = useState({
+                dashboard: {
+                    totalProducts: 2847,
+                    totalReviews: 15230,
+                    iherbMappedPercent: 78.5,
+                    priceAdvantagePercent: 65.2,
+                    brandsChart: [
+                        { name: 'Nature Made', count: 245 },
+                        { name: 'Vitamin Shoppe', count: 198 },
+                        { name: 'Puritan', count: 187 },
+                        { name: 'NOW Foods', count: 156 },
+                        { name: 'GNC', count: 142 }
+                    ],
+                    categoryBreakdown: [
+                        { category: '비타민', count: 856, percent: 30 },
+                        { category: '미네랄', count: 634, percent: 22 },
+                        { category: '헬스', count: 512, percent: 18 },
+                        { category: '스포츠', count: 445, percent: 16 },
+                        { category: '기타', count: 400, percent: 14 }
+                    ],
+                    recentActivity: [
+                        { id: 1, product: 'Vitamin C 1000mg', brand: 'Nature Made', status: '매핑 완료', time: '30분 전' },
+                        { id: 2, product: 'Omega-3 Fish Oil', brand: 'Vitamin Shoppe', status: '매핑 진행중', time: '1시간 전' },
+                        { id: 3, product: 'Multivitamin Daily', brand: 'Puritan', status: '매핑 실패', time: '2시간 전' }
+                    ]
+                },
+                products: [
+                    { id: 1, name: 'Vitamin C 1000mg', brand: 'Nature Made', price: 12500, reviews: 234, mapped: true, category: '비타민' },
+                    { id: 2, name: 'Vitamin D3 2000 IU', brand: 'Nature Made', price: 15000, reviews: 189, mapped: true, category: '비타민' },
+                    { id: 3, name: 'Omega-3 Fish Oil', brand: 'Vitamin Shoppe', price: 24500, reviews: 156, mapped: true, category: '헬스' },
+                    { id: 4, name: 'Multivitamin Daily', brand: 'Puritan', price: 18900, reviews: 203, mapped: false, category: '비타민' },
+                    { id: 5, name: 'B Complex', brand: 'NOW Foods', price: 10800, reviews: 87, mapped: true, category: '비타민' },
+                    { id: 6, name: 'Calcium + Magnesium', brand: 'GNC', price: 22000, reviews: 145, mapped: false, category: '미네랄' },
+                    { id: 7, name: 'Zinc 30mg', brand: 'Nature Made', price: 9900, reviews: 92, mapped: true, category: '미네랄' },
+                    { id: 8, name: 'Vitamin B12 1000mcg', brand: 'Vitamin Shoppe', price: 14500, reviews: 178, mapped: true, category: '비타민' }
+                ],
+                mapping: [
+                    { id: 1, opleProduct: 'Vitamin C 1000mg', iherbProduct: 'Nature\'s Way Vitamin C', method: 'UPC', score: 98, priceDiff: -2400, status: '검증완료' },
+                    { id: 2, opleProduct: 'Omega-3 Fish Oil', iherbProduct: 'NOW Foods Omega-3', method: 'Fuzzy', score: 87, priceDiff: 3200, status: '검증대기' },
+                    { id: 3, opleProduct: 'Multivitamin Daily', iherbProduct: '매칭 없음', method: 'None', score: 0, priceDiff: 0, status: '매칭실패' }
+                ],
+                jobs: [
+                    { id: 1, name: '전체 제품 스크래핑', startTime: '2026-04-03 09:00', status: '완료', itemCount: 2847, duration: '2시간 15분' },
+                    { id: 2, name: 'iHerb 가격 동기화', startTime: '2026-04-03 08:30', status: '진행중', itemCount: 1234, duration: '1시간 30분 중' },
+                    { id: 3, name: '리뷰 수집', startTime: '2026-04-02 22:00', status: '완료', itemCount: 15230, duration: '3시간 45분' }
+                ]
+            });
+
+            const mockApiCall = async (endpoint) => {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve(true);
+                    }, 800);
+                });
+            };
+
+            return (
+                <AppContext.Provider value={{ data, setData, mockApiCall }}>
+                    {children}
+                </AppContext.Provider>
+            );
+        };
+
+        const useApp = () => useContext(AppContext);
+
+        // ============= COMPONENTS =============
+
+        const Header = () => {
+            return (
+                <header className="header sticky top-0 z-40 shadow-md">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center py-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                                    O
+                                </div>
+                                <div>
+                                    <h1 className="text-white font-bold text-xl">IT.OPLE</h1>
+                                    <p className="text-gray-300 text-xs">제품 분석 대시보드</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <button className="px-4 py-2 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-all text-sm flex items-center gap-2">
+                                    <span>👤</span>
+                                    로그인
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+            );
+        };
+
+        const TabNavigation = ({ activeTab, setActiveTab }) => {
+            const tabs = [
+                { id: 'dashboard', label: '대시보드' },
+                { id: 'products', label: '제품' },
+                { id: 'mapping', label: 'iHerb 매핑' },
+                { id: 'analytics', label: '분석' },
+                { id: 'scraper', label: '스크래퍼' }
+            ];
+
+            return (
+                <div className="bg-white border-b border-gray-200">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <nav className="flex gap-8">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(tab.id)}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+                </div>
+            );
+        };
+
+        const KPICard = ({ label, value, change, icon, color = 'green' }) => {
+            const borderColor = color === 'green' ? '#00A651' : color === 'orange' ? '#E46728' : '#1A2A4A';
+
+            return (
+                <div className="kpi-card" style={{ borderLeft: `4px solid ${borderColor}` }}>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <p className="kpi-label">{label}</p>
+                            <p className="kpi-value">{value}</p>
+                            {change && (
+                                <span className={`kpi-change ${change > 0 ? 'positive' : 'negative'}`}>
+                                    {change > 0 ? '↑' : '↓'} {Math.abs(change)}%
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-3xl">{icon}</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const Dashboard = () => {
+            const { data } = useApp();
+            const d = data.dashboard;
+
+            return (
+                <div className="space-y-6">
+                    {/* KPI Cards */}
+                    <div className="stats-grid">
+                        <KPICard
+                            label="총 제품 수"
+                            value={d.totalProducts.toLocaleString()}
+                            change={12}
+                            icon="📦"
+                            color="green"
+                        />
+                        <KPICard
+                            label="총 리뷰 수"
+                            value={d.totalReviews.toLocaleString()}
+                            change={8}
+                            icon="⭐"
+                            color="orange"
+                        />
+                        <KPICard
+                            label="iHerb 매핑률"
+                            value={`${d.iherbMappedPercent}%`}
+                            change={5}
+                            icon="🔗"
+                            color="blue"
+                        />
+                        <KPICard
+                            label="가격 경쟁력"
+                            value={`${d.priceAdvantagePercent}%`}
+                            change={-2}
+                            icon="💰"
+                            color="green"
+                        />
+                    </div>
+
+                    {/* Brand Distribution */}
+                    <div className="card p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">브랜드별 제품 분포</h3>
+                        <div className="space-y-4">
+                            {d.brandsChart.map((brand, idx) => {
+                                const maxCount = Math.max(...d.brandsChart.map(b => b.count));
+                                const percentage = (brand.count / maxCount) * 100;
+
+                                return (
+                                    <div key={idx}>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="font-medium text-gray-700">{brand.name}</span>
+                                            <span className="text-sm font-bold text-gray-600">{brand.count}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                            <div
+                                                className="bg-gradient-to-r from-green-500 to-green-600 h-2.5 rounded-full transition-all duration-300"
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Category & Price Distribution */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="card p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">카테고리 분포</h3>
+                            <div className="space-y-3">
+                                {d.categoryBreakdown.map((cat, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <p className="font-medium text-gray-700">{cat.category}</p>
+                                            <div className="w-full bg-gray-100 rounded-full h-2 mt-1">
+                                                <div
+                                                    className="bg-blue-500 h-2 rounded-full"
+                                                    style={{ width: `${cat.percent}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        <div className="ml-4 text-right">
+                                            <p className="font-bold text-gray-900">{cat.count}</p>
+                                            <p className="text-xs text-gray-500">{cat.percent}%</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="card p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">최근 매핑 활동</h3>
+                            <div className="space-y-3">
+                                {d.recentActivity.map((activity) => (
+                                    <div key={activity.id} className="flex items-start gap-3 pb-3 border-b border-gray-100 last:border-0">
+                                        <div className="flex-1">
+                                            <p className="font-medium text-gray-900">{activity.product}</p>
+                                            <p className="text-sm text-gray-500">{activity.brand}</p>
+                                            <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                                        </div>
+                                        <span className={`badge ${
+                                            activity.status === '매핑 완료' ? 'badge-success' :
+                                            activity.status === '매핑 진행중' ? 'badge-warning' :
+                                            'badge-danger'
+                                        }`}>
+                                            {activity.status}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ProductsPage = () => {
+            const { data } = useApp();
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedBrand, setSelectedBrand] = useState('');
+            const [selectedCategory, setSelectedCategory] = useState('');
+            const [currentPage, setCurrentPage] = useState(1);
+            const [selectedProduct, setSelectedProduct] = useState(null);
+            const itemsPerPage = 10;
+
+            let filtered = data.products;
+
+            if (searchTerm) {
+                filtered = filtered.filter(p =>
+                    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+
+            if (selectedBrand) {
+                filtered = filtered.filter(p => p.brand === selectedBrand);
+            }
+
+            if (selectedCategory) {
+                filtered = filtered.filter(p => p.category === selectedCategory);
+            }
+
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const displayedProducts = filtered.slice(startIdx, startIdx + itemsPerPage);
+
+            const brands = [...new Set(data.products.map(p => p.brand))];
+            const categories = [...new Set(data.products.map(p => p.category))];
+
+            return (
+                <div className="space-y-6">
+                    {/* Filters */}
+                    <div className="filter-section">
+                        <input
+                            type="text"
+                            placeholder="제품명으로 검색..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="search-input flex-1"
+                        />
+                        <select
+                            value={selectedBrand}
+                            onChange={(e) => {
+                                setSelectedBrand(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="filter-select"
+                        >
+                            <option value="">모든 브랜드</option>
+                            {brands.map(brand => (
+                                <option key={brand} value={brand}>{brand}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => {
+                                setSelectedCategory(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="filter-select"
+                        >
+                            <option value="">모든 카테고리</option>
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Table */}
+                    <div className="card overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">제품명</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">브랜드</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">가격</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">리뷰</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">상태</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">조작</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {displayedProducts.map((product) => (
+                                        <tr key={product.id} className="table-row border-b border-gray-100">
+                                            <td className="px-6 py-4 font-medium text-gray-900">
+                                                <button
+                                                    onClick={() => setSelectedProduct(product)}
+                                                    className="text-blue-600 hover:underline cursor-pointer"
+                                                >
+                                                    {product.name}
+                                                </button>
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-700">{product.brand}</td>
+                                            <td className="px-6 py-4 font-bold text-gray-900">₩{product.price.toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-gray-700">{product.reviews}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`badge ${product.mapped ? 'badge-success' : 'badge-danger'}`}>
+                                                    {product.mapped ? '✓ 매핑완료' : '✗ 미매핑'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <button className="btn-secondary text-xs">보기</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <div className="flex justify-between items-center">
+                                <p className="text-sm text-gray-600">
+                                    전체 {filtered.length}개 중 {startIdx + 1}-{Math.min(startIdx + itemsPerPage, filtered.length)}
+                                </p>
+                                <div className="pagination">
+                                    <button
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        이전
+                                    </button>
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                        <button
+                                            key={page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className={page === currentPage ? 'active' : ''}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        다음
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Product Detail Modal */}
+                    {selectedProduct && (
+                        <div className="modal" onClick={() => setSelectedProduct(null)}>
+                            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h2>
+                                    <button
+                                        onClick={() => setSelectedProduct(null)}
+                                        className="text-gray-400 hover:text-gray-600 text-2xl"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-gray-600">브랜드</p>
+                                            <p className="text-lg font-bold text-gray-900">{selectedProduct.brand}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-600">카테고리</p>
+                                            <p className="text-lg font-bold text-gray-900">{selectedProduct.category}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-600">가격</p>
+                                            <p className="text-lg font-bold text-green-600">₩{selectedProduct.price.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-600">리뷰</p>
+                                            <p className="text-lg font-bold text-gray-900">{selectedProduct.reviews}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-gray-200">
+                                        <p className="text-sm text-gray-600 mb-2">매핑 상태</p>
+                                        <div className={`inline-block badge ${selectedProduct.mapped ? 'badge-success' : 'badge-danger'}`}>
+                                            {selectedProduct.mapped ? '✓ iHerb에 매핑됨' : '✗ 아직 매핑되지 않음'}
+                                        </div>
+                                    </div>
+
+                                    <button className="w-full btn-primary mt-6">
+                                        세부정보 보기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const MappingPage = () => {
+            const { data, mockApiCall } = useApp();
+            const [selectedMethod, setSelectedMethod] = useState('');
+            const [verifying, setVerifying] = useState(null);
+
+            let filtered = data.mapping;
+            if (selectedMethod) {
+                filtered = filtered.filter(m => m.method === selectedMethod);
+            }
+
+            const handleVerify = async (mappingId) => {
+                setVerifying(mappingId);
+                await mockApiCall('/api/mapping/verify');
+                setVerifying(null);
+            };
+
+            const stats = {
+                total: data.mapping.length,
+                verified: data.mapping.filter(m => m.status === '검증완료').length,
+                pending: data.mapping.filter(m => m.status === '검증대기').length,
+                failed: data.mapping.filter(m => m.status === '매칭실패').length
+            };
+
+            return (
+                <div className="space-y-6">
+                    {/* Summary Stats */}
+                    <div className="stats-grid">
+                        <KPICard
+                            label="총 매핑"
+                            value={stats.total}
+                            icon="🔗"
+                            color="green"
+                        />
+                        <KPICard
+                            label="검증완료"
+                            value={stats.verified}
+                            icon="✓"
+                            color="green"
+                        />
+                        <KPICard
+                            label="검증대기"
+                            value={stats.pending}
+                            icon="⏳"
+                            color="orange"
+                        />
+                        <KPICard
+                            label="매칭실패"
+                            value={stats.failed}
+                            icon="✕"
+                            color="red"
+                        />
+                    </div>
+
+                    {/* Filter */}
+                    <div className="filter-section">
+                        <select
+                            value={selectedMethod}
+                            onChange={(e) => setSelectedMethod(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="">모든 매칭 방법</option>
+                            <option value="UPC">UPC</option>
+                            <option value="Fuzzy">Fuzzy 매칭</option>
+                            <option value="None">매칭 없음</option>
+                        </select>
+                    </div>
+
+                    {/* Mapping Table */}
+                    <div className="card overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">OPLE 제품</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">iHerb 제품</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">매칭방법</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">점수</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">가격차</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">상태</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">조작</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filtered.map((mapping) => (
+                                        <tr key={mapping.id} className="table-row border-b border-gray-100">
+                                            <td className="px-6 py-4 font-medium text-gray-900">{mapping.opleProduct}</td>
+                                            <td className="px-6 py-4 text-gray-700">{mapping.iherbProduct}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`badge ${
+                                                    mapping.method === 'UPC' ? 'badge-info' :
+                                                    mapping.method === 'Fuzzy' ? 'badge-warning' :
+                                                    'badge-danger'
+                                                }`}>
+                                                    {mapping.method}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-bold text-gray-900">
+                                                {mapping.score > 0 ? `${mapping.score}%` : '-'}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={mapping.priceDiff >= 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                                                    {mapping.priceDiff > 0 ? '+' : ''}{mapping.priceDiff ? '₩' + Math.abs(mapping.priceDiff).toLocaleString() : '-'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`badge ${
+                                                    mapping.status === '검증완료' ? 'badge-success' :
+                                                    mapping.status === '검증대기' ? 'badge-warning' :
+                                                    'badge-danger'
+                                                }`}>
+                                                    {mapping.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {mapping.status === '검증대기' && (
+                                                    <button
+                                                        onClick={() => handleVerify(mapping.id)}
+                                                        disabled={verifying === mapping.id}
+                                                        className="btn-secondary text-xs"
+                                                    >
+                                                        {verifying === mapping.id ? (
+                                                            <span className="flex items-center gap-1">
+                                                                <span className="loading"></span>
+                                                            </span>
+                                                        ) : '검증'}
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AnalyticsPage = () => {
+            const analyticsData = {
+                brandComparison: [
+                    { brand: 'Nature Made', opleAvg: 14200, iherbAvg: 12500, advantage: 13.6 },
+                    { brand: 'Vitamin Shoppe', opleAvg: 19800, iherbAvg: 18900, advantage: 4.8 },
+                    { brand: 'Puritan', opleAvg: 16500, iherbAvg: 17200, advantage: -4.1 },
+                    { brand: 'NOW Foods', opleAvg: 12300, iherbAvg: 13100, advantage: -6.1 },
+                    { brand: 'GNC', opleAvg: 21500, iherbAvg: 20800, advantage: 3.4 }
+                ],
+                topKeywords: [
+                    { keyword: '효능', count: 234 },
+                    { keyword: '배송빠름', count: 198 },
+                    { keyword: '신뢰성', count: 176 },
+                    { keyword: '가성비', count: 165 },
+                    { keyword: '품질', count: 152 },
+                    { keyword: '포장', count: 128 },
+                    { keyword: '복용감', count: 115 }
+                ]
+            };
+
+            return (
+                <div className="space-y-6">
+                    {/* Brand Comparison */}
+                    <div className="card p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-6">브랜드 가격 비교 (OPLE vs iHerb)</h3>
+                        <div className="space-y-6">
+                            {analyticsData.brandComparison.map((brand, idx) => (
+                                <div key={idx}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="font-medium text-gray-700">{brand.brand}</span>
+                                        <span className={`text-sm font-bold ${brand.advantage > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            {brand.advantage > 0 ? '+' : ''}{brand.advantage}%
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs text-gray-600">OPLE 평균</span>
+                                            </div>
+                                            <div className="bg-orange-100 rounded h-8 flex items-center px-3">
+                                                <span className="text-sm font-bold text-orange-700">₩{brand.opleAvg.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs text-gray-600">iHerb 평균</span>
+                                            </div>
+                                            <div className="bg-blue-100 rounded h-8 flex items-center px-3">
+                                                <span className="text-sm font-bold text-blue-700">₩{brand.iherbAvg.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Keyword Cloud */}
+                    <div className="card p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">리뷰 상위 키워드</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {analyticsData.topKeywords.map((item, idx) => {
+                                const maxCount = Math.max(...analyticsData.topKeywords.map(k => k.count));
+                                const size = 0.8 + (item.count / maxCount) * 0.6;
+
+                                return (
+                                    <button
+                                        key={idx}
+                                        className="tag hover:scale-110 transition-transform"
+                                        style={{ fontSize: `${size}rem` }}
+                                    >
+                                        {item.keyword} ({item.count})
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Price Distribution Analysis */}
+                    <div className="card p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">가격대별 경쟁력 분석</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border-l-4 border-green-500">
+                                <p className="text-gray-700 text-sm font-medium">높음 (20% 이상)</p>
+                                <p className="text-2xl font-bold text-green-600 mt-2">24%</p>
+                            </div>
+                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border-l-4 border-blue-500">
+                                <p className="text-gray-700 text-sm font-medium">중간높음 (10-20%)</p>
+                                <p className="text-2xl font-bold text-blue-600 mt-2">41%</p>
+                            </div>
+                            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border-l-4 border-yellow-500">
+                                <p className="text-gray-700 text-sm font-medium">중간낮음 (0-10%)</p>
+                                <p className="text-2xl font-bold text-yellow-600 mt-2">26%</p>
+                            </div>
+                            <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-l-4 border-red-500">
+                                <p className="text-gray-700 text-sm font-medium">낮음 (음수)</p>
+                                <p className="text-2xl font-bold text-red-600 mt-2">9%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ScraperPage = () => {
+            const { data, mockApiCall } = useApp();
+            const [isScraping, setIsScraping] = useState(false);
+
+            const handleStartScrape = async () => {
+                setIsScraping(true);
+                await mockApiCall('/api/scraper/start');
+                setIsScraping(false);
+            };
+
+            return (
+                <div className="space-y-6">
+                    {/* Start Scrape Button */}
+                    <div className="card p-6 bg-gradient-to-r from-green-50 to-blue-50">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">스크래핑 작업 시작</h3>
+                                <p className="text-gray-600 text-sm mt-1">OPLE 제품 및 iHerb 가격 데이터를 수집하고 동기화합니다</p>
+                            </div>
+                            <button
+                                onClick={handleStartScrape}
+                                disabled={isScraping}
+                                className="btn-primary"
+                            >
+                                {isScraping ? (
+                                    <span className="flex items-center gap-2">
+                                        <span className="loading"></span>
+                                        진행중...
+                                    </span>
+                                ) : '스크래핑 시작'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Job History */}
+                    <div className="card overflow-hidden">
+                        <div className="p-6 border-b border-gray-200">
+                            <h3 className="text-lg font-bold text-gray-900">작업 이력</h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">작업명</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">시작시간</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">상태</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">항목 수</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">소요시간</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.jobs.map((job) => (
+                                        <tr key={job.id} className="table-row border-b border-gray-100">
+                                            <td className="px-6 py-4 font-medium text-gray-900">{job.name}</td>
+                                            <td className="px-6 py-4 text-gray-700 text-sm">{job.startTime}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`badge ${
+                                                    job.status === '완료' ? 'badge-success' :
+                                                    job.status === '진행중' ? 'badge-warning' :
+                                                    'badge-danger'
+                                                }`}>
+                                                    {job.status === '진행중' && <span className="inline-block loading mr-1" style={{ width: '12px', height: '12px' }}></span>}
+                                                    {job.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-bold text-gray-900">{job.itemCount.toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-gray-700">{job.duration}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Main = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {activeTab === 'dashboard' && <Dashboard />}
+                        {activeTab === 'products' && <ProductsPage />}
+                        {activeTab === 'mapping' && <MappingPage />}
+                        {activeTab === 'analytics' && <AnalyticsPage />}
+                        {activeTab === 'scraper' && <ScraperPage />}
+                    </main>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <AppProvider>
+                    <Main />
+                </AppProvider>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

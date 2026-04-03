@@ -554,6 +554,101 @@ async def run_iherb_scrape_job(job_id: int, categories: list, max_products: int,
 
 # ── iHerb Products API ─────────────────────────────────
 
+from pydantic import BaseModel
+from typing import List
+
+class IHerbProductIn(BaseModel):
+    iherb_id: str
+    name: str = ""
+    name_ko: str = ""
+    brand: str = ""
+    url: str = ""
+    image_url: str = ""
+    price_usd: float = 0
+    price_krw: float = 0
+    price_original: float = 0
+    discount_pct: float = 0
+    rating: float = 0
+    review_count: int = 0
+    category: str = ""
+    sub_category: str = ""
+    category_path: str = ""
+    description: str = ""
+    description_ko: str = ""
+    suggested_use: str = ""
+    other_ingredients: str = ""
+    warnings: str = ""
+    supplement_facts: str = ""
+    product_form: str = ""
+    count: str = ""
+    weight: str = ""
+    dimensions: str = ""
+    badges: str = "[]"
+    in_stock: bool = True
+
+class BulkProductsIn(BaseModel):
+    products: List[IHerbProductIn]
+
+@app.post("/api/iherb/products/bulk")
+def bulk_save_iherb_products(data: BulkProductsIn, db: Session = Depends(get_db)):
+    """Bulk save/update iHerb products from Chrome scraper."""
+    saved = 0
+    updated = 0
+    for p in data.products:
+        existing = db.query(IHerbProduct).filter(IHerbProduct.iherb_id == p.iherb_id).first()
+        if existing:
+            # Update existing
+            for field in ['name', 'name_ko', 'brand', 'url', 'image_url', 'price_usd',
+                         'price_krw', 'price_original', 'discount_pct', 'rating',
+                         'review_count', 'category', 'sub_category', 'category_path',
+                         'description', 'description_ko', 'suggested_use',
+                         'other_ingredients', 'warnings', 'supplement_facts',
+                         'product_form', 'count', 'weight', 'dimensions', 'badges', 'in_stock']:
+                val = getattr(p, field)
+                if val and val != "" and val != 0 and val != "[]":
+                    setattr(existing, field, val)
+            existing.updated_at = datetime.utcnow()
+            updated += 1
+        else:
+            # Create new
+            new_product = IHerbProduct(
+                iherb_id=p.iherb_id,
+                product_id=f"iherb_{p.iherb_id}",
+                name=p.name,
+                name_ko=p.name_ko,
+                brand=p.brand,
+                url=p.url,
+                image_url=p.image_url,
+                price_usd=p.price_usd,
+                price_krw=p.price_krw,
+                price_original=p.price_original,
+                discount_pct=p.discount_pct,
+                rating=p.rating,
+                review_count=p.review_count,
+                category=p.category,
+                sub_category=p.sub_category,
+                category_path=p.category_path,
+                description=p.description,
+                description_ko=p.description_ko,
+                suggested_use=p.suggested_use,
+                other_ingredients=p.other_ingredients,
+                warnings=p.warnings,
+                supplement_facts=p.supplement_facts,
+                product_form=p.product_form,
+                count=p.count,
+                weight=p.weight,
+                dimensions=p.dimensions,
+                badges=p.badges,
+                in_stock=p.in_stock,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            db.add(new_product)
+            saved += 1
+    db.commit()
+    return {"status": "ok", "saved": saved, "updated": updated, "total": saved + updated}
+
+
 @app.get("/api/iherb/products")
 def get_iherb_products(
     page: int = Query(1, ge=1),

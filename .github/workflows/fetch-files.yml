@@ -12,11 +12,12 @@ jobs:
       - name: Download project files
         run: |
           mkdir -p api scraper static
-          curl -sL https://files.catbox.moe/b1gjil.py -o api/main.py
-                    curl -sL https://files.catbox.moe/48c5q8.py -o api/database.py
+          curl -sL https://files.catbox.moe/m6ewpd.py -o api/main.py
+                    curl -sL https://files.catbox.moe/ydlyzd.py -o api/database.py
           curl -sL https://files.catbox.moe/ap4l5y.py -o scraper/ople_scraper.py
           curl -sL https://files.catbox.moe/8ilrwh.py -o scraper/iherb_mapper.py
-          curl -sL https://files.catbox.moe/p8qs5a.html -o static/index.html
+                      curl -sL https://files.catbox.moe/d44dwz.py -o scraper/iherb_scraper.py
+          curl -sL https://files.catbox.moe/52pbrs.html -o static/index.html
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"

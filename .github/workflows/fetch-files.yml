@@ -1,6 +1,9 @@
 name: Fetch project files
 on: workflow_dispatch
 
+permissions:
+  contents: write
+
 jobs:
   fetch-and-commit:
     runs-on: ubuntu-latest

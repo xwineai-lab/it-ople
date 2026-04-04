@@ -106,11 +106,12 @@ class IHerbProduct(Base):
 
     # ── 상품명 ──
     name = Column(String(1000))
-    name_ko = Column(String(1000))  # 한국어 상품명 (있으면)
+    name_ko = Column(String(1000))  # 한국어 상품명
     subtitle = Column(String(500))  # sub-title or tagline
 
     # ── 브랜드 정보 ──
     brand = Column(String(300), index=True)
+    brand_ko = Column(String(300))  # 한국어 브랜드명 (e.g. "올게인")
     brand_url = Column(Text)
     manufacturer = Column(String(300))
 
@@ -128,6 +129,9 @@ class IHerbProduct(Base):
     category = Column(String(300), index=True)
     sub_category = Column(String(300))
     category_path = Column(Text)  # 전체 카테고리 경로: "Supplements > Vitamins > Vitamin C"
+    category_ko = Column(String(300))  # 한국어 카테고리
+    sub_category_ko = Column(String(300))  # 한국어 서브카테고리
+    category_path_ko = Column(Text)  # 한국어 카테고리 경로: "보충제 > 비타민 > 비타민 C"
     category_ids = Column(JSON)  # [cat_id1, cat_id2, ...]
 
     # ── 이미지 ──
@@ -143,20 +147,28 @@ class IHerbProduct(Base):
     top_critical_review = Column(Text)
 
     # ── 상품 설명 ──
-    description = Column(Text)  # 메인 설명
+    description = Column(Text)  # 메인 설명 (영문)
+    description_ko = Column(Text)  # 한국어 설명
     description_html = Column(Text)  # HTML 원본
     features = Column(JSON)  # 주요 특징 리스트 ["Non-GMO", "Vegan", ...]
-    warnings = Column(Text)  # 주의사항
-    suggested_use = Column(Text)  # 복용법/사용법
-    storage_info = Column(Text)  # 보관방법
+    features_ko = Column(JSON)  # 한국어 특징 리스트
+    warnings = Column(Text)  # 주의사항 (영문)
+    warnings_ko = Column(Text)  # 한국어 주의사항
+    suggested_use = Column(Text)  # 복용법/사용법 (영문)
+    suggested_use_ko = Column(Text)  # 한국어 복용법/사용법
+    storage_info = Column(Text)  # 보관방법 (영문)
+    storage_info_ko = Column(Text)  # 한국어 보관방법
 
     # ── 성분 & 영양정보 ──
-    ingredients = Column(Text)  # 전체 성분 텍스트
+    ingredients = Column(Text)  # 전체 성분 텍스트 (영문)
+    ingredients_ko = Column(Text)  # 한국어 성분 텍스트
     ingredients_list = Column(JSON)  # 파싱된 성분 리스트
     supplement_facts = Column(JSON)  # 영양성분표 [{name, amount, daily_value}, ...]
     nutrition_facts = Column(JSON)  # 일반 영양정보 (식품용)
-    other_ingredients = Column(Text)  # 기타 성분
-    allergen_info = Column(Text)  # 알레르기 정보
+    other_ingredients = Column(Text)  # 기타 성분 (영문)
+    other_ingredients_ko = Column(Text)  # 한국어 기타 성분
+    allergen_info = Column(Text)  # 알레르기 정보 (영문)
+    allergen_info_ko = Column(Text)  # 한국어 알레르기 정보
 
     # ── 상품 규격 ──
     serving_size = Column(String(200))  # 1회 섭취량
@@ -198,6 +210,7 @@ class IHerbProduct(Base):
 
     # ── 타임스탬프 ──
     scraped_at = Column(DateTime, default=datetime.utcnow)
+    ko_scraped_at = Column(DateTime)  # 한국어 데이터 수집 시간
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (

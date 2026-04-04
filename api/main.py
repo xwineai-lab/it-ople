@@ -50,6 +50,14 @@ async def root():
         return index_path.read_text(encoding="utf-8")
     return "<h1>IT.OPLE API</h1><p>Frontend not found. Place index.html in /static/</p>"
 
+
+@app.get("/spec", response_class=HTMLResponse)
+async def spec():
+    spec_path = static_dir / "spec.html"
+    if spec_path.exists():
+        return spec_path.read_text(encoding="utf-8")
+    return "<h1>Spec not found</h1>"
+
 # ── Dashboard APIs ───────────────────────────────────────
 @app.get("/api/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):

@@ -354,6 +354,137 @@
             padding: 1rem;
         }
 
+        /* Data Table View */
+        .data-table-wrap {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .data-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .data-table th {
+            background: #1e293b;
+            color: #e2e8f0;
+            font-weight: 600;
+            padding: 0.6rem 0.65rem;
+            text-align: left;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 2px solid #334155;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+        }
+        .data-table th:hover { background: #334155; }
+        .data-table th .sort-icon { opacity: 0.4; margin-left: 2px; font-size: 0.65rem; }
+        .data-table th.sorted .sort-icon { opacity: 1; color: #60a5fa; }
+        .data-table td {
+            padding: 0.5rem 0.65rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .data-table tbody tr {
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+        .data-table tbody tr:hover { background: #f0f9ff; }
+        .data-table tbody tr:nth-child(even) { background: #fafbfc; }
+        .data-table tbody tr:nth-child(even):hover { background: #f0f9ff; }
+        .data-table .thumb-cell {
+            width: 44px;
+            min-width: 44px;
+        }
+        .data-table .thumb-cell img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #f9fafb;
+        }
+        .data-table .name-cell {
+            max-width: 280px;
+        }
+        .data-table .name-cell .prod-name {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-weight: 500;
+            color: #1e293b;
+            font-size: 0.8rem;
+        }
+        .data-table .name-cell .prod-brand {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            margin-top: 1px;
+        }
+        .data-table .num-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .data-table .price-cell {
+            font-weight: 600;
+            color: #059669;
+        }
+        .data-table .rating-bar {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .data-table .rating-bar .bar {
+            width: 48px;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .data-table .rating-bar .bar-fill {
+            height: 100%;
+            background: #f59e0b;
+            border-radius: 3px;
+        }
+        .data-table .category-tag {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+        .view-toggle {
+            display: inline-flex;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .view-toggle button {
+            padding: 0.35rem 0.7rem;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #64748b;
+            transition: all 0.15s;
+        }
+        .view-toggle button.active {
+            background: #1e293b;
+            color: white;
+        }
+        .view-toggle button:hover:not(.active) {
+            background: #f1f5f9;
+        }
+
         .star-rating {
             color: #f59e0b;
         }
@@ -680,7 +811,8 @@
             const [detailData, setDetailData] = useState(null);
             const [brands, setBrands] = useState([]);
             const [categories, setCategories] = useState([]);
-            const limit = 24;
+            const [viewMode, setViewMode] = useState('table');
+            const limit = viewMode === 'table' ? 50 : 24;
 
             const loadProducts = useCallback(async () => {
                 setLoading(true);
@@ -699,7 +831,7 @@
                     setTotal(res.total || 0);
                 }
                 setLoading(false);
-            }, [page, searchTerm, selectedBrand, selectedCategory, sortBy]);
+            }, [page, searchTerm, selectedBrand, selectedCategory, sortBy, viewMode]);
 
             useEffect(() => {
                 loadProducts();
@@ -752,6 +884,10 @@
                             <option value="price_desc">가격 높은순</option>
                             <option value="newest">최신순</option>
                         </select>
+                        <div className="view-toggle">
+                            <button className={viewMode === 'table' ? 'active' : ''} onClick={() => { setViewMode('table'); setPage(1); }} title="테이블 뷰">☰</button>
+                            <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => { setViewMode('grid'); setPage(1); }} title="카드 뷰">▦</button>
+                        </div>
                         <span className="text-sm text-gray-500 whitespace-nowrap">{total.toLocaleString()}개 상품</span>
                     </div>
 
@@ -764,7 +900,77 @@
                         </div>
                     ) : (
                         <div>
-                            {/* Product Grid */}
+                            {viewMode === 'table' ? (
+                            /* ===== DATA TABLE VIEW ===== */
+                            <div className="data-table-wrap" style={{ overflowX: 'auto' }}>
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style={{width:'30px',textAlign:'center'}}>#</th>
+                                            <th className="thumb-cell"></th>
+                                            <th className="name-cell" onClick={() => setSortBy('name')}>
+                                                상품명 <span className={'sort-icon' + (sortBy==='name'?' sorted':'')}>↕</span>
+                                            </th>
+                                            <th onClick={() => setSortBy('category')}>
+                                                카테고리 <span className={'sort-icon'}>↕</span>
+                                            </th>
+                                            <th className="num-cell" onClick={() => setSortBy(sortBy==='price_desc'?'price_asc':'price_desc')}>
+                                                원화가격 <span className={'sort-icon' + (sortBy.startsWith('price')?' sorted':'')}>↕</span>
+                                            </th>
+                                            <th className="num-cell" onClick={() => setSortBy('rating')}>
+                                                평점 <span className={'sort-icon' + (sortBy==='rating'?' sorted':'')}>↕</span>
+                                            </th>
+                                            <th className="num-cell" onClick={() => setSortBy('reviews')}>
+                                                리뷰수 <span className={'sort-icon' + (sortBy==='reviews'?' sorted':'')}>↕</span>
+                                            </th>
+                                            <th className="num-cell">Q&A</th>
+                                            <th style={{textAlign:'center'}}>재고</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {products.map((p, idx) => (
+                                            <tr key={p.iherb_id || idx} onClick={() => openDetail(p)}>
+                                                <td style={{textAlign:'center',color:'#94a3b8',fontSize:'0.7rem'}}>{(page - 1) * limit + idx + 1}</td>
+                                                <td className="thumb-cell">
+                                                    <img
+                                                        src={p.image_url || p.thumbnail_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect fill="%23f3f4f6" width="40" height="40"/></svg>'}
+                                                        alt="" loading="lazy"
+                                                        onError={e => { e.target.style.display = 'none'; }}
+                                                    />
+                                                </td>
+                                                <td className="name-cell">
+                                                    <div className="prod-name">{p.name_ko || p.name}</div>
+                                                    <div className="prod-brand">{p.brand}</div>
+                                                </td>
+                                                <td><span className="category-tag">{p.category || '-'}</span></td>
+                                                <td className="num-cell price-cell">
+                                                    {p.price_krw > 0 ? String.fromCharCode(8361) + Math.round(p.price_krw).toLocaleString() : (p.price_usd > 0 ? ('$' + p.price_usd.toFixed(2)) : '-')}
+                                                </td>
+                                                <td className="num-cell">
+                                                    <div className="rating-bar">
+                                                        <span style={{fontWeight:600,color:'#1e293b'}}>{(p.rating || 0).toFixed(1)}</span>
+                                                        <div className="bar"><div className="bar-fill" style={{width: ((p.rating || 0) / 5 * 100) + '%'}}></div></div>
+                                                    </div>
+                                                </td>
+                                                <td className="num-cell" style={{fontWeight:500}}>
+                                                    {p.review_count ? p.review_count.toLocaleString() : '-'}
+                                                </td>
+                                                <td className="num-cell" style={{color:'#64748b'}}>
+                                                    {p.qa_count || '-'}
+                                                </td>
+                                                <td style={{textAlign:'center'}}>
+                                                    {p.in_stock !== false ?
+                                                        <span style={{color:'#059669',fontSize:'0.75rem',fontWeight:600}}>●</span> :
+                                                        <span style={{color:'#ef4444',fontSize:'0.75rem',fontWeight:600}}>●</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ) : (
+                            /* ===== CARD GRID VIEW ===== */
                             <div className="product-grid">
                                 {products.map((p, idx) => (
                                     <div key={p.iherb_id || idx} className="product-card" onClick={() => openDetail(p)}>
@@ -777,16 +983,13 @@
                                         <div className="p-4">
                                             <p className="text-xs text-gray-400 mb-1">{p.brand}</p>
                                             <h4 className="font-medium text-gray-900 text-sm mb-2 line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                                {p.name || p.name_ko}
+                                                {p.name_ko || p.name}
                                             </h4>
                                             <StarRating rating={p.rating || 0} count={p.review_count} />
                                             <div className="mt-2 flex items-center gap-2">
                                                 <span className="text-lg font-bold text-green-600">
-                                                    ${p.price_usd ? p.price_usd.toFixed(2) : '0.00'}
+                                                    {p.price_krw > 0 ? (String.fromCharCode(8361) + Math.round(p.price_krw).toLocaleString()) : ('$' + (p.price_usd ? p.price_usd.toFixed(2) : '0.00'))}
                                                 </span>
-                                                {p.price_original > 0 && p.price_original > p.price_usd && (
-                                                    <span className="text-xs text-gray-400 line-through">${p.price_original.toFixed(2)}</span>
-                                                )}
                                                 {p.discount_pct > 0 && (
                                                     <span className="badge badge-danger text-xs">-{p.discount_pct}%</span>
                                                 )}
@@ -794,17 +997,11 @@
                                             {p.in_stock === false && (
                                                 <span className="badge badge-danger mt-2">품절</span>
                                             )}
-                                            {p.badges && p.badges.length > 0 && (
-                                                <div className="mt-2 flex flex-wrap gap-1">
-                                                    {(p.badges || []).slice(0, 3).map((b, i) => (
-                                                        <span key={i} className="tag text-xs" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>{b}</span>
-                                                    ))}
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 ))}
                             </div>
+                            )}
 
                             {/* Pagination */}
                             {totalPages > 1 && (

@@ -37,6 +37,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("iherb_scraper")
 
 BASE_URL = "https://www.iherb.com"
+BASE_URL_KR = "https://kr.iherb.com"
 DELAY = 2.0  # seconds between requests
 MAX_RETRIES = 3
 
@@ -337,7 +338,7 @@ async def scrape_product_detail(client: httpx.AsyncClient, product_url: str, pro
     soup = BeautifulSoup(resp.text, "html.parser")
     info = {"url": product_url, "product_id": product_id}
 
-    # ── 1. JSON-LD 구조화 데이터 추출 (가장 정확) ──
+    # ── 1. JSON-LD 구조화 데이터 추출 (가장 정화) ──
     json_ld_data = extract_json_ld(soup)
     if json_ld_data:
         info.update(json_ld_data)
@@ -1001,6 +1002,156 @@ def extract_meta(soup) -> dict:
     return info
 
 
+# ── Korean Data Scraper (kr.iherb.com) ──────────────────
+
+def _to_kr_url(url: str) -> str:
+    """Convert www.iherb.com URL to kr.iherb.com URL."""
+    if not url:
+        return ""
+    return url.replace("https://www.iherb.com", BASE_URL_KR).replace("http://www.iherb.com", BASE_URL_KR)
+
+
+async def scrape_korean_detail(client: httpx.AsyncClient, product_url: str) -> dict:
+    """
+    Scrape Korean-language product data from kr.iherb.com.
+    Uses the same URL structure, just with kr.iherb.com domain.
+    Returns dict with _ko suffixed fields.
+    """
+    kr_url = _to_kr_url(product_url)
+    if not kr_url:
+        return {}
+
+    resp = await fetch_with_retry(client, kr_url)
+    if not resp or resp.status_code != 200:
+        return {}
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    info = {}
+
+    # ── 1. JSON-LD 한국어 데이터 (가장 정화) ──
+    scripts = soup.find_all("script", type="application/ld+json")
+    for script in scripts:
+        try:
+            data = json.loads(script.string)
+            if isinstance(data, dict) and data.get("@type") == "Product":
+                info["name_ko"] = data.get("name", "")
+                info["description_ko"] = data.get("description", "")
+                brand = data.get("brand", {})
+                if isinstance(brand, dict):
+                    brand_name = brand.get("name", "")
+                else:
+                    brand_name = str(brand)
+                # Extract Korean brand name from pattern like "Orgain (오게인)"
+                ko_match = re.search(r'\(([가-힣\s]+)\)', brand_name)
+                if ko_match:
+                    info["brand_ko"] = ko_match.group(1).strip()
+                else:
+                    info["brand_ko"] = brand_name
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            continue
+
+    # ── 2. 한국어 카테고리 경로 ──
+    breadcrumb = soup.find(class_="breadcrumb") or soup.find(attrs={"itemtype": re.compile("BreadcrumbList")})
+    if breadcrumb:
+        crumbs = []
+        for item in breadcrumb.find_all("a"):
+            text = clean_text(item.get_text())
+            if text and text not in ("홈", "Home"):
+                crumbs.append(text)
+        if crumbs:
+            info["category_path_ko"] = " > ".join(crumbs)
+            if len(crumbs) >= 1:
+                info["category_ko"] = crumbs[-1]
+            if len(crumbs) >= 2:
+                info["sub_category_ko"] = crumbs[-1]
+                info["category_ko"] = crumbs[-2]
+
+    # ── 3. 한국어 상품 설명 & 특징 ──
+    desc_el = soup.find(id="product-desc-content") or soup.find(class_="prodOverviewDetail")
+    if desc_el:
+        info["description_ko"] = clean_text(desc_el.get_text())[:3000]
+
+    # Features (Korean)
+    features_ko = []
+    feature_list = soup.find(id="product-overview") or soup.find(class_="product-overview")
+    if feature_list:
+        for li in feature_list.find_all("li"):
+            text = clean_text(li.get_text())
+            if text:
+                features_ko.append(text)
+    if not features_ko and desc_el:
+        for li in desc_el.find_all("li"):
+            text = clean_text(li.get_text())
+            if text and len(text) < 200:
+                features_ko.append(text)
+    if features_ko:
+        info["features_ko"] = features_ko[:20]
+
+    # ── 4. 한국어 복용법 ──
+    use_el = soup.find(id="suggested-use") or soup.find(string=re.compile(r"권장 사용법|복용법|사용법|Suggested Use", re.IGNORECASE))
+    if use_el:
+        parent = use_el.parent if use_el.name is None else use_el
+        next_content = parent.find_next_sibling() if parent else None
+        if next_content:
+            info["suggested_use_ko"] = clean_text(next_content.get_text())[:500]
+        else:
+            info["suggested_use_ko"] = clean_text(parent.get_text())[:500]
+
+    # ── 5. 한국어 주의사항 ──
+    warn_el = soup.find(id="warnings") or soup.find(string=re.compile(r"주의사항|경고|Warnings?", re.IGNORECASE))
+    if warn_el:
+        parent = warn_el.parent if warn_el.name is None else warn_el
+        next_content = parent.find_next_sibling() if parent else None
+        if next_content:
+            info["warnings_ko"] = clean_text(next_content.get_text())[:500]
+        else:
+            info["warnings_ko"] = clean_text(parent.get_text())[:500]
+
+    # ── 6. 한국어 보관방법 ──
+    storage_el = soup.find(string=re.compile(r"보관|Store in|Storage", re.IGNORECASE))
+    if storage_el:
+        parent = storage_el.parent if storage_el.name is None else storage_el
+        info["storage_info_ko"] = clean_text(parent.get_text())[:300]
+
+    # ── 7. 한국어 성분 정보 ──
+    ingredients_el = soup.find(id="product-ingredients") or soup.find(class_="ingredientsList")
+    if not ingredients_el:
+        ing_heading = soup.find(string=re.compile(r"기타 성분|성분|Other Ingredients|Ingredients", re.IGNORECASE))
+        if ing_heading:
+            parent = ing_heading.parent if ing_heading.name is None else ing_heading
+            ingredients_el = parent.find_next_sibling() or parent
+    if ingredients_el:
+        info["ingredients_ko"] = clean_text(ingredients_el.get_text())[:2000]
+
+    # Other ingredients (Korean)
+    other_ing = soup.find(string=re.compile(r"기타 성분|Other Ingredients"))
+    if other_ing:
+        parent = other_ing.parent if other_ing.name is None else other_ing
+        next_el = parent.find_next_sibling()
+        if next_el:
+            info["other_ingredients_ko"] = clean_text(next_el.get_text())[:500]
+
+    # Allergen info (Korean)
+    allergen = soup.find(string=re.compile(r"알레르기|알러지|함유|Allergen|Contains:", re.IGNORECASE))
+    if allergen:
+        parent = allergen.parent if allergen.name is None else allergen
+        info["allergen_info_ko"] = clean_text(parent.get_text())[:300]
+
+    # ── 8. 한국어 원화 가격 ──
+    price_el = soup.find(id="price") or soup.find(class_="product-price")
+    if price_el:
+        price_text = price_el.get_text()
+        krw_match = re.search(r'₩([\d,]+)', price_text)
+        if krw_match:
+            try:
+                info["price_krw"] = int(krw_match.group(1).replace(",", ""))
+            except ValueError:
+                pass
+
+    info["ko_scraped_at"] = datetime.utcnow().isoformat()
+    return info
+
+
 # ── Main Scraper Pipeline ───────────────────────────────
 
 async def run_iherb_scrape(
@@ -1009,6 +1160,7 @@ async def run_iherb_scrape(
     max_products_per_category: int = None,
     max_pages_per_category: int = 10,
     scrape_details: bool = True,
+    scrape_korean: bool = True,
     progress_callback=None,
 ):
     """
@@ -1114,14 +1266,41 @@ async def run_iherb_scrape(
 
                 await asyncio.sleep(DELAY)
 
+        # ═══ Phase 3: Scrape Korean data from kr.iherb.com ═══
+        ko_count = 0
+        target_list = detailed_products if detailed_products else list(total_products.values())
+
+        if scrape_korean and target_list:
+            logger.info("═══ Phase 3: Scraping Korean data from kr.iherb.com ═══")
+            total_count = len(target_list)
+
+            for i, product in enumerate(target_list):
+                url = product.get("url", "")
+                if not url:
+                    continue
+
+                ko_data = await scrape_korean_detail(client, url)
+                if ko_data:
+                    product.update(ko_data)
+                    ko_count += 1
+
+                if (i + 1) % 10 == 0:
+                    logger.info(f"  Korean progress: {i + 1}/{total_count} ({ko_count} successful)")
+
+                if progress_callback:
+                    await progress_callback(i + 1, total_count, f"한국어 수집: {product.get('name_ko', product.get('name', ''))[:30]}")
+
+                await asyncio.sleep(DELAY)
+
         # Save final results
         with open(output / "iherb_products.json", "w", encoding="utf-8") as f:
-            json.dump(detailed_products if detailed_products else list(total_products.values()), f, ensure_ascii=False, indent=2)
+            json.dump(target_list, f, ensure_ascii=False, indent=2)
 
     # Summary
     result = {
         "total_product_ids": len(total_products),
         "detailed_products": len(detailed_products),
+        "korean_enriched": ko_count,
         "categories_scraped": len(cats),
         "scraped_at": datetime.utcnow().isoformat(),
     }
@@ -1129,6 +1308,7 @@ async def run_iherb_scrape(
     logger.info("═══ iHerb Scraping Complete ═══")
     logger.info(f"  Product IDs: {result['total_product_ids']}")
     logger.info(f"  Detailed: {result['detailed_products']}")
+    logger.info(f"  Korean enriched: {result['korean_enriched']}")
     logger.info(f"  Categories: {result['categories_scraped']}")
 
     with open(output / "iherb_scrape_summary.json", "w", encoding="utf-8") as f:

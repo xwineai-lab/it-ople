@@ -1,6 +1,6 @@
 """
-IT.OPLE â FastAPI Backend
-OPLE ìí/ë¦¬ë·° ë¶ì & iHerb ë§¤í ì¸í¸ë¼ë·
+IT.OPLE — FastAPI Backend
+OPLE 상품/리뷰 분석 & iHerb 매핑 인트라넷
 """
 import os
 import json
@@ -17,8 +17,8 @@ from sqlalchemy import func, desc, case
 
 from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob
 
-# ââ App Setup ââââââââââââââââââââââââââââââââââââââââââââ
-app = FastAPI(title="IT.OPLE", version="1.1.0", description="OPLE ìí ë¶ì & iHerb ë§¤í ì¸í¸ë¼ë·")
+# ── App Setup ────────────────────────────────────────────
+app = FastAPI(title="IT.OPLE", version="1.1.0", description="OPLE 상품 분석 & iHerb 매핑 인트라넷")
 
 # CORS middleware - allow iHerb scraping tabs to send data
 app.add_middleware(
@@ -38,7 +38,7 @@ def startup():
         seed_demo_data(db)
     db.close()
 
-# ââ Static Files âââââââââââââââââââââââââââââââââââââââââ
+# ── Static Files ─────────────────────────────────────────
 static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
@@ -50,7 +50,7 @@ async def root():
         return index_path.read_text(encoding="utf-8")
     return "<h1>IT.OPLE API</h1><p>Frontend not found. Place index.html in /static/</p>"
 
-# ââ Dashboard APIs âââââââââââââââââââââââââââââââââââââââ
+# ── Dashboard APIs ───────────────────────────────────────
 @app.get("/api/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):
     total_products = db.query(Product).count()
@@ -90,7 +90,7 @@ def get_category_stats(db: Session = Depends(get_db)):
         func.sum(Product.review_count).label("total_reviews"),
     ).group_by(Product.parent_category).order_by(desc("count")).all()
     return [
-        {"category": c.parent_category or "ê¸°í", "count": c.count, "avg_price": round(c.avg_price or 0, 2), "total_reviews": c.total_reviews or 0}
+        {"category": c.parent_category or "기타", "count": c.count, "avg_price": round(c.avg_price or 0, 2), "total_reviews": c.total_reviews or 0}
         for c in cats
     ]
 
@@ -99,7 +99,7 @@ def get_price_distribution(db: Session = Depends(get_db)):
     ranges = [("$0-10", 0, 10), ("$10-20", 10, 20), ("$20-30", 20, 30), ("$30-50", 30, 50), ("$50+", 50, 9999)]
     return [{"range": label, "count": db.query(Product).filter(Product.price_usd >= lo, Product.price_usd < hi).count()} for label, lo, hi in ranges]
 
-# ââ Products API âââââââââââââââââââââââââââââââââââââââââ
+# ── Products API ─────────────────────────────────────────
 @app.get("/api/products")
 def get_products(
     page: int = Query(1, ge=1), per_page: int = Query(20, ge=1, le=100),
@@ -153,7 +153,7 @@ def get_product_detail(it_id: str, db: Session = Depends(get_db)):
         "iherb_mapping": mapping,
     }
 
-# ââ iHerb Mapping API ââââââââââââââââââââââââââââââââââââ
+# ── iHerb Mapping API ────────────────────────────────────
 @app.get("/api/mapping")
 def get_mappings(
     page: int = Query(1, ge=1), per_page: int = Query(20, ge=1, le=100),
@@ -201,7 +201,7 @@ def verify_mapping(ople_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "verified"}
 
-# ââ Scrape Jobs API ââââââââââââââââââââââââââââââââââââââ
+# ── Scrape Jobs API ──────────────────────────────────────
 @app.get("/api/jobs")
 def get_jobs(db: Session = Depends(get_db)):
     jobs = db.query(ScrapeJob).order_by(desc(ScrapeJob.created_at)).limit(20).all()
@@ -221,7 +221,7 @@ async def start_ople_scrape(background_tasks: BackgroundTasks, max_products: int
     db.refresh(job)
     return {"job_id": job.id, "status": "queued", "message": f"Scraping up to {max_products} products"}
 
-# ââ iHerb Products API âââââââââââââââââââââââââââââââââââ
+# ── iHerb Products API ───────────────────────────────────
 from pydantic import BaseModel
 from typing import List
 
@@ -509,7 +509,7 @@ def get_iherb_product_detail(product_id: str, db: Session = Depends(get_db)):
                    "distribution": product.rating_distribution,
                    "top_positive": product.top_positive_review, "top_critical": product.top_critical_review},
         "description": {"text": product.description, "features": product.features,
-                         "suggested_use": product.suggested_use, "warnings": product.warnings, "storage": product.storage_info},
+                       "suggested_use": product.suggested_use, "warnings": product.warnings, "storage": product.storage_info},
         "nutrition": {"supplement_facts": product.supplement_facts, "ingredients": product.ingredients,
                      "ingredients_list": product.ingredients_list, "other_ingredients": product.other_ingredients,
                      "allergen_info": product.allergen_info, "serving_size": product.serving_size,
@@ -548,7 +548,7 @@ def get_iherb_stats(db: Session = Depends(get_db)):
     return {
         "total_products": total, "in_stock": in_stock, "has_details": has_details,
         "by_category": [
-            {"category": c.category or "ê¸°í", "count": c.count, "avg_price": round(c.avg_price or 0, 2), "avg_rating": round(c.avg_rating or 0, 1)}
+            {"category": c.category or "기타", "count": c.count, "avg_price": round(c.avg_price or 0, 2), "avg_rating": round(c.avg_rating or 0, 1)}
             for c in by_category
         ],
         "by_brand": [
@@ -561,7 +561,7 @@ def get_iherb_stats(db: Session = Depends(get_db)):
         ],
     }
 
-# ââ Analytics API âââââââââââââââââââââââââââââââââââââââââ
+# ── Analytics API ─────────────────────────────────────────
 @app.get("/api/analytics/brand-comparison")
 def brand_comparison(db: Session = Depends(get_db)):
     results = db.query(
@@ -590,113 +590,27 @@ def review_keywords(db: Session = Depends(get_db)):
     sorted_kw = sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:50]
     return [{"keyword": k, "count": v} for k, v in sorted_kw]
 
-# ââ Demo Data Seeding âââââââââââââââââââââââââââââââââââââ
+# ── Demo Data Seeding ─────────────────────────────────────
 def seed_demo_data(db: Session):
     demo_products = [
-        {"it_id": "1319032894", "name_ko": "Now Foods ì¸í¸ë¼ ì¤ë©ê°-3, 180ìº¡ì", "name_en": "Now Foods Ultra Omega-3 180 Softgels", "brand": "Now Foods", "price_usd": 25.99, "price_krw": 39115, "review_count": 1473, "parent_category": "ê±ê°ìí", "category_name": "ì¤ë©ê°3/í¼ìì¤ì¼"},
-        {"it_id": "1505216341", "name_ko": "Solgar ì½ë¼ê² íìë£¨ë¡ì°, 30ì ", "name_en": "Solgar Collagen Hyaluronic Acid Complex", "brand": "Solgar", "price_usd": 14.99, "price_krw": 22560, "review_count": 607, "parent_category": "ë·°í°ì©í", "category_name": "ì½ë¼ê²"},
-        {"it_id": "1407165807", "name_ko": "Doctor's Best ë£¨íì¸+ë¸¨í°ê·ì¤ 20mg, 180ìº¡ì", "name_en": "Doc                 "suggested_use": product.suggested_use, "warnings": product.warnings, "storage": product.storage_info},
-        "nutrition": {"supplement_facts": product.supplement_facts, "ingredients": product.ingredients,
-                     "ingredients_list": product.ingredients_list, "other_ingredients": product.other_ingredients,
-                     "allergen_info": product.allergen_info, "serving_size": product.serving_size,
-                     "servings_per_container": product.servings_per_container},
-        "specs": {"product_form": product.product_form, "count": product.count, "weight": product.weight,
-                 "dimensions": product.dimensions, "upc_barcode": product.upc_barcode, "sku": product.sku,
-                 "shipping_weight": product.shipping_weight},
-        "certifications": {"badges": json.loads(product.badges) if isinstance(product.badges, str) and product.badges.startswith("[") else (product.badges or []),
-                          "certifications": product.certifications, "best_by_date": product.best_by_date},
-        "category": {"category": product.category, "sub_category": product.sub_category, "path": product.category_path},
-        "social": {"qa_count": product.qa_count, "top_questions": product.top_questions, "reviews": product.reviews_data},
-        "related": {"related_products": product.related_products, "also_bought": product.also_bought, "bundle_deals": product.bundle_deals},
-        "meta": {"tags": product.tags, "popularity_rank": product.popularity_rank,
-                "scraped_at": product.scraped_at.isoformat() if product.scraped_at else None,
-                "updated_at": product.updated_at.isoformat() if product.updated_at else None},
-    }
-
-@app.get("/api/iherb/stats")
-def get_iherb_stats(db: Session = Depends(get_db)):
-    total = db.query(IHerbProduct).count()
-    in_stock = db.query(IHerbProduct).filter(IHerbProduct.in_stock == True).count()
-    has_details = db.query(IHerbProduct).filter(
-        (IHerbProduct.description != None) & (IHerbProduct.description != "")
-    ).count()
-    by_category = db.query(
-        IHerbProduct.category, func.count(IHerbProduct.id).label("count"),
-        func.avg(IHerbProduct.price_usd).label("avg_price"), func.avg(IHerbProduct.rating).label("avg_rating"),
-    ).group_by(IHerbProduct.category).order_by(desc("count")).limit(20).all()
-    by_brand = db.query(
-        IHerbProduct.brand, func.count(IHerbProduct.id).label("count"),
-        func.avg(IHerbProduct.price_usd).label("avg_price"), func.avg(IHerbProduct.rating).label("avg_rating"),
-    ).group_by(IHerbProduct.brand).order_by(desc("count")).limit(20).all()
-    top_rated = db.query(IHerbProduct).filter(
-        IHerbProduct.review_count >= 100, IHerbProduct.rating > 0,
-    ).order_by(desc(IHerbProduct.rating)).limit(10).all()
-    return {
-        "total_products": total, "in_stock": in_stock, "has_details": has_details,
-        "by_category": [
-            {"category": c.category or "ê¸°í", "count": c.count, "avg_price": round(c.avg_price or 0, 2), "avg_rating": round(c.avg_rating or 0, 1)}
-            for c in by_category
-        ],
-        "by_brand": [
-            {"brand": b.brand or "Unknown", "count": b.count, "avg_price": round(b.avg_price or 0, 2), "avg_rating": round(b.avg_rating or 0, 1)}
-            for b in by_brand
-        ],
-        "top_rated": [
-            {"name": p.name, "brand": p.brand, "rating": p.rating, "review_count": p.review_count, "price_usd": p.price_usd, "image_url": p.image_url}
-            for p in top_rated
-        ],
-    }
-
-# ââ Analytics API âââââââââââââââââââââââââââââââââââââââââ
-@app.get("/api/analytics/brand-comparison")
-def brand_comparison(db: Session = Depends(get_db)):
-    results = db.query(
-        Product.brand, func.count(IHerbMapping.id).label("mapped_count"),
-        func.avg(Product.price_usd).label("avg_ople_price"),
-        func.avg(IHerbMapping.iherb_price_usd).label("avg_iherb_price"),
-        func.avg(IHerbMapping.price_diff_pct).label("avg_diff_pct"),
-    ).join(IHerbMapping, Product.it_id == IHerbMapping.ople_id).group_by(Product.brand).having(
-        func.count(IHerbMapping.id) >= 3
-    ).order_by(desc("mapped_count")).limit(15).all()
-    return [
-        {"brand": r.brand or "Unknown", "mapped_count": r.mapped_count,
-         "avg_ople_price": round(r.avg_ople_price or 0, 2), "avg_iherb_price": round(r.avg_iherb_price or 0, 2),
-         "avg_diff_pct": round(r.avg_diff_pct or 0, 1)}
-        for r in results
-    ]
-
-@app.get("/api/analytics/review-keywords")
-def review_keywords(db: Session = Depends(get_db)):
-    reviews = db.query(Review.keywords).filter(Review.keywords.isnot(None)).limit(1000).all()
-    keyword_counts = {}
-    for r in reviews:
-        if r.keywords:
-            for kw in r.keywords:
-                keyword_counts[kw] = keyword_counts.get(kw, 0) + 1
-    sorted_kw = sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:50]
-    return [{"keyword": k, "count": v} for k, v in sorted_kw]
-
-# ââ Demo Data Seeding âââââââââââââââââââââââââââââââââââââ
-def seed_demo_data(db: Session):
-    demo_products = [
-        {"it_id": "1319032894", "name_ko": "Now Foods ì¸í¸k¼ ì¤ë©ê°-3, 180ìº¡ì", "name_en": "Now Foods Ultra Omega-3 180 Softgels", "brand": "Now Foods", "price_usd": 25.99, "price_krw": 39115, "review_count": 1473, "parent_category": "ê±´ê°ìí", "category_name": "ì¤ë©ê°3/í¼ìì`¤ì¼"},
-        {"it_id": "1505216341", "name_ko": "Solgar ì½ë¼ê² íìë£¨ë¡ ì°, 30ì ", "name_en": "Solgar Collagen Hyaluronic Acid Complex", "brand": "Solgar", "price_usd": 14.99, "price_krw": 22560, "review_count": 607, "parent_category": "ë·°í°ì©í", "category_name": "ì½ë¼ê²"},
-        {"it_id": "1407165807", "name_ko": "Doctor's Best ë£¨íì¸+ë£¨í¸ë§¥ì¤ 20mg, 180ìº¡ì", "name_en": "Doctor's Best Lutein with FloraGlo 20mg", "brand": "Doctor's Best", "price_usd": 26.99, "price_krw": 40620, "review_count": 954, "parent_category": "ê±´ê°ìí", "category_name": "ëê±´ê°"},
-        {"it_id": "1511431863", "name_ko": "Jarrow Formulas ë¹ê±´ MSM 1000mg, 200ìº¡ì", "name_en": "Jarrow Formulas Vegan MSM 1000mg", "brand": "Jarrow Formulas", "price_usd": 25.99, "price_krw": 39115, "review_count": 1106, "parent_category": "ê±´ê°ìí", "category_name": "ê´ì ê±´ê°"},
-        {"it_id": "1417406111", "name_ko": "Solgar ê¸ë£¨ì½ì¬ë¯¼+ì½ëë¡ì´ì¹+MSM, 120ì ", "name_en": "Solgar Glucosamine Chondroitin MSM", "brand": "Solgar", "price_usd": 28.99, "price_krw": 43630, "review_count": 156, "parent_category": "ê±´ê°ìí", "category_name": "ê´ì ê±´ê°"},
-        {"it_id": "1511224023", "name_ko": "Solgar ë§ê·¸ë¤ì¨+ë¹íë¯¼B6, 250ì ", "name_en": "Solgar Magnesium with Vitamin B6", "brand": "Solgar", "price_usd": 11.99, "price_krw": 18045, "review_count": 204, "parent_category": "ê±´ê°ìí", "category_name": "ë¯¸ë¤ë"},
-        {"it_id": "1510428215", "name_ko": "Solgar ìì¤í°-C ë¹íë¯¼C 1000mg, 180ì ", "name_en": "Solgar Ester-C Plus Vitamin C 1000mg", "brand": "Solgar", "price_usd": 21.59, "price_krw": 32493, "review_count": 445, "parent_category": "ê±´ê°ìí", "category_name": "ë¹íë¯¼C"},
-        {"it_id": "1511818877", "name_ko": "Doctor's Best ë¹íë¯¼ D3 2000IU, 180ìº¡ì", "name_en": "Doctor's Best Vitamin D3 2000IU", "brand": "Doctor's Best", "price_usd": 7.99, "price_krw": 12025, "review_count": 110, "parent_category": "ê±´ê°ìí", "category_name": "ë¹íë¯¼D"},
-        {"it_id": "1505100130", "name_ko": "Now Foods L-ìë¥´ê¸°ë 1000mg, 120ì ", "name_en": "Now Foods L-Arginine 1000mg", "brand": "Now Foods", "price_usd": 13.99, "price_krw": 21055, "review_count": 440, "parent_category": "ê±´ê°ìí", "category_name": "ìë¯¸ë¸ì°"},
-        {"it_id": "1417406120", "name_ko": "Solgar ë¹ì¤í´ 10000mcg, 60ìº¡ì", "name_en": "Solgar Biotin 10000mcg", "brand": "Solgar", "price_usd": 13.99, "price_krw": 21055, "review_count": 70, "parent_category": "ë·°í°ì©í", "category_name": "ë¹ì¤í´"},
-        {"it_id": "1672906957", "name_ko": "Jarrow Formulas ë¹ê±´ í¨ ëí¼ë¬ì¤ ì ì°ê· , 30ìº¡ì", "name_en": "Jarrow Formulas Fem Dophilus", "brand": "Jarrow Formulas", "price_usd": 22.99, "price_krw": 34600, "review_count": 145, "parent_category": "ê±´ê°ìí", "category_name": "ì ì°ê· "},
-        {"it_id": "1513534579", "name_ko": "Double Wood í¬ì¤íí°ëì¸ë¦° 300mg, 120ìº¡ì", "name_en": "Double Wood Phosphatidylserine 300mg", "brand": "Double Wood", "price_usd": 14.29, "price_krw": 21507, "review_count": 230, "parent_category": "ê±´ê°ìí", "category_name": "ëëê±´ê°"},
-        {"it_id": "1672905857", "name_ko": "Swanson ì ì°ê·  ê°ì¸ë¦¬ 30ìµ, 60ìº¡ì", "name_en": "Swanson L. Gasseri 3 Billion", "brand": "Swanson", "price_usd": 12.99, "price_krw": 19550, "review_count": 187, "parent_category": "ì¬ì¤/ë¤ì´ì´í¸", "category_name": "ë¤ì´ì´í¸"},
-        {"it_id": "1511560477", "name_ko": "Absonutrix ììì¤ 1600mg, 120ìº¡ì", "name_en": "Absonutrix Cissus 1600mg", "brand": "Absonutrix", "price_usd": 19.99, "price_krw": 30085, "review_count": 268, "parent_category": "í¬,¤/ë¤ì´ì´í¸", "category_name": "ë¤ì´ì´í¸"},
-        {"it_id": "1510480064", "name_ko": "Jarrow Formulas ë¹ê±´ MSM íì°ë, 1kg", "name_en": "Jarrow Formulas MSM Powder 1kg", "brand": "Jarrow Formulas", "price_usd": 38.99, "price_krw": 58679, "review_count": 604, "parent_category": "ê±´ê°ìí", "category_name": "ê´ì ê±´ê°"},
-        {"it_id": "1268694786", "name_ko": "Solgar ë£¨íì¸ 20mg, 60ìº¡ì", "name_en": "Solgar Lutein 20mg", "brand": "Solgar", "price_usd": 15.59, "price_krw": 23463, "review_count": 79, "parent_category": "ê±´ê°ìí", "category_name": "ëê±´ê°"},
-        {"it_id": "1505230641", "name_ko": "Solgar ì¹¼ì¨+ë§ê·¸ë¤ì+ìì°, 250ì ", "name_en": "Solgar Calcium Magnesium Zinc", "brand": "Solgar", "price_usd": 13.99, "price_krw": 21055, "review_count": 300, "parent_category": "ê±´ê°ìí", "category_name": "ë¯¸ë¤ë"},
-        {"it_id": "1334058959", "name_ko": "Nature's Way ì¼ë¼ì´ë¸ ë§¨ì¦ 50+ ë©í°ë¹íë¯¼, 60ì ", "name_en": "Nature's Way Alive Men's 50+ Multi", "brand": "Nature's Way", "price_usd": 17.99, "price_krw": 27075, "review_count": 480, "parent_category": "ê±´ê°ìí", "category_name": "ì¢í©ë¹íë¯¼"},
+        {"it_id": "1319032894", "name_ko": "Now Foods 울트라 오메가-3, 180캡슐", "name_en": "Now Foods Ultra Omega-3 180 Softgels", "brand": "Now Foods", "price_usd": 25.99, "price_krw": 39115, "review_count": 1473, "parent_category": "건강식품", "category_name": "오메가3/피쉬오일"},
+        {"it_id": "1505216341", "name_ko": "Solgar 콜라겐 히알루론산, 30정", "name_en": "Solgar Collagen Hyaluronic Acid Complex", "brand": "Solgar", "price_usd": 14.99, "price_krw": 22560, "review_count": 607, "parent_category": "뷰티용품", "category_name": "콜라겐"},
+        {"it_id": "1407165807", "name_ko": "Doctor's Best 루테인+루트맥스 20mg, 180캡슐", "name_en": "Doctor's Best Lutein with FloraGlo 20mg", "brand": "Doctor's Best", "price_usd": 26.99, "price_krw": 40620, "review_count": 954, "parent_category": "건강식품", "category_name": "눈건강"},
+        {"it_id": "1511431863", "name_ko": "Jarrow Formulas 비건 MSM 1000mg, 200캡슐", "name_en": "Jarrow Formulas Vegan MSM 1000mg", "brand": "Jarrow Formulas", "price_usd": 25.99, "price_krw": 39115, "review_count": 1106, "parent_category": "건강식품", "category_name": "관절건강"},
+        {"it_id": "1417406111", "name_ko": "Solgar 글루코사민+코드로이친+MSM, 120정", "name_en": "Solgar Glucosamine Chondroitin MSM", "brand": "Solgar", "price_usd": 28.99, "price_krw": 43630, "review_count": 156, "parent_category": "건강식품", "category_name": "관절건강"},
+        {"it_id": "1511224023", "name_ko": "Solgar 마그네슘+비타민B6, 250정", "name_en": "Solgar Magnesium with Vitamin B6", "brand": "Solgar", "price_usd": 11.99, "price_krw": 18045, "review_count": 204, "parent_category": "건강식품", "category_name": "미네랄"},
+        {"it_id": "1510428215", "name_ko": "Solgar 에스터-C 비타민C 1000mg, 180정", "name_en": "Solgar Ester-C Plus Vitamin C 1000mg", "brand": "Solgar", "price_usd": 21.59, "price_krw": 32493, "review_count": 445, "parent_category": "건강식품", "category_name": "비타민C"},
+        {"it_id": "1511818877", "name_ko": "Doctor's Best 비타민 D3 2000IU, 180캡슐", "name_en": "Doctor's Best Vitamin D3 2000IU", "brand": "Doctor's Best", "price_usd": 7.99, "price_krw": 12025, "review_count": 110, "parent_category": "건강식품", "category_name": "비타민D"},
+        {"it_id": "1505100130", "name_ko": "Now Foods L-아르기닜 1000mg, 120정", "name_en": "Now Foods L-Arginine 1000mg", "brand": "Now Foods", "price_usd": 13.99, "price_krw": 21055, "review_count": 440, "parent_category": "건강식품", "category_name": "아미노산"},
+        {"it_id": "1417406120", "name_ko": "Solgar 비오틴 10000mcg, 60캡슐", "name_en": "Solgar Biotin 10000mcg", "brand": "Solgar", "price_usd": 13.99, "price_krw": 21055, "review_count": 70, "parent_category": "뷰티용품", "category_name": "비오틴"},
+        {"it_id": "1672906957", "name_ko": "Jarrow Formulas 비건 펨 도피러,�� 유산균, 30캡슐", "name_en": "Jarrow Formulas Fem Dophilus", "brand": "Jarrow Formulas", "price_usd": 22.99, "price_krw": 34600, "review_count": 145, "parent_category": "건강식품", "category_name": "유산균"},
+        {"it_id": "1513534579", "name_ko": "Double Wood 포스파티딜세린 300mg, 120캡슐", "name_en": "Double Wood Phosphatidylserine 300mg", "brand": "Double Wood", "price_usd": 14.29, "price_krw": 21507, "review_count": 230, "parent_category": "건강식품", "category_name": "두뇌건강"},
+        {"it_id": "1672905857", "name_ko": "Swanson 유산균 가세리 30억, 60캡슐", "name_en": "Swanson L. Gasseri 3 Billion", "brand": "Swanson", "price_usd": 12.99, "price_krw": 19550, "review_count": 187, "parent_category": "여스/다이어트", "category_name": "다이어트"},
+        {"it_id": "1511560477", "name_ko": "Absonutrix 시서스 1600mg, 120캡슐", "name_en": "Absonutrix Cissus 1600mg", "brand": "Absonutrix", "price_usd": 19.99, "price_krw": 30085, "review_count": 268, "parent_category": "헬스/다이어트", "category_name": "다이어트"},
+        {"it_id": "1510480064", "name_ko": "Jarrow Formulas 비건 MSM 파우더, 1kg", "name_en": "Jarrow Formulas MSM Powder 1kg", "brand": "Jarrow Formulas", "price_usd": 38.99, "price_krw": 58679, "review_count": 604, "parent_category": "건강식품", "category_name": "관절건강"},
+        {"it_id": "1268694786", "name_ko": "Solgar 루테인 20mg, 60캡슐", "name_en": "Solgar Lutein 20mg", "brand": "Solgar", "price_usd": 15.59, "price_krw": 23463, "review_count": 79, "parent_category": "건강식품", "category_name": "눈건강"},
+        {"it_id": "1505230641", "name_ko": "Solgar 칼슙+마그네슘/아연, 250정", "name_en": "Solgar Calcium Magnesium Zinc", "brand": "Solgar", "price_usd": 13.99, "price_krw": 21055, "review_count": 300, "parent_category": "건강식품", "category_name": "미네랄"},
+        {"it_id": "1334058959", "name_ko": "Nature's Way 얼라이브 맨즀 50+ 멀티비타민, 60정", "name_en": "Nature's Way Alive Men's 50+ Multi", "brand": "Nature's Way", "price_usd": 17.99, "price_krw": 27075, "review_count": 480, "parent_category": "건강식품", "category_name": "종합비타민"},
     ]
     for p in demo_products:
         product = Product(
@@ -727,21 +641,21 @@ def seed_demo_data(db: Session):
         )
         db.add(mapping)
     demo_reviews = [
-        {"product_id": "1319032894", "reviewer": "ê±´ê°ë§***", "rating": 5, "text": "ì¤ë©ê°3 ë¨¹ê³  ëì í¼ë¡ê° í ì¤ìì´ì.", "date": "2024-12-15", "keywords": ["í¼ë¡", "ëê±´ê°", "ì¤ë©ê°3"]},
-        {"product_id": "1319032894", "reviewer": "ì´ëë§¤***", "rating": 5, "text": "ì´ë í íë³µì´ ë¹¨ë¼ì§ ê² ê°ìì.", "date": "2024-11-20", "keywords": ["ì´ë", "íë³µ", "ê´ì "]},
-        {"product_id": "1505216341", "reviewer": "ë·°í°ë¬***", "rating": 4, "text": "ì½ë¼ê² íë¬ ë¨¹ìëë° í¼ë¶ íë ¥ì´ ì¢ìì§ ëëì´ìì", "date": "2024-12-01", "keywords": ["ì½ë¼ê²", "í¼ë¶", "íë ¥"]},
-        {"product_id": "1407165807", "reviewer": "ì§ì¥ì¸***", "rating": 5, "text": "ë£¨íì¸ ë¨¹ê³ ëì ë í¼ë¡ê° íì¤í ì¤ììµëë¤.", "date": "2025-01-10", "keywords": ["ë£¨íì¸", "ëí¼ë¡", "ì§ì¥ì¸"]},
-        {"product_id": "1511431863", "reviewer": "ë±ì°ë¬***", "rating": 5, "text": "MSM ê´ì ì ì ë§ ì¢ìì. ë¬´ë¦ íµì¦ì´ ë§ì´ ì¤ììµëë¤", "date": "2024-10-25", "keywords": ["MSM", "ê´ì ", "ë¬¼ë¦¢", "íµì¦"]},
-        {"product_id": "1510428215", "reviewer": "ë©´ì­ì ***", "rating": 5, "text": "ë¹íë¯¼C ìì¤í°Cê° ìì ë¶ë´ ìì´ì ì¢ìì.", "date": "2024-11-15", "keywords": ["ë¹íë¯¼C", "ë©´ì­", "ê°ê¸°, "ìì¥"]},
+        {"product_id": "1319032894", "reviewer": "건강맘***", "rating": 5, "text": "오메가3 먹고 나서 피로가 화 줄었어요.", "date": "2024-12-15", "keywords": ["피로", "눈건강", "오메가3"]},
+        {"product_id": "1319032894", "reviewer": "운동매***", "rating": 5, "text": "운동 후 회복이 빨라진 것 같아요.", "date": "2024-11-20", "keywords": ["운동", "회복", "관절"]},
+        {"product_id": "1505216341", "reviewer": "뷰티러***", "rating": 4, "text": "콜라겐 한달 먹었는데 피부 탄력이 좋아진 늒낌이에요", "date": "2024-12-01", "keywords": ["콜라겐", "피부", "탄력"]},
+        {"product_id": "1407165807", "reviewer": "직장인***", "rating": 5, "text": "루테인 먹고 나서 눈 피로가 확실히 줄었습니다.", "date": "2025-01-10", "keywords": ["루테인", "눈피로", "직장인"]},
+        {"product_id": "1511431863", "reviewer": "등산러***", "rating": 5, "text": "MSM 관절에 정말 좋아요. 무릎 통증이 많이 줄었습니다", "date": "2024-10-25", "keywords": ["MSM", "관절", "무릎", "통증"]},
+        {"product_id": "1510428215", "reviewer": "면역전***", "rating": 5, "text": "비타민C 에스터C가 위에 부담 없어서 좋아요.", "date": "2024-11-15", "keywords": ["비타민C", "면역", "감기", "위장"]},
     ]
     for r in demo_reviews:
         review = Review(product_id=r["product_id"], reviewer=r["reviewer"], rating=r["rating"],
-                        text=r["text"], date=r["date"], keywords=r["keywords"])
+                       text=r["text"], date=r["date"], keywords=r["keywords"])
         db.add(review)
     db.commit()
     print(f"Seeded {len(demo_products)} products, {len(demo_mappings)} mappings, {len(demo_reviews)} reviews")
 
-# ââ Run ââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ── Run ──────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", "8000")), reload=True)

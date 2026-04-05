@@ -1,0 +1,178 @@
+{
+  "ingredient_key": "magnesium",
+  "name_i18n": {
+    "ko": "마그네슘",
+    "en": "Magnesium"
+  },
+  "dosage": {
+    "rda": "420 mg for adults and from 30 to 410 mg for in",
+    "ai": "25 grams magnesium, with 50% to 60% present",
+    "upper_limit": "25 grams magnesium, with 50% to 60% present",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Magnesium, an abundant mineral in the body, is naturally present in many foods, added to other food products, available as a dietary supplement, and present in some medicines (e.g., antacids, laxatives). Magnesium is a cofactor in more than 300 enzyme systems that regulate diverse biochemical reactions in the body, including protein synthesis, muscle and nerve function, blood glucose control, and ",
+    "deficiency": "Loss of appetite, nausea, vomiting, fatigue, and weakness are some of the early signs and symptoms of magnesium deficiency. As the condition progresses, people with magnesium deficiency may experience numbness, muscle contractions and cramps, seizures, abnormal heart rhythms, coronary spasms, and ot",
+    "health_effects": "Habitually low intakes of magnesium induce changes in biochemical pathways that can increase the risk of illness over time. This section focuses on four diseases and disorders in which magnesium might be involved: hypertension and cardiovascular disease, type 2 diabetes, osteoporosis, and migraine h",
+    "drug_interactions": "Magnesium may interact with certain medications, such as oral bisphosphonates, tetracyclines, and quinolone antibiotics. In addition, some medications, including diuretics and proton pump inhibitors, can affect magnesium status. Several types of medications have the potential to interact with magnes",
+    "toxicity": "Although the risk of acquiring too much magnesium from food is low among healthy people, high doses of magnesium from dietary supplements or medications can cause diarrhea, nausea, and abdominal cramping. Very high doses of magnesium can lead to magnesium toxicity, which can cause hypotension, vomit"
+  },
+  "allergens": [
+    "cacahuetes",
+    "milk",
+    "noisettes",
+    "nuts",
+    "peanuts",
+    "soybeans"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[아연]①정상적인 면역기능에 필요② 정상적인 세포분열에 필요\r\n[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요 ②뼈의 형성과 유지에 필요",
+      "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[아연]①정상적인 면역기능에 필요②정상적인 세포분열에 필요\r\n[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요",
+      "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "진츄어블칼슘마그네슘아연 + 비타민D",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[아연]①정상적인 면역기능에 필요② 정상적인 세포분열에 필요\r\n[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요 ②뼈의 형성과 유지에 필요",
+      "intake_method_ko": "1일 2회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "1. 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n2. PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "패각분말, 수산화마그네슘, 산화아연, 비타민 D3 혼합분말, 유산균혼합분말, 카르복시메틸셀룰로오스나트륨, 스테아린산마그네슘, 밀크향분말, 초코향분말, 자일리톨, 결정과당, 허브혼합추출물분말, 아미노산혼합분말, 효소혼합분말, 나한과추출분말, 코코아맛분말, 무수결정포도당, D-소르비톨",
+      "mfds_report_no": "20040015107374"
+    },
+    {
+      "name_ko": "칼슘마그네슘아연플러스",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[아연]①정상적인 면역기능에 필요②정상적인 세포분열에 필요\r\n[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1일 2회, 1회 2정을 물과 함께 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "해조분말, 산화마그네슘, 산화아연, 비타민 C, 유당혼합분말(가루, 과립), 유단백가수분해물, 비타민 D3 혼합제제, 스테아린산마그네슘, 이산화규소",
+      "mfds_report_no": "20040015107417"
+    },
+    {
+      "name_ko": "마더스칼슘마그네슘",
+      "company_ko": "주)팜크로스",
+      "form": "정",
+      "functionality_claim_ko": "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요",
+      "intake_method_ko": "1일 1회, 1회 2정을 물과 함께 섭취하십시오.",
+      "warnings_ko": "알레르기 체질이신 분은 성분 확인 후 섭취하십시오. 섭취시 목에 걸리거나 불편할 수 있으므로 물과 함께 섭취하십시오. 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의하시고 이상반응이 있을시 제품에 기재된 고객상담실로 문의하십시오.",
+      "raw_materials_ko": "탄산칼슘, 산화마그네슘, 결정셀룰로오스, 말토덱스트린, 프락토올리고당, 유당혼합분말(가루, 과립), 난황펩타이드(난황), 카르복시메틸셀룰로오스칼슘, 히드록시프로필메틸셀룰로오스, 스테아린산마그네슘, 흑효모배양액분말(가루, 과립), 우유 단백가수분해분말, 산화아연, 비타민 D3 혼합제제",
+      "mfds_report_no": "20040015110301"
+    },
+    {
+      "name_ko": "칼슘마그네슘아연+비타민C,D",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④골다공증발생 위험 감소에 도움을 줌\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[아연]①정상적인 면역기능에 필요②정상적인 세포분열에 필요\r\n[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감",
+      "intake_method_ko": "1일 2회, 1회 2정을 물과 함께 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "해조분말, 산화마그네슘, 산화아연, 비타민 C, 비타민 D3 혼합제제, 유당혼합(유당 95%, 덱스트린 5%), 스테아린산마그네슘, 유단백가수분해물, 이산화규소, 복합 효소(EZ)(복합효소분말(프로테아제(곰팡이성:HUT) 37.5%, 프로테아제(곰팡이성:SAP) 9.4%, 알파아밀라아제(비세균성) 20%, 말토덱스트린 16.3%, 글루코아밀라아제 10%, 인베르타아제 4%, 리파아제, 아미노산혼합(아미노믹스)(아미노브레인믹스 [BCAA(L-이소",
+      "mfds_report_no": "20040015107492"
+    },
+    {
+      "name_ko": "에이치엠멀티미네랄 마그네슘&망간",
+      "company_ko": "(주)팜텍코리아",
+      "form": "액상",
+      "functionality_claim_ko": "[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[망간]①뼈 형성에 필요②에너지 이용에 필요③유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "동봉된 1ml 계량스푼으로 1일2회 1회 1ml를 계량하여 물(약300ml)이나 주스에 희석하여 섭취하십시오",
+      "warnings_ko": "-특이체질 및 과다 섭취시 알레르기 및 설사 등의 발생우려가 있으니 성분 및 섭취량을 확인하시고\r\n섭취하시기바랍니다.\r\n-원액 그대로 섭취하지 마시고 반드시 희석하여 섭취하시기 바랍니다.\r\n-과량 섭취시 부작용이 있을 수 있으며, 질병치료중인 분은 섭취전 의사와 상담하시기 바랍니다.\r\n-영/유아의 손이 닿지 않는 곳에 보관하십시오",
+      "raw_materials_ko": "무기질혼합용액(액), 황산망간분말(가루, 과립), 클로렐라추출물(추출액)",
+      "mfds_report_no": "2004001519124"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "8410076610737",
+      "name": "Nature Valley Protein Cacahuètes & Chocolat",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), chicory root extract, isolated soy protein, chocolate pieces (8%) (sugar, cocoa paste, emulsifier: soy lecithin), sugar, vegetable fat: palm, whey (milk), sunflower oil, fructos",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/661/0737/front_fr.68.400.jpg"
+    },
+    {
+      "barcode": "5060088700112",
+      "name": "Protein Cocoa Hazelnut Bars",
+      "brand": "Nakd",
+      "ingredients_text": "Dates (38%), Peanuts (35%), Chicory fibre (10%), Peanut flour (8%), Hazelnuts (5%), Fat-reduced cocoa powder (3%), natural flavouring.",
+      "allergens": [
+        "nuts",
+        "peanuts",
+        "cacahuetes",
+        "noisettes"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/0112/front_en.30.400.jpg"
+    },
+    {
+      "barcode": "5060088706022",
+      "name": "NAKD Cacahuètes - 140g (4x1p)",
+      "brand": "Nakd.",
+      "ingredients_text": "dates 53%, peanuts 46%, sea salt, a hint of natural flavourings",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/6022/front_fr.92.400.jpg"
+    },
+    {
+      "barcode": "8000500435670",
+      "name": "PROTEIN Arachidi e Cioccolato Fondente",
+      "brand": "EAT NATURAL",
+      "ingredients_text": "CACAHUETES 51%, flocons de SOja, sirop de riz, chocolat noir 12% (pâte de cacao, sucre de canne, beurre de cacao), miel, riz croustillant, cacao maigre en poudre, noix de coco râpée déshydratée 0,5%, ",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/800/050/043/5670/front_fr.63.400.jpg"
+    },
+    {
+      "barcode": "8410076901026",
+      "name": "Barre céréales Protéines peanut& chocolat🍫",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), oligofructose, soy protein isolate, chocolate chunks (8%) (sugar, cocoa mass, cocoa butter, emulsifier (soy lecithin)), vegetable oils and fats (palm, rapeseed, sunflower in var",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/690/1026/front_es.54.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:14:07Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://world.openfoodfacts.org/api/v2/search?search_terms=magnesium&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:14:07Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:14:08Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:14:05Z",
+    "pilot_version": "1.0"
+  }
+}

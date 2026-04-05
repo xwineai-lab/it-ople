@@ -89,6 +89,38 @@ async def iherb_shopify_flow():
         return spec_path.read_text(encoding="utf-8")
     return "<h1>Flow not found</h1>"
 
+
+@app.get("/ingredients", response_class=HTMLResponse)
+async def ingredients_page():
+    spec_path = static_dir / "ingredients.html"
+    if spec_path.exists():
+        return spec_path.read_text(encoding="utf-8")
+    return "<h1>Ingredients viewer not found</h1>"
+
+
+@app.get("/api/ingredients/{key}")
+async def get_ingredient(key: str):
+    """Serve unified ingredient JSON from pilot ETL output."""
+    import json
+    from fastapi import HTTPException
+    data_path = static_dir / "data" / "pilot_etl" / f"{key}_unified.json"
+    if not data_path.exists():
+        raise HTTPException(status_code=404, detail=f"ingredient '{key}' not found")
+    return json.loads(data_path.read_text(encoding="utf-8"))
+
+
+@app.get("/api/ingredients")
+async def list_ingredients():
+    """List available ingredients."""
+    data_dir = static_dir / "data" / "pilot_etl"
+    if not data_dir.exists():
+        return {"ingredients": []}
+    keys = sorted([
+        p.stem.replace("_unified", "")
+        for p in data_dir.glob("*_unified.json")
+    ])
+    return {"ingredients": keys, "count": len(keys)}
+
 # ── Dashboard APIs ───────────────────────────────────────
 @app.get("/api/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):

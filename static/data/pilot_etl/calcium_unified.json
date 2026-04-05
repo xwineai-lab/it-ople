@@ -1,0 +1,168 @@
+{
+  "ingredient_key": "calcium",
+  "name_i18n": {
+    "ko": "칼슘",
+    "en": "Calcium"
+  },
+  "dosage": {
+    "rda": "1,200 mg for adults and from 200 to 1,300 mcg fo",
+    "ai": "30 grams (g) calcium",
+    "upper_limit": "1,300 mcg for infants, children, and adolescents,",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Calcium, the most abundant mineral in the body, is found in some foods, added to others, present in some medicines (such as antacids), and available as a dietary supplement. Calcium makes up much of the structure of bones and teeth and allows normal bodily movement by keeping tissue rigid, strong, and flexible [ 1 ]. The small ionized pool of calcium in the circulatory system, extracellular fluid,",
+    "deficiency": "Calcium deficiency can lead to osteoporosis, which causes weak, fragile bones and increases the risk of falls and fractures. It can also cause rickets in children and osteomalacia in children and adults, although these conditions are more commonly caused by vitamin D deficiency. Calcium deficiency c",
+    "health_effects": "This section focuses on six health conditions and diseases in which calcium might play a role: bone health in older adults, cancer, cardiovascular disease (CVD), preeclampsia, weight management, and metabolic syndrome.",
+    "drug_interactions": "Calcium supplements may interact with medications, and some medications may affect calcium levels. These medications include dolutegravir, levothyroxine, lithium, and quinolone antibiotics. Calcium supplements have the potential to interact with certain medications, and several types of medications ",
+    "toxicity": "Higher intakes of supplemental calcium might increase the risk of kidney stones. According to some research, calcium supplements have the potential to increase the risk of cardiovascular disease. Higher calcium intakes might also increase the risk of prostate cancer. The tolerable upper intake level"
+  },
+  "allergens": [
+    "eggs",
+    "gluten",
+    "milk",
+    "nuts"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n①탄수화물과 에너지 대사에 필요\r\n①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 ",
+      "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n①탄수화물과 에너지 대사에 필요\r\n①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 ",
+      "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "영양칼슘비타민",
+      "company_ko": "고려인삼과학주식회사",
+      "form": "캡슐",
+      "functionality_claim_ko": "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n①탄수화물과 에너지 대사에 필요\r\n①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 ",
+      "intake_method_ko": "1일 3회, 1회2캡슐(250mg/1캡슐) 식전 또는 식후에 물과 함께 섭취",
+      "warnings_ko": "물과 함께 섭취한다.1)의약품과 함께 섭취하지 마세요\n2)특이체질 등 알러지 체질의 경우 성분을 확인 후 섭취하세요",
+      "raw_materials_ko": "유청칼슘(칼슘함량20%이상), 비타민B1질산염, 비타민C(함량 100%), 판토텐산칼슘, 나이아신(함량 100%), 카제인포스포펩타이드(c.pp)",
+      "mfds_report_no": "200400150395"
+    },
+    {
+      "name_ko": "해조칼슘비타민",
+      "company_ko": "고려인삼과학주식회사",
+      "form": "캡슐",
+      "functionality_claim_ko": "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n①탄수화물과 에너지 대사에 필요\r\n①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 ",
+      "intake_method_ko": "1일 3회, 1회 2캡슐(250mg/1캡슐) 식전 또는 식후에 물과 함께 섭취",
+      "warnings_ko": "물과 함께 섭취한다.1)의약품과 함께 섭취하지 마세요\n2)특이체질 등 알러지 체질의 경우 성분을 확인 후 섭취하세요",
+      "raw_materials_ko": "나이아신(함량100%), 해조칼슘(칼슘함량30%이상), 비타민B1질산염, 비타민C(함량 100%), 판토텐산칼슘, 카제인포스포펩타이드(C.P.P)",
+      "mfds_report_no": "200400150396"
+    },
+    {
+      "name_ko": "맛있는 칼슘",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음",
+      "intake_method_ko": "1일 3회, 1회 2정을 씹어서 섭취하십시오.",
+      "warnings_ko": "① 우유알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다\n② 제품개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의하시기 바랍니다",
+      "raw_materials_ko": "유청칼슘(칼슘 25%이상), 요구르트혼합분말(농후발효유 50%, 설탕 29.5%, 말토덱스트린 10%, 정제가공유지 10%, 글리세린지방산에스테르 0.5%), 스테아린산마그네슘, 스테비오사이드, 비타민D3혼합제제(비타민D3 0.25%, DL-알파-토코페롤0.2%, 가공유지 7.5%, 아라비아검 38%, 설탕 38%, 옥수수전분 16.05%), 정제포도당, D-소르비톨, 자일리톨, 유당혼합제제(유당95%, 덱스트린 5%), 탈지분유, 유단백가수분",
+      "mfds_report_no": "200400151074"
+    },
+    {
+      "name_ko": "에이드칼슘",
+      "company_ko": "(주)허브큐어",
+      "form": "정",
+      "functionality_claim_ko": "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④골다공증발생 위험 감소에 도움을 줌",
+      "intake_method_ko": "1일 2회 1회3정씩 물과 함께 섭취",
+      "warnings_ko": "",
+      "raw_materials_ko": "칼슘 (유청칼슘(칼슘24%이상), 칼슘 (해조칼슘(칼슘함량 30%이상), 건조효모분말(가루, 과립), 산화마그네슘, 비타민C, 산화아연, 스테아린산마그네슘, 비타민B6염산염, 비타민D3혼합제제분말",
+      "mfds_report_no": "2004001516210"
+    },
+    {
+      "name_ko": "티세이칼슘",
+      "company_ko": "주식회사 네추럴웨이",
+      "form": "환",
+      "functionality_claim_ko": "①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음",
+      "intake_method_ko": "1일 3회 1회 1포(2g)씩 식사후에 섭취.",
+      "warnings_ko": "화분, 대두, 우유, 밀에 알레르기를 일으키기 쉬운 체질을 갖고 계신 분은 섭취를 금함.",
+      "raw_materials_ko": "패각칼슘(비소성, 칼슘함량 35%이상), 비타민B1염산염, 비타민B2, 비타민 B6 염산염, 혼합제제, 히드록시프로필메틸셀룰로스, 글리세린, 코코아분말, 화분추출물분말(화분추출물분말 80%, 덱스트린 20%), 맥주효모추출물, 맥아분말, 덱스트린, 타우린, 삼백초농축액, 유청단백분말, 상어연골분말, 유단백가수분해물, 기타가공품, 클로렐라추출물, 비타민C, 감마오리자놀, 작약 등 복합추출물, 스테비올배당체, 중력분, 산화아연, 니코틴산아미드",
+      "mfds_report_no": "200400151048"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "0811620022118",
+      "name": "Chocolate Nutrition Shake",
+      "brand": "fairlife nutrition plan",
+      "ingredients_text": "filtered lowfat grade A milk, alkalized cocoa, natural flavors, cellulose gel, cellulose gum, salt, carrageenan, lactase enzyme, monk fruit juice concentrate, acesulfame potassium",
+      "allergens": [
+        "gluten",
+        "milk"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/081/162/002/2118/front_en.2257.400.jpg"
+    },
+    {
+      "barcode": "0857777004232",
+      "name": "Chocolate Sea Salt Bar",
+      "brand": "RXBAR",
+      "ingredients_text": "Egg whites, almonds, cashews, dates",
+      "allergens": [
+        "eggs",
+        "nuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/777/700/4232/front_en.225.400.jpg"
+    },
+    {
+      "barcode": "0857777004195",
+      "name": "Blueberry",
+      "brand": "RXBAR",
+      "ingredients_text": "Dates, egg whites, almonds, cashews, blueberries, natural blueberry flavor.",
+      "allergens": [
+        "eggs",
+        "nuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/777/700/4195/front_en.188.400.jpg"
+    },
+    {
+      "barcode": "0857273008666",
+      "name": "Collagen Peptides",
+      "brand": "Vital Proteins",
+      "ingredients_text": "collagen peptides",
+      "allergens": [],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/727/300/8666/front_en.360.400.jpg"
+    },
+    {
+      "barcode": "0811620021951",
+      "name": "High Protein Milk Shake",
+      "brand": "Core Power",
+      "ingredients_text": "FILTERED LOW FAT GRADE A MILK, ALKALIZED COCOA, NATURAL FLAVORS, MONK FRUIT JUICE CONCENTRATE, STEVIA LEAF EXTRACT, CARRAGEENAN, CELLULOSE GEL, CELLULOSE GUM, ACESULFAME POTASSIUM, SUCRALOSE, LACTASE ",
+      "allergens": [],
+      "image_url": "https://images.openfoodfacts.org/images/products/081/162/002/1951/front_en.500.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:14:02Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://us.openfoodfacts.org/api/v2/search?search_terms=calcium&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:14:02Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:14:05Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:14:00Z",
+    "pilot_version": "1.0"
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "ingredient_key": "vitamin_c",
+  "name_i18n": {
+    "ko": "비타민C",
+    "en": "Vitamin C"
+  },
+  "dosage": {
+    "rda": "120 mg for adults and from 15 to 115 mg for in",
+    "ai": "120 mg for adults and from 15 to 115 mg for in",
+    "upper_limit": "25 g/day ascorbic acid produce mean peak pla",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Vitamin C, also known as L-ascorbic acid, is a water-soluble vitamin that is naturally present in some foods, added to others, and available as a dietary supplement. Humans, unlike most animals, are unable to synthesize vitamin C endogenously, so it is an essential dietary component [ 1 ]. Vitamin C is required for the biosynthesis of collagen, L-carnitine, and certain neurotransmitters; vitamin C",
+    "deficiency": "Vitamin C deficiency causes scurvy, but this condition is rare in developed countries. The signs and symptoms of scurvy can appear within 1 month of consuming less than about 10 mg/day of vitamin C. The lack of vitamin C impairs collagen synthesis, weakening connective tissues. This can lead to pete",
+    "health_effects": "Because vitamin C acts as an antioxidant and plays a role in immune function, it has been promoted as a means to help prevent and/or treat numerous health conditions. This section focuses on the following diseases and disorders in which vitamin C might play a role: cancer (including prevention and t",
+    "drug_interactions": "Vitamin C supplements may interact with radiation therapy and medications, including chemotherapeutic agents and statins. Vitamin C supplements have the potential to interact with several types of medications. A few examples are provided below. Individuals who are taking these medications on a regul",
+    "toxicity": "In general, vitamin C has low toxicity, and high intakes of vitamin C do not cause serious adverse effects. However, high doses of vitamin C can lead to diarrhea, nausea, abdominal cramps, and other gastrointestinal disturbances. There are some concerns surrounding high vitamin C intakes, such as th"
+  },
+  "allergens": [],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 983,
+    "sample_functionality_claims": [
+      "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n[아연]①정상적인 면역기능에 필요② 정상적인 세포분열에 필요",
+      "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요",
+      "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n[엽산]①세포와 혈액생성에 필요②태아 신경관의 정상 발달에 필요③혈액의 호모시스테인 수준을 정상으로 유지하는데 필요"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "코오롱츄어블비타민C블루비타",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n[아연]①정상적인 면역기능에 필요② 정상적인 세포분열에 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "1. 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n2. PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "비타민C(L-Ascorbic acid), L-아스코르빈산나트륨, 산화아연, 이소말트, 에리스리톨, 치커리식이섬유, 자일리톨, 포도과즙분말(포도과즙 90%, 말토덱스트린 9.6%, 포도과피색소 0.4%), 블루베리향분말(블루베리향키베이스Ⅰ 10%, 블루베리향 키베이스Ⅱ 0.2%, 아라비아검 4.95%, 덱스트린 84.85%), 스테아린산마그네슘, 히드록시프로필메틸셀룰로오스, 아세로라추출분말, 치자적색소, 수크랄로스, 블루베리과즙분말, 아스파탐, ",
+      "mfds_report_no": "20040015107352"
+    },
+    {
+      "name_ko": "이롬비타민C",
+      "company_ko": "주식회사 해밀리",
+      "form": "정",
+      "functionality_claim_ko": "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1회 1정, 1일 3회 씹어서 섭취.",
+      "warnings_ko": "어린이의 경우 섭취 시 목에 결릴 우려가 있으니 보호자의 지도 하에 섭취하십시오. \r\n특이체질, 알러지 체질의 경우 성분을 확인하시고 섭취하여 주시기 바랍니다.",
+      "raw_materials_ko": "비타민C(L-Ascorbic acid), 이산화규소, 스테아린산마그네슘, 까무까무추출물분말, 자일리톨, 이소말트, 결정과장, 동결건조아세로라분말(아세로라 95%, 덱스트린 5%), 동결건조딸기분말, 타피오카전분, 결정셀룰로오스, 오렌지추출물분말",
+      "mfds_report_no": "200900151711"
+    },
+    {
+      "name_ko": "코오롱츄어블비타민C레드비타",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n[엽산]①세포와 혈액생성에 필요②태아 신경관의 정상 발달에 필요③혈액의 호모시스테인 수준을 정상으로 유지하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "1. 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n2. PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "비타민C(L-Ascorbic acid), 엽산, 정제포도당, 혼합유당(유당 95%, 덱스트린 5%), 석류농축분말(석류농축고형분 50%, 덱스트린 50%), 자일리톨, 체리농축분말(체리농축액(고형분 30%) 59%, 덱스트린 41%), DL-사과산, 히드록시프로필메틸셀룰로오스, 스테아린산마그네슘, 석류향분말(석류향베이스 4%, 이산화규소 2%, 무수결정포도당 94%), 아스파탐",
+      "mfds_report_no": "20040015107357"
+    },
+    {
+      "name_ko": "내몸에좋은비타민C와E 딸기맛",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n[비타민E]①유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1일 3회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "비타민C, DL-알파-토코페릴초산염(DL-알파-토코페릴초산염 50%, 변성전분 24.5%, 말토덱스트린 24.5%, 이산화규소 1%), 정제포도당, 식물성크림분말(말토덱스트린 33.5%, 물엿 27.9987%, 팜유 26%, 농축유청 10.5%, 유청단백분말 0.5%, 제이인산칼륨 0.5%, 레시틴(대두) 0.4%, 정제염 0.4%, 글리세린지방산에스테르 0.2%, 비타민B2 0.0013%), D-소르비톨, 딸기과즙분말(딸기과즙 30%, 덱스트",
+      "mfds_report_no": "20040015107400"
+    },
+    {
+      "name_ko": "비타민C-1000 오리지널",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 물과 함께 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "비타민 C, D-소르비톨, 결정셀룰로오스, 이산화규소, 스테아린산마그네슘, 이산화티타늄, 히드록시프로필메틸셀룰로오스, 글리세린지방산에스테르",
+      "mfds_report_no": "20040015107482"
+    }
+  ],
+  "market_samples": [],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:13:55Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "status": "unavailable",
+      "note": "OFF API temporarily unavailable. Retry later or use local dump: https://world.openfoodfacts.org/data"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:13:59Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "2/3",
+    "detail": {
+      "nih": "ok",
+      "off": "missing",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:13:53Z",
+    "pilot_version": "1.0"
+  }
+}

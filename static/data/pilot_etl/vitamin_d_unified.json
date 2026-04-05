@@ -1,0 +1,168 @@
+{
+  "ingredient_key": "vitamin_d",
+  "name_i18n": {
+    "ko": "비타민D",
+    "en": "Vitamin D"
+  },
+  "dosage": {
+    "rda": "20 mcg (600–800 IU) for adults and from 10 to",
+    "ai": "20 mcg (600–800 IU) for adults and from 10 to",
+    "upper_limit": "15 mcg (400–600 IU) for infants, children, and",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Vitamin D (also referred to as calciferol) is a fat-soluble vitamin that is naturally present in a few foods, added to others, and available as a dietary supplement. It is also produced endogenously when ultraviolet (UV) rays from sunlight strike the skin and trigger vitamin D synthesis. Vitamin D obtained from sun exposure, foods, and supplements is biologically inert and must undergo two hydroxy",
+    "deficiency": "Vitamin D deficiency is more common among people who are lactose intolerant, have a milk allergy, or follow an ovo-vegetarian or vegan diet. Deficiency may also occur in people who have limited exposure to sunlight, those whose kidneys cannot convert 25(OH)D to its active form, or those who cannot a",
+    "health_effects": "The FNB committee that established DRIs for vitamin D found that the evidence was inadequate or too contradictory to conclude that the vitamin had any effect on a long list of potential health outcomes (e.g., on resistance to chronic diseases or functional measures), except for measures related to b",
+    "drug_interactions": "Vitamin D supplements may interact with medications, and some medications may affect vitamin D levels. These medications include orlistat, statins, steroids, and thiazide diuretics. Vitamin D supplements may interact with several types of medications. A few examples are provided below. Individuals t",
+    "toxicity": "Vitamin D toxicity can cause hypercalcemia, hypercalciuria, and high serum 25(OH)D concentrations; in extreme cases, it may lead to renal failure, calcification of soft tissues, cardiac arrhythmias, and death. Vitamin D toxicity is almost always a result of excessive intakes of vitamin D through sup"
+  },
+  "allergens": [
+    "eggs",
+    "gluten",
+    "milk",
+    "nuts"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[아연]①정상적인 면역기능에 필요② 정상적인 세포분열에 필요\r\n[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요 ②뼈의 형성과 유지에 필요",
+      "[아연]①정상적인 면역기능에 필요②정상적인 세포분열에 필요\r\n[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌\r\n[비타민B6]①단백질 및 아미노산 이용에 필요②혈액의 호모시스테인 수준을 정상으로 유지하는데 필요",
+      "[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "진츄어블칼슘마그네슘아연 + 비타민D",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[칼슘]①뼈와 치아 형성에 필요②신경과 근육 기능 유지에 필요③정상적인 혈액응고에 필요④청년기 이전에 적절한 운동과 건강한 식습관을 유지하면서 충분한 칼슘을 섭취하면 향후 골다공증발생의 위험을 감소시킬 수 있음\r\n[마그네슘]①에너지 이용에 필요②신경과 근육 기능 유지에 필요\r\n[아연]①정상적인 면역기능에 필요② 정상적인 세포분열에 필요\r\n[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요 ②뼈의 형성과 유지에 필요",
+      "intake_method_ko": "1일 2회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "1. 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n2. PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "패각분말, 수산화마그네슘, 산화아연, 비타민 D3 혼합분말, 유산균혼합분말, 카르복시메틸셀룰로오스나트륨, 스테아린산마그네슘, 밀크향분말, 초코향분말, 자일리톨, 결정과당, 허브혼합추출물분말, 아미노산혼합분말, 효소혼합분말, 나한과추출분말, 코코아맛분말, 무수결정포도당, D-소르비톨",
+      "mfds_report_no": "20040015107374"
+    },
+    {
+      "name_ko": "보령파미스비타민D",
+      "company_ko": "주)팜크로스",
+      "form": "정",
+      "functionality_claim_ko": "[아연]①정상적인 면역기능에 필요②정상적인 세포분열에 필요\r\n[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌\r\n[비타민B6]①단백질 및 아미노산 이용에 필요②혈액의 호모시스테인 수준을 정상으로 유지하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 물과 함께 섭취하십시오.",
+      "warnings_ko": "알레르기 체질이신 분은 원료성분을 확인하신 후 섭취하십시오. 섭취 시 불편할 수 있으므로 충분한 물과 함께 섭취하십시오. 제품 개봉 시 포장재에 의해 상처를 입을 수 있으니 주의하시고 이상반응이 있을 시 제품에 기재된 고객상담실로 문의하십시오.",
+      "raw_materials_ko": "비타민 D3 혼합제제, 비타민 B6 염산염, 산화아연, 카나우바왁스, 채소혼합농축액분말, 과일혼합농축액분말, 아가베선인장추출물(추출액)분말(분말 추출물)(유기농), 말토덱스트린(유기농), 결정(분말)포도당(유기농)",
+      "mfds_report_no": "20040015110425"
+    },
+    {
+      "name_ko": "츄어블 비타민D3",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌",
+      "intake_method_ko": "1일 1회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정",
+      "raw_materials_ko": "비타민 D3 혼합제제(비타민D3 0.25%, DL-알파-토코페롤 0.2%, 가공유지(팜유) 7.5%, 아라비아검 38%, 자당(설탕) 38%, 옥수수전분 15.55%, 이산화규소 0.5%), 포도당, D-소르비톨, 자일리톨, 사과 과즙분말(가루, 과립)(사과과즙 80%, 덱스트린 20%), DL-사과산, 사과향(사과향키베이스 1.33%, 덱스트린 88.56%, 유당 8.85%, 프로필렌글리콜 0.54%, 펙틴 0.44%, 에틸말톨 0.28%),",
+      "mfds_report_no": "20040015107580"
+    },
+    {
+      "name_ko": "엽산600위드비타민D",
+      "company_ko": "주)팜크로스",
+      "form": "정",
+      "functionality_claim_ko": "[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌\r\n[엽산]①세포와 혈액생성에 필요②태아 신경관의 정상 발달에 필요③혈액의 호모시스테인 수준을 정상으로 유지하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 물과 함께 섭취.",
+      "warnings_ko": "본 제품은 임신부 전용제품입니다.\r\n알레르기 체질이신 분은 성분 확인 후 섭취하십시오. 섭취 시 불편할 수 있으므로 충분한 물과 함께 섭취하십시오. 제품 개봉 시 포장재에 의해 상처를 입을 수 있으니 주의하시고 이상반응이 있을 시제품에 기재된 고객상담실로 문의하십시오.",
+      "raw_materials_ko": "레몬추출물(추출액)분말(분말 추출물), 건조효모분말(가루, 과립), 블루베리농축분말, 과일혼합분말(가루, 과립), 카나우바왁스, 말토덱스트린, 결정(분말)포도당",
+      "mfds_report_no": "20040015110486"
+    },
+    {
+      "name_ko": "프리미엄비타민D1000",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민D]①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌",
+      "intake_method_ko": "1일 1회, 1회 1정을 물과 함께 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "비타민 D3 혼합제제(비타민D3 0.25%, DL-알파-토코페롤 0.2%, 가공유지 7.5%, 아라비아검 38%, 자당 38%, 옥수수전분 15.55%, 이산화규소 0.5%), 결정셀룰로오스, 유당혼합분말(가루, 과립)(유당 95%, 덱스트린 5%), 히드록시프로필메틸셀룰로오스, 스테아린산마그네슘, 이산화규소",
+      "mfds_report_no": "20040015107593"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "0811620022118",
+      "name": "Chocolate Nutrition Shake",
+      "brand": "fairlife nutrition plan",
+      "ingredients_text": "filtered lowfat grade A milk, alkalized cocoa, natural flavors, cellulose gel, cellulose gum, salt, carrageenan, lactase enzyme, monk fruit juice concentrate, acesulfame potassium",
+      "allergens": [
+        "gluten",
+        "milk"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/081/162/002/2118/front_en.2257.400.jpg"
+    },
+    {
+      "barcode": "0857777004232",
+      "name": "Chocolate Sea Salt Bar",
+      "brand": "RXBAR",
+      "ingredients_text": "Egg whites, almonds, cashews, dates",
+      "allergens": [
+        "eggs",
+        "nuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/777/700/4232/front_en.225.400.jpg"
+    },
+    {
+      "barcode": "0857777004195",
+      "name": "Blueberry",
+      "brand": "RXBAR",
+      "ingredients_text": "Dates, egg whites, almonds, cashews, blueberries, natural blueberry flavor.",
+      "allergens": [
+        "eggs",
+        "nuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/777/700/4195/front_en.188.400.jpg"
+    },
+    {
+      "barcode": "0857273008666",
+      "name": "Collagen Peptides",
+      "brand": "Vital Proteins",
+      "ingredients_text": "collagen peptides",
+      "allergens": [],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/727/300/8666/front_en.360.400.jpg"
+    },
+    {
+      "barcode": "0811620021951",
+      "name": "High Protein Milk Shake",
+      "brand": "Core Power",
+      "ingredients_text": "FILTERED LOW FAT GRADE A MILK, ALKALIZED COCOA, NATURAL FLAVORS, MONK FRUIT JUICE CONCENTRATE, STEVIA LEAF EXTRACT, CARRAGEENAN, CELLULOSE GEL, CELLULOSE GUM, ACESULFAME POTASSIUM, SUCRALOSE, LACTASE ",
+      "allergens": [],
+      "image_url": "https://images.openfoodfacts.org/images/products/081/162/002/1951/front_en.500.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:02:45Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://us.openfoodfacts.org/api/v2/search?search_terms=vitamin+d&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:02:45Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:02:50Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:02:43Z",
+    "pilot_version": "1.0"
+  }
+}

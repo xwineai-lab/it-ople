@@ -1,0 +1,178 @@
+{
+  "ingredient_key": "omega_3",
+  "name_i18n": {
+    "ko": "오메가3",
+    "en": "Omega 3"
+  },
+  "dosage": {
+    "rda": null,
+    "ai": "65 g for total fat but not for omega-3s",
+    "upper_limit": "59 g in females and 2",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "The two major classes of polyunsaturated fatty acids (PUFAs) are the omega-3 and omega-6 fatty acids. Like all fatty acids, PUFAs consist of long chains of carbon atoms with a carboxyl group at one end of the chain and a methyl group at the other. PUFAs are distinguished from saturated and monounsaturated fatty acids by the presence of two or more double bonds between carbons within the fatty acid",
+    "deficiency": "A deficiency of essential fatty acids—either omega-3s or omega-6s—can cause rough, scaly skin and dermatitis [ 5 ]. Plasma and tissue concentrations of DHA decrease when an omega-3 fatty acid deficiency is present. However, there are no known cut-off concentrations of DHA or EPA below which function",
+    "health_effects": "The potential health benefits of consuming omega-3s are the focus of a great deal of scientific research. By far, the majority of research has focused on EPA and DHA from foods (e.g., fish) and/or dietary supplements (e.g., fish oil) as opposed to ALA from plant-based foods. Many observational studi",
+    "drug_interactions": "Omega-3 dietary supplements, such as fish oil, have the potential to interact with medications. One example is provided below. People taking these and other medications on a regular basis should discuss possible interactions with their health care providers.",
+    "toxicity": "For most macronutrients, the IOM has established an acceptable macronutrient distribution range (AMDR) that suggests an acceptable range of intake. The AMDR for total fat intake, for example, is based on adverse effects from either very low fat or very high fat diets. The IOM established an AMDR for"
+  },
+  "allergens": [
+    "cacahuetes",
+    "milk",
+    "noisettes",
+    "nuts",
+    "peanuts",
+    "soybeans"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "①혈중 중성지질 개선 ②혈행개선",
+      "혈중 중성지질 개선·혈행개선에 도움을 줄 수 있음\n기억력 개선에 도움을 줄 수 있음\n건조한 눈을 개선하여 눈 건강에 도움을 줄 수 있음",
+      "①혈중 중성지질 개선 ②혈행개선"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "웰빙오메가3-EPA DHA",
+      "company_ko": "(주)유유헬스케어",
+      "form": "캡슐",
+      "functionality_claim_ko": "①혈중 중성지질 개선 ②혈행개선",
+      "intake_method_ko": "500mg : 1일 2회, 1회 2캅셀을 물과 함께 섭취하십시오.\r\n1000mg : 1일 2회, 1회 1캅셀을 물과 함께 섭취하십시오.",
+      "warnings_ko": "①알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정하십시오. ②PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의하십시오.",
+      "raw_materials_ko": "정제어유(EPA와 DHA의 합으로서 30%이상), 젤라틴, 글리세린, 정제수, D-알파-토코페롤, 대두레시틴",
+      "mfds_report_no": "20040015107332"
+    },
+    {
+      "name_ko": "한미오메가3EPA/DHA",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "혈중 중성지질 개선·혈행개선에 도움을 줄 수 있음\n기억력 개선에 도움을 줄 수 있음\n건조한 눈을 개선하여 눈 건강에 도움을 줄 수 있음",
+      "intake_method_ko": "1일 3회, 1회 1캡슐씩 물과 함께 섭취",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인한 후 섭취하시기 바랍니다.",
+      "raw_materials_ko": "오메가-3지방산함유유지(정제어유(EPA와 DHA의 합-30%이상)), 젤라틴, 글리세린, D-소르비톨액, D-α-토코페롤(D-α-토코페롤 67.1%, 식물성유지(대두유 50%, 카놀라유 50%) 32.9%)",
+      "mfds_report_no": "20040015083435"
+    },
+    {
+      "name_ko": "오메가3 골드",
+      "company_ko": "(주)유유헬스케어",
+      "form": "캡슐",
+      "functionality_claim_ko": "①혈중 중성지질 개선 ②혈행개선",
+      "intake_method_ko": "500mg : 1일 1회, 1회 2캡슐을 물과 함께 섭취하십시오.\r\n1000mg : 1일 1회, 1회 1캡슐을 물과 함께 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정하십시오. \r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의하십시오.",
+      "raw_materials_ko": "정제어유(유지), 젤라틴, 글리세린, D-소르비톨액, 에틸바닐린",
+      "mfds_report_no": "20040015107484"
+    },
+    {
+      "name_ko": "중외복합오메가3플러스",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "[오메가-3지방산함유유지 제품] 혈중 중성지질 개선·혈행개선에 도움을 줄 수 있음\r\n[비타민E] 유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1일 2회, 1회 2캡슐을 충분한 물과 함께 섭취.",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다.",
+      "raw_materials_ko": "정제어유, 하프물범(단, 하프물범신제외)유지(Oil), D-α-토코페롤(D-α-토코페롤 72.7%, 대두유 27.3%), 젤라틴, 글리세린, D-소르비톨액, 에틸바닐린, 포도씨유 , 보라지 종자유지(Oil), 소나무(잎(엽))유지(Oil)(송침유)",
+      "mfds_report_no": "20040015083641"
+    },
+    {
+      "name_ko": "홈플러스 오메가3",
+      "company_ko": "(주)유유헬스케어",
+      "form": "캡슐",
+      "functionality_claim_ko": "①혈중 중성지질 개선 ②혈행개선",
+      "intake_method_ko": "1일 1회, 1회 1캡슐을 물과 함께 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정하십시오. \r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의하십시오.",
+      "raw_materials_ko": "정제어유(유지)(정제어유 99.95%, 비타민E 0.05%), 젤라틴, 글리세린, D-소르비톨액, 에틸바닐린, 마늘유지(Oil)",
+      "mfds_report_no": "20040015107585"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "8410076610737",
+      "name": "Nature Valley Protein Cacahuètes & Chocolat",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), chicory root extract, isolated soy protein, chocolate pieces (8%) (sugar, cocoa paste, emulsifier: soy lecithin), sugar, vegetable fat: palm, whey (milk), sunflower oil, fructos",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/661/0737/front_fr.68.400.jpg"
+    },
+    {
+      "barcode": "5060088700112",
+      "name": "Protein Cocoa Hazelnut Bars",
+      "brand": "Nakd",
+      "ingredients_text": "Dates (38%), Peanuts (35%), Chicory fibre (10%), Peanut flour (8%), Hazelnuts (5%), Fat-reduced cocoa powder (3%), natural flavouring.",
+      "allergens": [
+        "nuts",
+        "peanuts",
+        "cacahuetes",
+        "noisettes"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/0112/front_en.30.400.jpg"
+    },
+    {
+      "barcode": "5060088706022",
+      "name": "NAKD Cacahuètes - 140g (4x1p)",
+      "brand": "Nakd.",
+      "ingredients_text": "dates 53%, peanuts 46%, sea salt, a hint of natural flavourings",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/6022/front_fr.92.400.jpg"
+    },
+    {
+      "barcode": "8000500435670",
+      "name": "PROTEIN Arachidi e Cioccolato Fondente",
+      "brand": "EAT NATURAL",
+      "ingredients_text": "CACAHUETES 51%, flocons de SOja, sirop de riz, chocolat noir 12% (pâte de cacao, sucre de canne, beurre de cacao), miel, riz croustillant, cacao maigre en poudre, noix de coco râpée déshydratée 0,5%, ",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/800/050/043/5670/front_fr.63.400.jpg"
+    },
+    {
+      "barcode": "8410076901026",
+      "name": "Barre céréales Protéines peanut& chocolat🍫",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), oligofructose, soy protein isolate, chocolate chunks (8%) (sugar, cocoa mass, cocoa butter, emulsifier (soy lecithin)), vegetable oils and fats (palm, rapeseed, sunflower in var",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/690/1026/front_es.54.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:03:04Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://world.openfoodfacts.org/api/v2/search?search_terms=omega+3&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:03:04Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:03:07Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:03:03Z",
+    "pilot_version": "1.0"
+  }
+}

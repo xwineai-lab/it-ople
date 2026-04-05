@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>성분 마스터 DB (3-Source 통합)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif; background: #f7f9fc; color: #1a202c; line-height: 1.6; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+  header.hero { background: linear-gradient(135deg, #00A651 0%, #3b82f6 100%); color: #fff; padding: 40px 24px; text-align: center; }
+  header.hero h1 { font-size: 2rem; margin-bottom: 8px; font-weight: 800; }
+  header.hero p { opacity: 0.95; max-width: 760px; margin: 0 auto; }
+  .breadcrumb { margin-top: 12px; font-size: 0.85rem; opacity: 0.9; }
+  .breadcrumb a { color: #fff; text-decoration: underline; margin: 0 6px; }
+
+  /* Ingredient picker */
+  .picker { background: #fff; border-radius: 12px; padding: 16px; margin: 24px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .picker label { font-weight: 700; color: #64748b; font-size: 0.85rem; margin-right: 8px; }
+  .pill { padding: 8px 16px; border-radius: 24px; border: 2px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.15s; }
+  .pill:hover { border-color: #00A651; color: #00A651; }
+  .pill.active { background: #00A651; color: #fff; border-color: #00A651; }
+
+  /* Coverage badge */
+  .coverage { display: inline-flex; align-items: center; gap: 8px; background: #c6f6d5; color: #276749; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; }
+  .coverage.partial { background: #feebc8; color: #c05621; }
+  .coverage.fail { background: #fed7d7; color: #c53030; }
+
+  /* Cards layout */
+  .grid-main { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .grid-main { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card h2 { font-size: 1.15rem; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 10px; }
+  .card h2 .src-badge { font-size: 0.65rem; background: #edf2f7; color: #4a5568; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+  .card h2 .src-badge.nih { background: #bee3f8; color: #2c5282; }
+  .card h2 .src-badge.off { background: #feebc8; color: #c05621; }
+  .card h2 .src-badge.mfds { background: #c6f6d5; color: #276749; }
+
+  .kv { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed #edf2f7; font-size: 0.9rem; }
+  .kv:last-child { border-bottom: none; }
+  .kv dt { min-width: 110px; color: #64748b; font-weight: 600; }
+  .kv dd { flex: 1; color: #2d3748; }
+
+  .excerpt { font-size: 0.85rem; color: #4a5568; line-height: 1.55; background: #f8fafc; border-left: 3px solid #cbd5e1; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+
+  /* Products list */
+  .products-list { display: grid; gap: 10px; }
+  .product-item { background: #f8fafc; border-radius: 8px; padding: 12px 14px; border-left: 4px solid #00A651; }
+  .product-item.off { border-left-color: #E46728; }
+  .product-item strong { font-size: 0.95rem; color: #1a202c; }
+  .product-item .sub { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+  .product-item .claim { font-size: 0.8rem; color: #4a5568; margin-top: 6px; line-height: 1.5; }
+  .tag-small { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: #edf2f7; color: #4a5568; margin-right: 4px; margin-top: 4px; }
+
+  /* Sources audit */
+  .audit-card { background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .audit-item { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #edf2f7; font-size: 0.85rem; }
+  .audit-item:last-child { border-bottom: none; }
+  .audit-item code { font-family: monospace; font-size: 0.78rem; color: #4a5568; background: #f7fafc; padding: 2px 6px; border-radius: 3px; word-break: break-all; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.ok { background: #48bb78; }
+  .status-dot.fail { background: #f56565; }
+
+  .loading { text-align: center; padding: 40px; color: #64748b; }
+
+  .back-nav { text-align: center; padding: 24px; color: #64748b; font-size: 0.9rem; }
+  .back-nav a { color: #00A651; text-decoration: none; margin: 0 12px; font-weight: 600; }
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>🧪 성분 마스터 DB (3-Source 통합)</h1>
+  <p>NIH ODS · Open Food Facts · 식약처 건강기능식품 DB 3개 공개 소스에서 자동 수집된 성분별 통합 데이터를 실시간 조회합니다.</p>
+  <div class="breadcrumb">
+    <a href="/">홈</a> › <a href="/iherb-shopify-flow">Shopify 플로우</a> › <strong>성분 DB</strong>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Ingredient picker -->
+  <div class="picker">
+    <label>성분 선택:</label>
+    <button class="pill active" data-key="vitamin_d">비타민 D</button>
+    <button class="pill" data-key="vitamin_c">비타민 C</button>
+    <button class="pill" data-key="omega_3">오메가 3</button>
+    <button class="pill" data-key="calcium">칼슘</button>
+    <button class="pill" data-key="magnesium">마그네슘</button>
+  </div>
+
+  <!-- Summary bar -->
+  <div id="summary-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding: 12px 20px; background:#fff; border-radius:10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+    <div>
+      <span id="ing-name" style="font-size:1.3rem; font-weight:800;">—</span>
+      <span id="ing-en" style="font-size:0.95rem; color:#64748b; margin-left:10px;">—</span>
+    </div>
+    <div id="coverage-badge" class="coverage">—</div>
+  </div>
+
+  <div id="content">
+    <div class="loading">로딩 중...</div>
+  </div>
+
+</div>
+
+<div class="back-nav">
+  <a href="/">🏠 홈</a> |
+  <a href="/iherb-shopify-flow">🛍️ Shopify 플로우</a> |
+  <a href="/iherb-comparison">🔥 UX 비교</a>
+</div>
+
+<script>
+  const picker = document.querySelector('.picker');
+  const content = document.getElementById('content');
+  const ingName = document.getElementById('ing-name');
+  const ingEn = document.getElementById('ing-en');
+  const covBadge = document.getElementById('coverage-badge');
+
+  async function loadIngredient(key) {
+    content.innerHTML = '<div class="loading">로딩 중...</div>';
+    try {
+      const res = await fetch(`/api/ingredients/${key}`);
+      if (!res.ok) throw new Error('fetch failed');
+      const d = await res.json();
+      renderIngredient(d);
+    } catch (e) {
+      content.innerHTML = '<div class="loading" style="color:#c53030;">데이터를 불러오지 못했습니다: ' + e.message + '</div>';
+    }
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderIngredient(d) {
+    const name = d.name_i18n || {};
+    ingName.textContent = name.ko || d.ingredient_key;
+    ingEn.textContent = name.en || '';
+
+    const cov = d.coverage_score || {};
+    const score = cov.score || '0/3';
+    covBadge.textContent = `📊 커버리지 ${score}`;
+    covBadge.className = 'coverage' + (score === '3/3' ? '' : score === '0/3' ? ' fail' : ' partial');
+
+    // Build cards HTML
+    const dosage = d.dosage || {};
+    const safety = d.safety_notes || {};
+    const kr = d.kr_regulatory || {};
+    const krProducts = d.korean_registered_products || [];
+    const marketSamples = d.market_samples || [];
+    const sources = d.sources_used || [];
+
+    let html = '';
+
+    // NIH: Dosage + Safety
+    html += `<div class="grid-main">`;
+    html += `<div class="card">
+      <h2>💊 복용량 기준 <span class="src-badge nih">NIH ODS</span></h2>
+      <dl>
+        <div class="kv"><dt>RDA/AI</dt><dd>${escapeHtml(dosage.rda || dosage.ai || '—')}</dd></div>
+        <div class="kv"><dt>상한섭취량 (UL)</dt><dd>${escapeHtml(dosage.upper_limit || '—')}</dd></div>
+        <div class="kv"><dt>기준 기관</dt><dd>${escapeHtml(dosage.reference_authority || '—')}</dd></div>
+      </dl>
+      ${safety.description_en ? `<div class="excerpt" style="margin-top:12px;">${escapeHtml(safety.description_en)}</div>` : ''}
+    </div>`;
+
+    html += `<div class="card">
+      <h2>⚠️ 안전성 & 상호작용 <span class="src-badge nih">NIH ODS</span></h2>
+      ${safety.deficiency ? `<h4 style="font-size:0.85rem;color:#4a5568;margin-top:8px;">결핍 증상</h4><div class="excerpt">${escapeHtml(safety.deficiency)}</div>` : ''}
+      ${safety.drug_interactions ? `<h4 style="font-size:0.85rem;color:#4a5568;margin-top:12px;">약물 상호작용</h4><div class="excerpt">${escapeHtml(safety.drug_interactions)}</div>` : ''}
+      ${safety.toxicity ? `<h4 style="font-size:0.85rem;color:#4a5568;margin-top:12px;">독성/과량</h4><div class="excerpt">${escapeHtml(safety.toxicity)}</div>` : ''}
+    </div>`;
+    html += `</div>`;
+
+    // Korean regulatory (MFDS)
+    html += `<div class="card" style="margin-bottom:20px;">
+      <h2>🇰🇷 한국 식약처 등록 제품 <span class="src-badge mfds">MFDS</span>
+        <span style="margin-left:auto;font-size:0.8rem;color:#64748b;font-weight:500;">
+          등록 제품 수: <strong style="color:#276749;">${kr.registered_product_count || 0}건</strong>
+          · 수입/유통 가능 여부: <strong style="color:${kr.is_registered_in_kr ? '#276749' : '#c53030'};">${kr.is_registered_in_kr ? '가능' : '미등록'}</strong>
+        </span>
+      </h2>
+      <div class="products-list">`;
+    if (krProducts.length === 0) {
+      html += '<div style="color:#64748b;font-size:0.9rem;">등록된 제품이 없습니다.</div>';
+    } else {
+      for (const p of krProducts.slice(0, 5)) {
+        html += `<div class="product-item">
+          <strong>${escapeHtml(p.name_ko || '')}</strong>
+          <div class="sub">${escapeHtml(p.company_ko || '')} · ${escapeHtml(p.form || '')} · 신고번호 ${escapeHtml(p.mfds_report_no || '')}</div>
+          ${p.functionality_claim_ko ? `<div class="claim">🏥 <em>${escapeHtml(p.functionality_claim_ko)}</em></div>` : ''}
+          ${p.intake_method_ko ? `<div class="claim">📝 <strong>섭취방법:</strong> ${escapeHtml(p.intake_method_ko)}</div>` : ''}
+        </div>`;
+      }
+    }
+    html += `</div></div>`;
+
+    // OFF market samples
+    html += `<div class="card" style="margin-bottom:20px;">
+      <h2>🌍 글로벌 시장 상품 샘플 <span class="src-badge off">Open Food Facts</span>
+        <span style="margin-left:auto;font-size:0.8rem;color:#64748b;font-weight:500;">${marketSamples.length}건</span>
+      </h2>
+      <div class="products-list">`;
+    if (marketSamples.length === 0) {
+      html += '<div style="color:#64748b;font-size:0.9rem;">OFF API에서 매칭된 상품이 없거나 API 일시 장애.</div>';
+    } else {
+      for (const p of marketSamples) {
+        html += `<div class="product-item off">
+          <strong>${escapeHtml(p.name || '')}</strong>
+          <div class="sub">${escapeHtml(p.brand || '')} · 바코드 ${escapeHtml(p.barcode || '—')}</div>
+          ${p.ingredients_text ? `<div class="claim">${escapeHtml(p.ingredients_text)}</div>` : ''}
+          ${(p.allergens || []).length > 0 ? `<div>${p.allergens.slice(0,6).map(a => '<span class="tag-small">'+escapeHtml(a)+'</span>').join('')}</div>` : ''}
+        </div>`;
+      }
+    }
+    html += `</div></div>`;
+
+    // Sources audit
+    html += `<div class="audit-card">
+      <h2 style="font-size:1.05rem;margin-bottom:10px;">🔍 데이터 출처 감사 (Audit Trail)</h2>`;
+    for (const s of sources) {
+      const ok = !s.status || s.status === 'ok';
+      html += `<div class="audit-item">
+        <span class="status-dot ${ok ? 'ok' : 'fail'}"></span>
+        <strong style="min-width:140px;">${escapeHtml(s.source || '')}</strong>
+        ${s.url ? `<code style="flex:1;">${escapeHtml(s.url).slice(0, 120)}...</code>` : ''}
+        ${s.service_id ? `<code>${escapeHtml(s.service_id)}</code>` : ''}
+        <span style="color:#64748b;font-size:0.78rem;">${escapeHtml(s.fetched_at || '')}</span>
+      </div>`;
+    }
+    html += `</div>`;
+
+    content.innerHTML = html;
+  }
+
+  picker.addEventListener('click', e => {
+    const btn = e.target.closest('.pill');
+    if (!btn) return;
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    loadIngredient(btn.dataset.key);
+  });
+
+  // Load default
+  loadIngredient('vitamin_d');
+</script>
+</body>
+</html>

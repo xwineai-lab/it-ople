@@ -3,7 +3,10 @@ IT.OPLE — FastAPI Backend
 OPLE 상품/리뷰 분석 & iHerb 매핑 인트라넷
 """
 import os
+import sys
 import json
+import asyncio
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -15,7 +18,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, case
 
-from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob
+from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob, SessionLocal
+
+# Add scraper module to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scraper"))
+from iherb_scraper import run_iherb_scrape, SUPPLEMENT_CATEGORIES
 
 # ── App Setup ────────────────────────────────────────────
 app = FastAPI(title="IT.OPLE", version="1.1.0", description="OPLE 상품 분석 & iHerb 매핑 인트라넷")
@@ -221,6 +228,19 @@ def get_jobs(db: Session = Depends(get_db)):
         for j in jobs
     ]
 
+@app.get("/api/jobs/{job_id}")
+def get_job(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {
+        "id": job.id, "type": job.job_type, "status": job.status,
+        "total_items": job.total_items, "processed_items": job.processed_items,
+        "error_message": job.error_message,
+        "started": job.started_at.isoformat() if job.started_at else None,
+        "completed": job.completed_at.isoformat() if job.completed_at else None,
+    }
+
 @app.post("/api/jobs/scrape-ople")
 async def start_ople_scrape(background_tasks: BackgroundTasks, max_products: int = 50, db: Session = Depends(get_db)):
     job = ScrapeJob(job_type="ople_products", status="pending", started_at=datetime.utcnow())
@@ -228,6 +248,157 @@ async def start_ople_scrape(background_tasks: BackgroundTasks, max_products: int
     db.commit()
     db.refresh(job)
     return {"job_id": job.id, "status": "queued", "message": f"Scraping up to {max_products} products"}
+
+# ── iHerb Scraping Background Task ─────────────────────
+async def _run_iherb_scrape_task(job_id: int, categories: list, max_products: int):
+    """Background task that runs the iHerb scraper and saves results to DB."""
+    db = SessionLocal()
+    try:
+        job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
+        job.status = "running"
+        job.started_at = datetime.utcnow()
+        db.commit()
+
+        async def progress_cb(processed, total, message):
+            nonlocal db, job
+            try:
+                db.refresh(job)
+                job.processed_items = processed
+                if total > 0:
+                    job.total_items = total
+                db.commit()
+            except Exception:
+                pass
+
+        # Map frontend category keys to scraper keys
+        cat_map = {
+            "vitamins": "vitamins", "minerals": "minerals",
+            "omega_fish_oil": "fish-oil-omegas", "probiotics": "probiotics",
+            "protein": "protein", "amino_acids": "amino-acids",
+            "herbs": "herbs-homeopathy", "antioxidants": "antioxidants",
+            "joint_bone": "bone-joint", "digestive": "digestive-support",
+            "immune": "immune-support", "sleep": "sleep",
+            "energy": "energy", "weight_management": "weight-management",
+            "beauty": "collagen", "mens_health": "mens-health",
+            "womens_health": "womens-health", "children": "childrens-health",
+            "greens_superfoods": "superfoods", "sports_nutrition": "sports-nutrition",
+        }
+        scraper_cats = None
+        if categories:
+            scraper_cats = [cat_map.get(c, c) for c in categories if cat_map.get(c, c) in SUPPLEMENT_CATEGORIES]
+            if not scraper_cats:
+                scraper_cats = None
+
+        max_per_cat = max_products if max_products > 0 else None
+
+        await run_iherb_scrape(
+            output_dir="data",
+            categories=scraper_cats,
+            max_products_per_category=max_per_cat,
+            max_pages_per_category=5 if max_per_cat and max_per_cat <= 100 else 10,
+            scrape_details=True,
+            scrape_korean=True,
+            progress_callback=progress_cb,
+        )
+
+        # Load results and save to database
+        results_file = Path("data/iherb_products.json")
+        if results_file.exists():
+            with open(results_file, encoding="utf-8") as f:
+                products = json.load(f)
+
+            saved_count = 0
+            for p in products:
+                pid = p.get("product_id", "")
+                if not pid:
+                    continue
+
+                existing = db.query(IHerbProduct).filter(IHerbProduct.product_id == str(pid)).first()
+                if existing:
+                    # Update existing
+                    for key in ["name", "name_ko", "brand", "price_usd", "price_krw", "rating",
+                                "review_count", "image_url", "description", "suggested_use",
+                                "other_ingredients", "warnings", "badges", "category", "sub_category"]:
+                        val = p.get(key)
+                        if val is not None and val != "":
+                            setattr(existing, key, val)
+                    saved_count += 1
+                else:
+                    iherb_prod = IHerbProduct(
+                        iherb_id=p.get("iherb_id", ""),
+                        product_id=str(pid),
+                        name=p.get("name", ""),
+                        name_ko=p.get("name_ko", ""),
+                        brand=p.get("brand", ""),
+                        price_usd=p.get("price_usd"),
+                        price_krw=p.get("price_krw"),
+                        rating=p.get("rating"),
+                        review_count=p.get("review_count"),
+                        category=p.get("category", ""),
+                        sub_category=p.get("sub_category", ""),
+                        product_form=p.get("product_form", ""),
+                        count=p.get("count", ""),
+                        in_stock=p.get("in_stock", True),
+                        url=p.get("url", ""),
+                        image_url=p.get("image_url", ""),
+                        description=p.get("description", ""),
+                        suggested_use=p.get("suggested_use", ""),
+                        other_ingredients=p.get("other_ingredients", ""),
+                        warnings=p.get("warnings", ""),
+                        badges=p.get("badges", []),
+                    )
+                    db.add(iherb_prod)
+                    saved_count += 1
+
+            db.commit()
+
+            job.processed_items = saved_count
+            job.total_items = len(products)
+            job.status = "completed"
+            job.completed_at = datetime.utcnow()
+            db.commit()
+            print(f"[Scraper] Completed: {saved_count} products saved to DB")
+        else:
+            job.status = "failed"
+            job.error_message = "No results file generated"
+            job.completed_at = datetime.utcnow()
+            db.commit()
+
+    except Exception as e:
+        traceback.print_exc()
+        try:
+            job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
+            if job:
+                job.status = "failed"
+                job.error_message = str(e)[:500]
+                job.completed_at = datetime.utcnow()
+                db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
+
+
+@app.post("/api/jobs/scrape-iherb")
+async def start_iherb_scrape(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    max_products = body.get("max_products", 50)
+    categories = body.get("categories", [])
+
+    job = ScrapeJob(
+        job_type="iherb_full",
+        status="pending",
+        config={"max_products": max_products, "categories": categories},
+        started_at=datetime.utcnow(),
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    # Launch scraper in background (use asyncio.create_task for async coroutine)
+    asyncio.create_task(_run_iherb_scrape_task(job.id, categories, max_products))
+
+    return {"job_id": job.id, "status": "queued", "message": f"iHerb scraping started (max {max_products} products)"}
 
 # ── iHerb Products API ───────────────────────────────────
 from pydantic import BaseModel

@@ -593,7 +593,7 @@
             return (
                 <div className="bg-white border-b border-gray-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <nav className="flex gap-4 overflow-x-auto">
+                        <nav className="flex flex-wrap gap-3" style={{rowGap:'8px'}}>
                             {tabs.map(tab => (
                                 <button
                                     key={tab.id}
@@ -629,7 +629,7 @@
                                 className="tab-button whitespace-nowrap"
                                 style={{textDecoration:'none', color:'#95BF47', fontWeight:700, display:'inline-flex', alignItems:'center', gap:'4px'}}
                             >
-                                🛍️ Shopify 플로우
+                                🛍️ Shopify
                             </a>
                             <a
                                 href="/ingredients"

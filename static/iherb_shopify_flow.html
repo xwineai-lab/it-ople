@@ -341,11 +341,283 @@
   </div>
 </section>
 
-<!-- Section 4: Implementation Flow A -->
+<!-- Section 4: Product Data Flow (NEW) -->
 <section>
-  <h2><span class="num">4</span> 구현 플로우 A: 상품 카탈로그 & 검색 UX</h2>
+  <h2><span class="num">4</span> 상품 데이터 플로우 (DB → Shopify)</h2>
+  <p>OPLE 현 DB 구조를 기반으로 iHerb 매핑 데이터를 결합·최적화하여, 다국어 대응이 가능한 단일 상품 마스터로 정규화한 뒤 Shopify에 일괄 업로드하는 상세 플로우입니다.</p>
 
-  <h3>4-1. 데이터 모델 설계 (Metaobjects)</h3>
+  <!-- 4-1 -->
+  <h3>4-1. 현행 OPLE 상품 DB 구조 파악</h3>
+  <p>현재 IT.OPLE의 SQLAlchemy 스키마는 3개 핵심 테이블 + 1개 iHerb 마스터 테이블로 구성되어 있습니다.</p>
+  <pre><code>┌─────────────────────┐       ┌─────────────────────┐
+│  Product (OPLE)     │ 1───N │  Review             │
+│─────────────────────│       │─────────────────────│
+│ id (PK)             │       │ id (PK)             │
+│ it_id (UNIQUE) ─────┼───────│ product_id (FK)     │
+│ name_ko, name_en    │       │ reviewer, rating    │
+│ brand               │       │ text, date          │
+│ price_usd, price_krw│       │ keywords (JSON)     │
+│ category_id/name    │       └─────────────────────┘
+│ parent_category     │
+│ review_count        │       ┌─────────────────────┐
+│ image_url, url      │ 1───1 │  IHerbMapping       │
+│ description         │───────│─────────────────────│
+└─────────────────────┘       │ ople_id (FK UNIQUE) │
+                              │ iherb_id            │
+┌─────────────────────────┐   │ iherb_name/brand    │
+│  IHerbProduct (Master)  │   │ iherb_price_usd     │
+│─────────────────────────│   │ match_method        │
+│ iherb_id (UNIQUE)       │   │   (upc|fuzzy|ai|    │
+│ product_id, url, slug   │   │    manual)          │
+│ name, name_ko, subtitle │   │ match_score         │
+│ brand, brand_ko         │   │ price_diff(_pct)    │
+│ price_usd, price_krw    │   │ verified (bool)     │
+│ discount_pct            │   └─────────────────────┘
+│ category_path(_ko)      │
+│ image_urls (JSON)       │   ※ IHerbProduct는 iHerb
+│ rating, review_count    │     전체 상품 카탈로그의
+│ description(_ko/_html)  │     "리치 마스터" 역할
+│ features(_ko) (JSON)    │     (성분/영양성분/배지/
+│ ingredients(_ko)        │      Q&amp;A/리뷰 데이터/
+│ supplement_facts (JSON) │      번들 등 포함)
+│ nutrition_facts (JSON)  │
+│ allergen_info(_ko)      │
+│ serving_size, count     │
+│ product_form            │
+│ upc_barcode, sku        │
+│ badges, certifications  │
+│ qa_count, top_questions │
+│ related_products        │
+│ reviews_data (JSON)     │
+│ scraped_at, ko_scraped_at│
+└─────────────────────────┘</code></pre>
+
+  <h4>현 구조의 강점과 개선 포인트</h4>
+  <table>
+    <thead><tr><th>구분</th><th>강점 ✅</th><th>개선 필요 ⚠️</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Product (OPLE)</td>
+        <td>한/영 이름 분리, 이중 통화(USD/KRW), 브랜드·카테고리 인덱스</td>
+        <td>성분/영양정보/제형 정보 부재, 인증 배지 없음, 이미지 단일 URL만 저장</td>
+      </tr>
+      <tr>
+        <td>IHerbMapping</td>
+        <td>UPC/퍼지/AI/수동 4단계 매칭 + match_score + verified 플래그</td>
+        <td>매핑 히스토리(변경 로그) 미저장, 다수 iHerb 후보 대응 불가 (1:1 고정)</td>
+      </tr>
+      <tr>
+        <td>IHerbProduct</td>
+        <td>50+ 필드 풍부한 마스터, 이중 언어 지원, JSON 구조화 필드 다수</td>
+        <td>OPLE Product와 분리되어 중복 저장, 언어가 ko/en 2개로 고정(일/중 확장 불가)</td>
+      </tr>
+      <tr>
+        <td>전체</td>
+        <td>SQLite→PostgreSQL 호환, 핵심 인덱스 정의됨</td>
+        <td>정규화된 성분 테이블 없음, 국가별 가격/재고/배송 데이터 모델 부재</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 4-2 -->
+  <h3>4-2. iHerb 매핑 & 추가 데이터 소스 확보</h3>
+  <p>현재 <span class="inline-code">IHerbMapping</span>의 4단계 매칭 방식을 개선하고, 외부 데이터 소스를 활용해 매핑 커버리지와 정확도를 끌어올립니다.</p>
+
+  <h4>매칭 정확도 개선 전략</h4>
+  <ol class="steps">
+    <li><strong>1차 – UPC/바코드 정확매칭</strong> → <span class="inline-code">IHerbProduct.upc_barcode</span> 기반 결정론적 매칭 (score 1.0). OPLE 상품에 UPC 수집 필드 추가 필요.</li>
+    <li><strong>2차 – 브랜드 + 제품명 + 용량 퍼지매칭</strong> → RapidFuzz Token-Set Ratio + 용량/수량 정규식 추출 ("500mg, 120 Capsules")로 false-positive 감소.</li>
+    <li><strong>3차 – 임베딩 유사도 (AI)</strong> → Sentence-Transformers (multilingual-e5-large)로 한/영 상품명 임베딩 후 코사인 유사도 Top-K 후보 제시.</li>
+    <li><strong>4차 – 사람 검수 (manual)</strong> → 관리자 UI에서 Top-5 후보 비교 → verified 플래그 설정. 결정 로그를 학습 데이터로 축적.</li>
+  </ol>
+
+  <h4>추가 확보 가능한 iHerb 데이터 소스</h4>
+  <table>
+    <thead><tr><th>소스</th><th>확보 방식</th><th>활용 용도</th><th>난이도</th></tr></thead>
+    <tbody>
+      <tr><td>iHerb 공식 검색 결과 JSON</td><td>페이지 임베디드 <span class="inline-code">__NEXT_DATA__</span> 파싱</td><td>카테고리별 전체 상품 리스트</td><td><span class="tag low">LOW</span></td></tr>
+      <tr><td>iHerb 다국어 페이지 (jp/cn/de/fr)</td><td>locale 스위치 + 동일 product ID로 크롤</td><td>일본어·중국어·독일어 상품명/설명 확보</td><td><span class="tag low">LOW</span></td></tr>
+      <tr><td>iHerb Rewards/Trending 페이지</td><td>주간 트렌딩/신상품/세일 섹션 스크랩</td><td>인기도 점수 & 신상품 자동 입고 신호</td><td><span class="tag med">MED</span></td></tr>
+      <tr><td>외부 UPC DB (UPCitemdb, Barcode Lookup)</td><td>공개 API 호출</td><td>UPC ↔ 브랜드/제품명 역매핑</td><td><span class="tag med">MED</span></td></tr>
+      <tr><td>제조사 공식 사이트 (NOW Foods, Garden of Life 등)</td><td>브랜드별 제품 카탈로그 크롤</td><td>공식 성분표·인증서·보관법 소스 오브 트루스</td><td><span class="tag med">MED</span></td></tr>
+      <tr><td>OpenFoodFacts API</td><td>무료 오픈 데이터셋</td><td>영양성분·알레르기·첨가물 크로스체크</td><td><span class="tag low">LOW</span></td></tr>
+      <tr><td>식약처 건강기능식품 DB</td><td>공공 API (data.go.kr)</td><td>한국 수입신고 여부, 기능성 원료 고시</td><td><span class="tag med">MED</span></td></tr>
+      <tr><td>Amazon.com 리뷰/Q&amp;A</td><td>Product Advertising API 또는 스크래핑</td><td>리뷰 보강, 영문 Q&amp;A 추가 확보</td><td><span class="tag high">HIGH</span></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 4-3 -->
+  <h3>4-3. 통합 DB 구조 최적화 (다국어·다국가 대비)</h3>
+  <p>OPLE Product와 IHerbProduct의 중복을 제거하고, 국가·언어별 로컬라이제이션을 위한 <strong>정규화된 Master-Translation 모델</strong>로 재설계합니다.</p>
+
+  <pre><code>┌───────────────────────────────┐
+│  product_master               │  ← 언어-불문 정보 (SSOT)
+│───────────────────────────────│
+│ id (PK, UUID)                 │
+│ sku_master (UNIQUE)           │  ← 내부 마스터 SKU
+│ upc_barcode (UNIQUE, NULL OK) │
+│ brand_id (FK)                 │
+│ category_id (FK)              │
+│ product_form (enum)           │  캡슐/정제/분말/액상
+│ serving_size_value            │  500
+│ serving_size_unit             │  mg
+│ servings_per_container        │  120
+│ weight_grams                  │
+│ source_type                   │  ople | iherb | manual
+│ source_ref_id                 │  원본 ID (역추적용)
+│ status                        │  active | draft | archived
+│ created_at, updated_at        │
+└───────────────────────────────┘
+         │ 1              │ 1            │ 1
+         │                │              │
+         ▼ N              ▼ N            ▼ N
+┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+│ product_i18n │  │ product_price│  │ product_media    │
+│──────────────│  │──────────────│  │──────────────────│
+│ master_id FK │  │ master_id FK │  │ master_id FK     │
+│ locale       │  │ country_code │  │ type (image/vid) │
+│   (ko/en/ja/ │  │   (KR/US/JP/ │  │ url              │
+│    zh-CN)    │  │    CN/…)     │  │ alt_text_i18n    │
+│ name         │  │ currency     │  │ sort_order       │
+│ subtitle     │  │ price        │  │ is_primary       │
+│ description  │  │ compare_at   │  └──────────────────┘
+│ features[]   │  │ in_stock     │
+│ suggested_use│  │ inventory_qty│  ┌──────────────────┐
+│ warnings     │  │ tax_rate     │  │ product_ingredient│
+│ allergen_info│  │ duty_rate    │  │──────────────────│
+│ slug         │  └──────────────┘  │ master_id FK     │
+│ UNIQUE       │                    │ ingredient_id FK │
+│ (master_id,  │  ┌──────────────┐  │ amount_value     │
+│  locale)     │  │ ingredient   │  │ amount_unit      │
+└──────────────┘  │──────────────│  │ daily_value_pct  │
+                  │ id (PK)      │  │ sort_order       │
+┌──────────────┐  │ ingredient_  │  └──────────────────┘
+│ product_     │  │  name_i18n   │
+│  mapping     │  │  (JSON)      │  ┌──────────────────┐
+│──────────────│  │ cas_number   │  │ product_review   │
+│ master_id FK │  │ category     │  │──────────────────│
+│ source       │  └──────────────┘  │ master_id FK     │
+│   (iherb|    │                    │ locale, rating   │
+│    amazon|   │  ┌──────────────┐  │ title, body      │
+│    mfr)      │  │ brand        │  │ reviewer_name    │
+│ source_id    │  │──────────────│  │ verified_purchase│
+│ source_url   │  │ id (PK)      │  │ helpful_count    │
+│ match_method │  │ name_i18n    │  │ created_at       │
+│ match_score  │  │ country_orig │  └──────────────────┘
+│ verified     │  └──────────────┘
+│ last_sync_at │
+└──────────────┘</code></pre>
+
+  <h4>설계 원칙</h4>
+  <div class="flow-grid">
+    <div class="flow-card green">
+      <h4>🌐 i18n First</h4>
+      <p>언어·국가-의존 필드는 모두 별도 테이블로 분리. 신규 언어 추가 시 <span class="inline-code">product_i18n</span> 행만 추가하면 됨.</p>
+    </div>
+    <div class="flow-card">
+      <h4>💱 국가별 가격/재고</h4>
+      <p><span class="inline-code">product_price</span>가 country_code+currency 단위로 저장. 관부가세·재고까지 국가별 관리.</p>
+    </div>
+    <div class="flow-card blue">
+      <h4>🔗 Source 역추적</h4>
+      <p><span class="inline-code">product_mapping</span>이 iHerb/Amazon/제조사 등 다중 소스를 1:N으로 연결, 데이터 출처 감사(audit) 가능.</p>
+    </div>
+    <div class="flow-card">
+      <h4>🧪 성분 정규화</h4>
+      <p>성분 마스터(<span class="inline-code">ingredient</span>)를 별도 분리 → 알레르기·비건 필터, 성분별 상품 크로스셀 가능.</p>
+    </div>
+  </div>
+
+  <h4>마이그레이션 전략 (현 DB → 신 DB)</h4>
+  <ol class="steps">
+    <li><strong>신 스키마 생성</strong> — 별도 PostgreSQL 스키마 <span class="inline-code">catalog_v2</span>에 Alembic 마이그레이션으로 테이블 생성</li>
+    <li><strong>brand/category/ingredient 마스터 추출</strong> — 기존 <span class="inline-code">Product.brand</span>, <span class="inline-code">IHerbProduct.category_path</span>, <span class="inline-code">ingredients_list</span>를 중복제거(dedupe)하여 마스터 적재</li>
+    <li><strong>product_master 생성</strong> — OPLE Product를 기준으로 UUID 발급, IHerbMapping이 verified=true인 건은 IHerbProduct 데이터로 보강</li>
+    <li><strong>product_i18n (ko/en) 분리 이관</strong> — name_ko→ko row, name_en/description→en row; iHerb의 일/중 데이터가 있으면 추가 locale row 생성</li>
+    <li><strong>product_price 초기화</strong> — KRW→country=KR, USD→country=US 기본값으로 시드. 이후 JP/CN 가격은 환율+마진 룰로 자동 산출</li>
+    <li><strong>검증 쿼리</strong> — 상품 수/평균 가격/카테고리 분포를 v1 vs v2 비교 리포트로 체크, 차이 &lt; 0.1% 목표</li>
+  </ol>
+
+  <!-- 4-4 -->
+  <h3>4-4. Shopify 일괄 업로드 구조화</h3>
+  <p>최적화된 신 DB를 Shopify가 이해하는 형식으로 변환하여 대량 업로드합니다. Shopify는 CSV 임포트와 GraphQL Admin API의 <strong>Bulk Operations</strong> 두 경로를 제공합니다.</p>
+
+  <h4>DB 필드 → Shopify Product 매핑표</h4>
+  <table>
+    <thead><tr><th>신 DB 필드</th><th>Shopify 필드</th><th>저장 방식</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>product_master.sku_master</td><td>Variant.sku</td><td>기본 필드</td><td>마스터 SKU 그대로 사용</td></tr>
+      <tr><td>product_master.upc_barcode</td><td>Variant.barcode</td><td>기본 필드</td><td>재고 추적 & 매핑 키</td>
+      </tr>
+      <tr><td>product_i18n.name (ko)</td><td>Product.title</td><td>기본 필드 (primary locale)</td><td>한국 시장 기본 언어</td></tr>
+      <tr><td>product_i18n.name (en/ja/zh-CN)</td><td>Translation via Markets</td><td>Translate &amp; Adapt</td><td>GraphQL translationsRegister</td></tr>
+      <tr><td>product_i18n.description</td><td>Product.body_html</td><td>기본 필드 + 번역</td><td>HTML 허용</td></tr>
+      <tr><td>product_master.brand_id → brand.name_i18n</td><td>Product.vendor</td><td>기본 필드</td><td>locale별로는 vendor 미지원 → metafield 보조</td></tr>
+      <tr><td>product_master.category_id</td><td>Product.product_type + Collection</td><td>기본 + Smart Collection</td><td>3-depth는 Collection 중첩으로</td></tr>
+      <tr><td>product_price (KR)</td><td>Variant.price</td><td>기본 필드</td><td>primary market</td></tr>
+      <tr><td>product_price (US/JP/CN)</td><td>Shopify Markets 가격</td><td>productVariantsBulkUpdate</td><td>country-specific pricing</td></tr>
+      <tr><td>product_master.product_form</td><td>metafield: <span class="inline-code">custom.form</span></td><td>Metafield (enum)</td><td>필터 노출</td></tr>
+      <tr><td>product_master.serving_size_*</td><td>metafield: <span class="inline-code">custom.serving_size</span></td><td>Metafield (dimension)</td><td>"500 mg" 포맷</td></tr>
+      <tr><td>product_ingredient (리스트)</td><td>metafield: <span class="inline-code">custom.ingredients</span></td><td>Metaobject reference list</td><td>성분 마스터 참조</td></tr>
+      <tr><td>badges/certifications</td><td>metafield: <span class="inline-code">custom.badges</span></td><td>Metafield (list.single_line)</td><td>Non-GMO, Vegan 등</td></tr>
+      <tr><td>allergen_info</td><td>metafield: <span class="inline-code">custom.allergens</span></td><td>Metafield (list) + 번역</td><td>필터 & 경고문</td></tr>
+      <tr><td>suggested_use / warnings</td><td>metafield: <span class="inline-code">custom.suggested_use/warnings</span></td><td>Metafield (rich_text) + 번역</td><td>PDP 블록</td></tr>
+      <tr><td>supplement_facts (JSON)</td><td>metafield: <span class="inline-code">custom.supplement_facts</span></td><td>Metafield (json)</td><td>영양성분표 렌더링</td></tr>
+      <tr><td>product_media (list)</td><td>Product.media (multi)</td><td>productCreateMedia</td><td>이미지 URL 배열 이관</td></tr>
+      <tr><td>product_master (HS code)</td><td>Variant.harmonizedSystemCode</td><td>기본 필드</td><td>관세 자동 계산용</td></tr>
+      <tr><td>product_price.duty_rate/tax_rate</td><td>Markets Duties</td><td>country-level 설정</td><td>PDP DDP 표기</td></tr>
+    </tbody>
+  </table>
+
+  <h4>업로드 파이프라인</h4>
+  <pre><code>┌────────────────┐   ┌────────────────┐   ┌─────────────────┐
+│ PostgreSQL     │──▶│ ETL Worker     │──▶│ Shopify         │
+│ catalog_v2     │   │ (Python/Node)  │   │ Admin GraphQL   │
+│                │   │                │   │ Bulk Operations │
+│ SELECT * FROM  │   │ 1. Extract     │   │                 │
+│  product_master│   │ 2. Transform → │   │ stagedUploadsCreate│
+│  JOIN i18n     │   │    Shopify JSON│   │   ↓             │
+│  JOIN price    │   │ 3. Chunk (1000)│   │ JSONL upload    │
+│  JOIN media    │   │ 4. JSONL 생성  │   │   ↓             │
+│  JOIN mapping  │   │ 5. Stage upload│   │ bulkOperationRun│
+└────────────────┘   └────────────────┘   │   Mutation      │
+                              │            │   ↓             │
+                              ▼            │ poll status →   │
+                     ┌────────────────┐    │   completed     │
+                     │ Validation &    │◀──┤                 │
+                     │ Retry Queue    │    └─────────────────┘
+                     │ (dead letter)   │
+                     └────────────────┘</code></pre>
+
+  <h4>업로드 단계별 세부 플로우</h4>
+  <ol class="steps">
+    <li><strong>ETL 쿼리 실행</strong> — product_master + i18n(ko) + price(KR) + media + mapping 조인, verified=true 상품만 추출 (1차 배치)</li>
+    <li><strong>Shopify JSONL 변환</strong> — 각 row를 Shopify의 ProductInput 스키마로 매핑, metafields 배열 구성, media 배열 구성</li>
+    <li><strong>Staged Upload</strong> — <span class="inline-code">stagedUploadsCreate</span>로 GCS URL 받고 JSONL 업로드 (상품 1,000건 ≒ 1~2MB)</li>
+    <li><strong>Bulk Mutation 실행</strong> — <span class="inline-code">bulkOperationRunMutation</span>으로 <span class="inline-code">productCreate</span> 일괄 호출, 60초 단위 상태 폴링</li>
+    <li><strong>번역 등록</strong> — 생성된 Product GID 회수 후 locale별 <span class="inline-code">translationsRegister</span>로 en/ja/zh-CN 번역 주입</li>
+    <li><strong>Market별 가격 업데이트</strong> — <span class="inline-code">productVariantsBulkUpdate</span>로 US/JP/CN 시장 가격(<span class="inline-code">contextualPricing</span>) 세팅</li>
+    <li><strong>검증 & 재시도</strong> — 실패 rows를 dead letter 테이블에 적재, 배치 단위 재실행. 샘플 10개 수동 QA.</li>
+  </ol>
+
+  <h4>다국가·다언어 확장 시나리오</h4>
+  <table>
+    <thead><tr><th>확장 상황</th><th>DB 변경</th><th>Shopify 작업</th><th>예상 소요</th></tr></thead>
+    <tbody>
+      <tr><td>일본어(ja) 추가</td><td>product_i18n에 locale='ja' row 삽입 (ETL로 일괄)</td><td>Markets에 JP Market 추가 + translationsRegister</td><td>2일</td></tr>
+      <tr><td>JPY 가격 정책 신설</td><td>product_price에 country='JP', currency='JPY' 행</td><td>Markets Local Currencies 설정</td><td>1일</td></tr>
+      <tr><td>태국 시장 진출</td><td>country='TH', currency='THB', 태국어(th) i18n 추가</td><td>Markets 신규 생성 + Shipping Zone + Translate &amp; Adapt</td><td>3일</td></tr>
+      <tr><td>성분 마스터 대폭 확장</td><td>ingredient에 신규 성분 + name_i18n 다국어</td><td>Metaobject 신규 entry 추가 (bulk)</td><td>1일</td></tr>
+    </tbody>
+  </table>
+
+</section>
+
+<!-- Section 5: Implementation Flow A -->
+<section>
+  <h2><span class="num">5</span> 구현 플로우 A: 상품 카탈로그 & 검색 UX</h2>
+
+  <h3>5-1. 데이터 모델 설계 (Metaobjects)</h3>
   <p>iHerb식 풍부한 상품 정보를 Shopify의 Metaobjects로 정규화합니다.</p>
   <pre><code># Metaobject: ingredient (성분)
 - name_ko: string
@@ -360,7 +632,7 @@
 - certifications: list&lt;single-line&gt;  (예: USDA Organic, Non-GMO)
 - kfda_notice: rich-text               (식약처 고시사항)</code></pre>
 
-  <h3>4-2. 검색 UX 구현 단계</h3>
+  <h3>5-2. 검색 UX 구현 단계</h3>
   <ol class="steps">
     <li><strong>Predictive Search 확장</strong> — Shopify Search & Discovery 앱에서 동의어/유사어 사전 등록 (예: "오메가3" ↔ "EPA", "DHA", "피쉬오일")</li>
     <li><strong>커스텀 자동완성 UI</strong> — Liquid 테마에 Alpine.js 기반 드롭다운, 썸네일+가격+평점 미리보기 표시</li>
@@ -369,7 +641,7 @@
     <li><strong>검색 로그 수집</strong> — 앱에서 쿼리/클릭 저장 → 향후 동의어 사전 자동 확장</li>
   </ol>
 
-  <h3>4-3. 필터 & 카테고리 구현</h3>
+  <h3>5-3. 필터 & 카테고리 구현</h3>
   <ol class="steps">
     <li><strong>Product Metafields 정의</strong> — brand, form(정제/캡슐/분말), serving_size, vegan, allergens를 metafield로 정의하여 Storefront Filter에 노출</li>
     <li><strong>Collection 3-depth 구조</strong> — 대카테고리(비타민) → 중카테고리(비타민D) → 소카테고리(비타민D3 5000IU) 를 Smart Collection 규칙으로 자동 생성</li>
@@ -380,23 +652,23 @@
 
 <!-- Section 5: Implementation Flow B -->
 <section>
-  <h2><span class="num">5</span> 구현 플로우 B: 다국어/다통화 & 글로벌 배송</h2>
+  <h2><span class="num">6</span> 구현 플로우 B: 다국어/다통화 & 글로벌 배송</h2>
 
-  <h3>5-1. Shopify Markets 설정</h3>
+  <h3>6-1. Shopify Markets 설정</h3>
   <ol class="steps">
     <li><strong>Market 정의</strong> — Primary(KR), International(US/JP/CN) 4개 Market 생성, 각 Market에 통화·언어·도메인 서브패스 매핑 (<span class="inline-code">ople.com/kr</span>, <span class="inline-code">/en</span>, <span class="inline-code">/jp</span>, <span class="inline-code">/cn</span>)</li>
     <li><strong>통화 설정</strong> — Local currencies 활성화, 가격 반올림 룰 정의 (JPY는 소수점 없음, KRW는 100원 단위)</li>
     <li><strong>Geolocation 앱 설치</strong> — 방문자 IP 기반 자동 리다이렉트 + 상단 국가/언어 셀렉터 배너</li>
   </ol>
 
-  <h3>5-2. 다국어 콘텐츠 플로우</h3>
+  <h3>6-2. 다국어 콘텐츠 플로우</h3>
   <ol class="steps">
     <li><strong>Translate & Adapt 앱</strong>으로 테마 텍스트·상품명·설명·metafield 자동 번역 초안 생성</li>
     <li><strong>커스텀 앱에 번역 동기화 잡</strong> — 관리자가 커스텀 앱 UI에서 번역본 리뷰/수정 → Admin API로 Shopify에 저장</li>
     <li><strong>URL 구조</strong> — hreflang 자동 삽입, Liquid에서 <span class="inline-code">{{ request.locale.iso_code }}</span> 기반 canonical 분기</li>
   </ol>
 
-  <h3>5-3. 글로벌 배송 & 관세 구현</h3>
+  <h3>6-3. 글로벌 배송 & 관세 구현</h3>
   <ol class="steps">
     <li><strong>Shipping Zones 재편</strong> — 국내(CJ대한통운), 동아시아(JP/CN 해외특송), 북미(DHL/UPS) 로 존 분리 및 weight-based rate 설정</li>
     <li><strong>Carrier Service API</strong> — 커스텀 앱이 외부 운송사 API와 통신하여 실시간 배송료 반환, 체크아웃 화면에 주입</li>
@@ -407,7 +679,7 @@
 
 <!-- Section 6: Dev Roadmap -->
 <section>
-  <h2><span class="num">6</span> 개발 로드맵 (16주)</h2>
+  <h2><span class="num">7</span> 개발 로드맵 (16주)</h2>
   <p>Shopify Partners 스토어에서 개발→스테이징→프로덕션으로 승격하는 4-Phase 로드맵입니다.</p>
 
   <table>
@@ -457,7 +729,7 @@
 
 <!-- Section 7: Risks & KPIs -->
 <section>
-  <h2><span class="num">7</span> 리스크 & 성공 지표</h2>
+  <h2><span class="num">8</span> 리스크 & 성공 지표</h2>
 
   <h3>주요 리스크</h3>
   <table>
@@ -490,7 +762,7 @@
 
 <!-- Section 8: Next Actions -->
 <section>
-  <h2><span class="num">8</span> 즉시 착수 가능한 다음 액션</h2>
+  <h2><span class="num">9</span> 즉시 착수 가능한 다음 액션</h2>
   <ol class="steps">
     <li>Shopify Partners 계정 생성 및 Development Store 개설</li>
     <li>Dawn 테마 fork 후 GitHub 연동 (Online Store → Themes → Connect)</li>

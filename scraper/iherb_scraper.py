@@ -38,8 +38,8 @@ logger = logging.getLogger("iherb_scraper")
 
 BASE_URL = "https://www.iherb.com"
 BASE_URL_KR = "https://kr.iherb.com"
-DELAY = 2.0  # seconds between requests
-MAX_RETRIES = 3
+DELAY = 3.0  # seconds between requests (increased to avoid bot detection)
+MAX_RETRIES = 5  # more retries for 403 recovery
 
 # ── iHerb Supplements 카테고리 맵 ──────────────────────
 
@@ -70,13 +70,39 @@ SUPPLEMENT_CATEGORIES = {
     "collagen": {"path": "/c/collagen-supplements", "name_ko": "콜라겐"},
 }
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-}
+import random
+
+_USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+]
+
+def _build_headers(referer: str = "https://www.iherb.com/") -> dict:
+    """Build realistic browser headers with a random User-Agent."""
+    ua = random.choice(_USER_AGENTS)
+    return {
+        "User-Agent": ua,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Connection": "keep-alive",
+        "Referer": referer,
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-User": "?1",
+        "Sec-CH-UA": '"Chromium";v="131", "Not_A Brand";v="24"',
+        "Sec-CH-UA-Mobile": "?0",
+        "Sec-CH-UA-Platform": '"macOS"',
+        "Upgrade-Insecure-Requests": "1",
+        "Cache-Control": "max-age=0",
+        "DNT": "1",
+    }
+
+HEADERS = _build_headers()
 
 
 # ── Helper Functions ───────────────────────────────────
@@ -115,19 +141,25 @@ def extract_number(text: str) -> int:
 
 
 async def fetch_with_retry(client: httpx.AsyncClient, url: str, retries: int = MAX_RETRIES) -> Optional[httpx.Response]:
-    """Fetch URL with retry and exponential backoff."""
+    """Fetch URL with retry, UA rotation, and exponential backoff."""
     for attempt in range(retries):
         try:
-            resp = await client.get(url)
+            # Rotate headers on each retry to look like different browsers
+            new_headers = _build_headers(
+                referer="https://www.iherb.com/" if "iherb.com/c/" in url else url.rsplit("/", 1)[0] + "/"
+            )
+            resp = await client.get(url, headers=new_headers)
+            logger.info(f"HTTP Request: GET {url} \"{resp.http_version} {resp.status_code} {'OK' if resp.status_code == 200 else resp.reason_phrase}\"")
             if resp.status_code == 200:
                 return resp
             elif resp.status_code == 429:  # Rate limited
-                wait = (2 ** attempt) * 5
+                wait = (2 ** attempt) * 10
                 logger.warning(f"Rate limited (429), waiting {wait}s...")
                 await asyncio.sleep(wait)
             elif resp.status_code == 403:
-                logger.warning(f"Forbidden (403) for {url}, attempt {attempt + 1}")
-                await asyncio.sleep(5)
+                wait = (2 ** attempt) * 8 + random.uniform(2, 6)
+                logger.warning(f"Forbidden (403) for {url}, attempt {attempt + 1}, waiting {wait:.1f}s...")
+                await asyncio.sleep(wait)
             else:
                 logger.warning(f"HTTP {resp.status_code} for {url}")
                 return resp
@@ -1181,7 +1213,12 @@ async def run_iherb_scrape(
     total_products = {}  # product_id -> basic info
     detailed_products = []
 
-    async with httpx.AsyncClient(headers=HEADERS, timeout=30, follow_redirects=True) as client:
+    async with httpx.AsyncClient(
+        headers=_build_headers(),
+        timeout=30,
+        follow_redirects=True,
+        http2=True,
+    ) as client:
 
         # ═══ Phase 1: Collect product IDs from category listings ═══
         logger.info("═══ Phase 1: Collecting product IDs from category listings ═══")

@@ -65,6 +65,14 @@ async def spec():
         return spec_path.read_text(encoding="utf-8")
     return "<h1>Spec not found</h1>"
 
+
+@app.get("/ople-spec", response_class=HTMLResponse)
+async def ople_spec():
+    spec_path = static_dir / "ople_spec.html"
+    if spec_path.exists():
+        return spec_path.read_text(encoding="utf-8")
+    return "<h1>OPLE Spec not found</h1>"
+
 # ── Dashboard APIs ───────────────────────────────────────
 @app.get("/api/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):

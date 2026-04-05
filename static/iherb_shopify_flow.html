@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iHerb → OPLE.COM → Shopify 구현 플로우</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    background: #f7f9fc;
+    color: #1a202c;
+    line-height: 1.6;
+  }
+  .container { max-width: 1280px; margin: 0 auto; padding: 32px 24px; }
+
+  /* Header */
+  header.hero {
+    background: linear-gradient(135deg, #00A651 0%, #E46728 50%, #95BF47 100%);
+    color: #fff;
+    padding: 56px 24px;
+    text-align: center;
+  }
+  header.hero h1 { font-size: 2.4rem; margin-bottom: 12px; font-weight: 800; }
+  header.hero p { font-size: 1.05rem; opacity: 0.95; max-width: 760px; margin: 0 auto; }
+  .breadcrumb { margin-top: 16px; font-size: 0.9rem; opacity: 0.9; }
+  .breadcrumb a { color: #fff; text-decoration: underline; margin: 0 6px; }
+
+  /* Pipeline visual */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 40px 0;
+    flex-wrap: wrap;
+  }
+  .stage {
+    flex: 1;
+    min-width: 220px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    text-align: center;
+    border-top: 4px solid #ccc;
+  }
+  .stage.src { border-top-color: #00A651; }
+  .stage.mid { border-top-color: #E46728; }
+  .stage.dst { border-top-color: #95BF47; }
+  .stage h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .stage .emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
+  .stage p { font-size: 0.85rem; color: #64748b; }
+  .arrow { font-size: 2rem; color: #cbd5e1; }
+
+  /* Sections */
+  section { background: #fff; border-radius: 14px; padding: 36px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  section h2 {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  section h2 .num {
+    background: #E46728;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  section h3 { margin: 20px 0 12px; font-size: 1.15rem; color: #2d3748; }
+  section p { margin-bottom: 12px; color: #4a5568; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 0.9rem; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  th { background: #f7fafc; font-weight: 700; color: #2d3748; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:hover td { background: #fafbfc; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+  .tag.high { background: #fed7d7; color: #c53030; }
+  .tag.med { background: #feebc8; color: #c05621; }
+  .tag.low { background: #c6f6d5; color: #276749; }
+  .tag.phase { background: #bee3f8; color: #2c5282; }
+
+  /* Flow cards */
+  .flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
+  .flow-card { background: #f8fafc; border-left: 4px solid #E46728; border-radius: 8px; padding: 18px; }
+  .flow-card h4 { font-size: 1rem; margin-bottom: 8px; color: #2d3748; }
+  .flow-card p { font-size: 0.88rem; color: #64748b; margin: 0; }
+  .flow-card.green { border-left-color: #00A651; }
+  .flow-card.blue { border-left-color: #3182ce; }
+
+  /* Code blocks */
+  pre { background: #1a202c; color: #e2e8f0; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-size: 0.82rem; line-height: 1.5; margin: 12px 0; }
+  pre code { font-family: 'SF Mono', Consolas, monospace; }
+  .inline-code { background: #edf2f7; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #c53030; }
+
+  /* Step list */
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 12px 12px 52px;
+    margin-bottom: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    width: 28px;
+    height: 28px;
+    background: #E46728;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  /* Gantt-ish roadmap */
+  .roadmap-bar { background: #edf2f7; border-radius: 6px; height: 30px; position: relative; margin: 8px 0; }
+  .roadmap-fill { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, #E46728, #00A651); border-radius: 6px; display: flex; align-items: center; padding: 0 12px; color: #fff; font-size: 0.8rem; font-weight: 600; }
+
+  /* Nav back */
+  .back-nav { text-align: center; padding: 24px; color: #64748b; }
+  .back-nav a { color: #E46728; text-decoration: none; margin: 0 12px; font-weight: 600; }
+  .back-nav a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>🚀 iHerb → OPLE.COM → Shopify 구현 플로우</h1>
+  <p>iHerb의 검증된 UX 패턴과 글로벌 커머스 역량을 OPLE.COM에 이식하고, 이를 Shopify 커스텀 테마 + 앱으로 구현하는 엔드투엔드 로드맵</p>
+  <div class="breadcrumb">
+    <a href="/">홈</a> › <a href="/spec">IT.OPLE 명세</a> › <a href="/ople-spec">OPLE.COM 분석</a> › <a href="/iherb-comparison">UX 비교</a> › <strong>Shopify 플로우</strong>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- Pipeline overview -->
+<div class="pipeline">
+  <div class="stage src">
+    <span class="emoji">🌿</span>
+    <h3>iHerb (Source)</h3>
+    <p>30+년 검증된 글로벌 건강식품 커머스 UX 패턴 & 기능</p>
+  </div>
+  <div class="arrow">→</div>
+  <div class="stage mid">
+    <span class="emoji">🟠</span>
+    <h3>OPLE.COM (Bridge)</h3>
+    <p>iHerb 패턴을 한국 시장에 맞게 큐레이션/로컬라이즈</p>
+  </div>
+  <div class="arrow">→</div>
+  <div class="stage dst">
+    <span class="emoji">🛍️</span>
+    <h3>Shopify (Target)</h3>
+    <p>커스텀 테마 + 커스텀 앱으로 OPLE.COM을 실제 가동</p>
+  </div>
+</div>
+
+<!-- Section 1: Strategy -->
+<section>
+  <h2><span class="num">1</span> 전략 & 범위</h2>
+  <p>본 문서는 두 가지 우선 기능 영역 — <strong>(A) 상품 카탈로그 & 검색 UX</strong>와 <strong>(B) 다국어/다통화 & 글로벌 배송</strong> — 을 iHerb에서 벤치마킹하여 OPLE.COM에 적용하고, 이를 Shopify 커스텀 테마 및 앱 개발 방식으로 구현하는 상세 플로우를 담고 있습니다.</p>
+
+  <div class="flow-grid">
+    <div class="flow-card green">
+      <h4>🎯 핵심 목표</h4>
+      <p>iHerb 수준의 상품 발견성(findability)과 글로벌 쇼핑 경험을 Shopify 기반 OPLE.COM 스토어프론트에 이식</p>
+    </div>
+    <div class="flow-card">
+      <h4>⚙️ 기술 스택</h4>
+      <p>Shopify Online Store 2.0 (Liquid) + Shopify Functions + 커스텀 임베디드 앱(Node/Remix) + Shopify Markets</p>
+    </div>
+    <div class="flow-card blue">
+      <h4>📊 성공 지표</h4>
+      <p>검색→PDP CVR +15%, 필터 사용률 40%+, 해외 사용자 이탈률 -25%, 다통화 표시 정확도 99.9%</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: Feature Mapping -->
+<section>
+  <h2><span class="num">2</span> 기능 매핑: iHerb → OPLE → Shopify</h2>
+  <p>iHerb에서 벤치마킹한 핵심 UX/기능을 OPLE.COM의 요구사항으로 재정의하고, 각각을 Shopify 위에서 어떻게 구현할지 매핑합니다.</p>
+
+  <h3>A. 상품 카탈로그 & 검색 UX</h3>
+  <table>
+    <thead>
+      <tr><th>iHerb 기능</th><th>OPLE.COM 요구사항</th><th>Shopify 구현 방식</th><th>우선순위</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>퍼사드 검색 + 자동완성 (브랜드/성분/카테고리)</td>
+        <td>한글·영문·성분명 통합 검색, 동의어 처리</td>
+        <td>Shopify Search & Discovery 앱 + 커스텀 앱의 Predictive Search API 래퍼</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>다단계 패싯 필터 (브랜드/성분/형태/가격/평점)</td>
+        <td>건강식품 특화 필터 (성분 함량, 알레르기, 비건 여부)</td>
+        <td>Storefront Filters (product metafields) + Liquid 렌더링 + AJAX 업데이트</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>카테고리 트리 (3-depth 이상)</td>
+        <td>목적별/성분별/브랜드별 3축 내비게이션</td>
+        <td>Collection + Metaobject + 커스텀 Collection Template (Liquid)</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>상품 비교 기능 (최대 4개)</td>
+        <td>성분·용량·가격 사이드바이사이드 비교</td>
+        <td>커스텀 앱: localStorage + 비교 페이지 템플릿</td>
+        <td><span class="tag med">MED</span></td>
+      </tr>
+      <tr>
+        <td>"자주 함께 구매" 추천</td>
+        <td>번들 추천, 연관 성분 크로스셀</td>
+        <td>Shopify Functions (Cart Transform) + 커스텀 앱의 추천 엔진</td>
+        <td><span class="tag med">MED</span></td>
+      </tr>
+      <tr>
+        <td>풍부한 PDP (성분표/영양정보/사용법/리뷰)</td>
+        <td>한글 라벨, 식약처 고시사항, 복용법 가이드</td>
+        <td>Metaobjects로 구조화된 PDP 섹션 + 커스텀 블록</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>B. 다국어/다통화 & 글로벌 배송</h3>
+  <table>
+    <thead>
+      <tr><th>iHerb 기능</th><th>OPLE.COM 요구사항</th><th>Shopify 구현 방식</th><th>우선순위</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>75+ 언어 자동 감지 및 전환</td>
+        <td>한/영/일/중(간체) 4개 언어 우선 지원</td>
+        <td>Shopify Markets + Translate & Adapt 앱 + Geolocation 앱</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>40+ 통화 실시간 환율 표시</td>
+        <td>KRW/USD/JPY/CNY 주력, 실시간 환율</td>
+        <td>Shopify Markets의 Local currencies + Currency formatter (Liquid)</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>국가별 배송료 실시간 계산</td>
+        <td>한국→해외, 해외→한국 양방향 배송 룰</td>
+        <td>Shopify Shipping Zones + Carrier Service API (커스텀 앱)</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>관세/부가세 사전 고지 (DDP)</td>
+        <td>목록통관/일반통관 구분, 관부가세 자동 계산</td>
+        <td>Shopify Markets Duties & Import Taxes + 커스텀 HS코드 매핑 앱</td>
+        <td><span class="tag med">MED</span></td>
+      </tr>
+      <tr>
+        <td>국가별 재고/발송지 표시</td>
+        <td>국내 재고 vs 해외 직배송 구분</td>
+        <td>Shopify Locations + 커스텀 앱의 재고 라우팅 로직</td>
+        <td><span class="tag med">MED</span></td>
+      </tr>
+      <tr>
+        <td>현지 결제수단 (Alipay/PayPal/로컬카드)</td>
+        <td>KR: 카카오페이/네이버페이/무통장, 해외: Stripe/PayPal</td>
+        <td>Shopify Payments + Custom Payment Apps (PortOne 등)</td>
+        <td><span class="tag high">HIGH</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Section 3: Architecture -->
+<section>
+  <h2><span class="num">3</span> 시스템 아키텍처</h2>
+  <p>Shopify를 커머스 백본으로 두고, 커스텀 임베디드 앱이 iHerb 스타일 기능을 확장하는 하이브리드 아키텍처입니다.</p>
+
+  <pre><code>┌─────────────────────────────────────────────────────────────┐
+│                    OPLE.COM Storefront                       │
+│         (Custom Liquid Theme - Online Store 2.0)             │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐     │
+│  │ Search UI    │ │ PDP Template │ │ Collection Grid  │     │
+│  │ (Predictive) │ │ (Metaobjects)│ │ (Facet Filters)  │     │
+│  └──────┬───────┘ └──────┬───────┘ └────────┬─────────┘     │
+│         │                │                    │              │
+└─────────┼────────────────┼────────────────────┼──────────────┘
+          │                │                    │
+          ▼                ▼                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│              OPLE Custom App (Remix + Node)                  │
+│  • Search synonym dictionary  • Product comparison state    │
+│  • HS code → duty calculator  • Recommendation engine       │
+│  • i18n translation sync      • Inventory routing logic     │
+└──────┬─────────────────┬──────────────────┬─────────────────┘
+       │                 │                   │
+       ▼                 ▼                   ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐
+│ Shopify      │ │ Shopify      │ │ Shopify Functions    │
+│ Admin API    │ │ Storefront   │ │ (Cart Transform,     │
+│ (GraphQL)    │ │ API          │ │  Delivery, Discount) │
+└──────────────┘ └──────────────┘ └──────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────┐
+│   Shopify Core: Markets · Payments · Shipping · Catalog     │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+
+  <h3>핵심 컴포넌트</h3>
+  <div class="flow-grid">
+    <div class="flow-card green">
+      <h4>🎨 커스텀 Liquid 테마</h4>
+      <p>Online Store 2.0 섹션/블록 기반. iHerb식 레이아웃을 Dawn 테마에서 fork하여 재구성.</p>
+    </div>
+    <div class="flow-card">
+      <h4>⚡ 임베디드 앱 (Remix)</h4>
+      <p>Shopify App Bridge + Polaris. 검색 동의어, 번들 추천, 관세 계산 등 커스텀 로직 담당.</p>
+    </div>
+    <div class="flow-card blue">
+      <h4>🌍 Shopify Markets</h4>
+      <p>다국가·다통화·다언어 설정의 중앙 허브. 국가별 가격/언어/결제수단 자동 라우팅.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: Implementation Flow A -->
+<section>
+  <h2><span class="num">4</span> 구현 플로우 A: 상품 카탈로그 & 검색 UX</h2>
+
+  <h3>4-1. 데이터 모델 설계 (Metaobjects)</h3>
+  <p>iHerb식 풍부한 상품 정보를 Shopify의 Metaobjects로 정규화합니다.</p>
+  <pre><code># Metaobject: ingredient (성분)
+- name_ko: string
+- name_en: string
+- dosage_unit: single-line
+- allergen_flag: boolean
+
+# Metaobject: product_extension (상품 확장)
+- product: product reference
+- ingredients: list&lt;ingredient&gt;
+- suggested_use_ko: rich-text
+- certifications: list&lt;single-line&gt;  (예: USDA Organic, Non-GMO)
+- kfda_notice: rich-text               (식약처 고시사항)</code></pre>
+
+  <h3>4-2. 검색 UX 구현 단계</h3>
+  <ol class="steps">
+    <li><strong>Predictive Search 확장</strong> — Shopify Search & Discovery 앱에서 동의어/유사어 사전 등록 (예: "오메가3" ↔ "EPA", "DHA", "피쉬오일")</li>
+    <li><strong>커스텀 자동완성 UI</strong> — Liquid 테마에 Alpine.js 기반 드롭다운, 썸네일+가격+평점 미리보기 표시</li>
+    <li><strong>검색 결과 페이지</strong> — <span class="inline-code">/search</span> 템플릿 재작성, 좌측 패싯 필터(브랜드/성분/가격/평점) + 우측 상품 그리드</li>
+    <li><strong>No-result 폴백</strong> — 커스텀 앱이 오타 교정 + 연관 카테고리 추천</li>
+    <li><strong>검색 로그 수집</strong> — 앱에서 쿼리/클릭 저장 → 향후 동의어 사전 자동 확장</li>
+  </ol>
+
+  <h3>4-3. 필터 & 카테고리 구현</h3>
+  <ol class="steps">
+    <li><strong>Product Metafields 정의</strong> — brand, form(정제/캡슐/분말), serving_size, vegan, allergens를 metafield로 정의하여 Storefront Filter에 노출</li>
+    <li><strong>Collection 3-depth 구조</strong> — 대카테고리(비타민) → 중카테고리(비타민D) → 소카테고리(비타민D3 5000IU) 를 Smart Collection 규칙으로 자동 생성</li>
+    <li><strong>동적 Collection 템플릿</strong> — Liquid의 <span class="inline-code">{% paginate %}</span> + <span class="inline-code">collection.filters</span> 활용, AJAX로 필터 토글 시 URL 쿼리 업데이트 & 부분 리렌더</li>
+    <li><strong>상품 비교 기능</strong> — 커스텀 앱이 localStorage에 variant ID 저장, <span class="inline-code">/pages/compare</span> 커스텀 페이지에서 metafield 기반 비교 표 렌더링</li>
+  </ol>
+</section>
+
+<!-- Section 5: Implementation Flow B -->
+<section>
+  <h2><span class="num">5</span> 구현 플로우 B: 다국어/다통화 & 글로벌 배송</h2>
+
+  <h3>5-1. Shopify Markets 설정</h3>
+  <ol class="steps">
+    <li><strong>Market 정의</strong> — Primary(KR), International(US/JP/CN) 4개 Market 생성, 각 Market에 통화·언어·도메인 서브패스 매핑 (<span class="inline-code">ople.com/kr</span>, <span class="inline-code">/en</span>, <span class="inline-code">/jp</span>, <span class="inline-code">/cn</span>)</li>
+    <li><strong>통화 설정</strong> — Local currencies 활성화, 가격 반올림 룰 정의 (JPY는 소수점 없음, KRW는 100원 단위)</li>
+    <li><strong>Geolocation 앱 설치</strong> — 방문자 IP 기반 자동 리다이렉트 + 상단 국가/언어 셀렉터 배너</li>
+  </ol>
+
+  <h3>5-2. 다국어 콘텐츠 플로우</h3>
+  <ol class="steps">
+    <li><strong>Translate & Adapt 앱</strong>으로 테마 텍스트·상품명·설명·metafield 자동 번역 초안 생성</li>
+    <li><strong>커스텀 앱에 번역 동기화 잡</strong> — 관리자가 커스텀 앱 UI에서 번역본 리뷰/수정 → Admin API로 Shopify에 저장</li>
+    <li><strong>URL 구조</strong> — hreflang 자동 삽입, Liquid에서 <span class="inline-code">{{ request.locale.iso_code }}</span> 기반 canonical 분기</li>
+  </ol>
+
+  <h3>5-3. 글로벌 배송 & 관세 구현</h3>
+  <ol class="steps">
+    <li><strong>Shipping Zones 재편</strong> — 국내(CJ대한통운), 동아시아(JP/CN 해외특송), 북미(DHL/UPS) 로 존 분리 및 weight-based rate 설정</li>
+    <li><strong>Carrier Service API</strong> — 커스텀 앱이 외부 운송사 API와 통신하여 실시간 배송료 반환, 체크아웃 화면에 주입</li>
+    <li><strong>HS코드 & 관세 매핑</strong> — 상품별 HS코드 metafield 등록, 앱이 Shopify Markets Duties API로 사전 관세 계산 → PDP 및 장바구니에 DDP 금액 표시</li>
+    <li><strong>결제수단 라우팅</strong> — Shopify Payments(해외 카드) + PortOne(국내 카카오페이/네이버페이/무통장) + PayPal(해외 대체)</li>
+  </ol>
+</section>
+
+<!-- Section 6: Dev Roadmap -->
+<section>
+  <h2><span class="num">6</span> 개발 로드맵 (16주)</h2>
+  <p>Shopify Partners 스토어에서 개발→스테이징→프로덕션으로 승격하는 4-Phase 로드맵입니다.</p>
+
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>기간</th><th>주요 작업</th><th>산출물</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag phase">P1</span> 기반 구축</td>
+        <td>W1-W3</td>
+        <td>Shopify 스토어 개설, Markets 세팅, Dawn 테마 fork, 커스텀 앱 scaffolding(Remix), Metaobjects/metafields 정의</td>
+        <td>개발 스토어, 빈 테마, 앱 OAuth 완성</td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P2</span> 카탈로그/검색</td>
+        <td>W4-W8</td>
+        <td>PDP 템플릿, Collection 그리드+필터, Predictive Search, 상품 비교, 동의어 사전 UI</td>
+        <td>상품 탐색 전 영역 완성</td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P3</span> 글로벌화</td>
+        <td>W9-W12</td>
+        <td>다국어 번역 동기화, 통화 포매터, Carrier Service, 관세 계산, 결제 라우팅</td>
+        <td>4개국 프론트 가동, 실결제 테스트</td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P4</span> 런칭</td>
+        <td>W13-W16</td>
+        <td>성능 최적화(LCP&lt;2.5s), A11y 감사, SEO/hreflang 검증, 베타 유저 테스트, 프로덕션 DNS 전환</td>
+        <td>ople.com 프로덕션 런칭</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>간트 차트 (요약)</h3>
+  <div style="margin: 16px 0;">
+    <div style="font-size:0.85rem; margin-bottom:4px;">P1 기반 구축</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:0%; width:18.75%;">W1-3</div></div>
+    <div style="font-size:0.85rem; margin-bottom:4px; margin-top:8px;">P2 카탈로그/검색</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:18.75%; width:31.25%;">W4-8</div></div>
+    <div style="font-size:0.85rem; margin-bottom:4px; margin-top:8px;">P3 글로벌화</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:50%; width:25%;">W9-12</div></div>
+    <div style="font-size:0.85rem; margin-bottom:4px; margin-top:8px;">P4 런칭</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:75%; width:25%;">W13-16</div></div>
+  </div>
+</section>
+
+<!-- Section 7: Risks & KPIs -->
+<section>
+  <h2><span class="num">7</span> 리스크 & 성공 지표</h2>
+
+  <h3>주요 리스크</h3>
+  <table>
+    <thead><tr><th>리스크</th><th>영향도</th><th>완화 전략</th></tr></thead>
+    <tbody>
+      <tr><td>Shopify Functions 쿼리 한도 초과</td><td><span class="tag high">HIGH</span></td><td>캐싱 레이어 + 미리 계산된 metafield 활용</td></tr>
+      <tr><td>다국어 번역 품질 불일치</td><td><span class="tag med">MED</span></td><td>전문 번역가 리뷰 워크플로, 앱 내 승인 프로세스</td></tr>
+      <tr><td>관세 계산 부정확 → 클레임</td><td><span class="tag high">HIGH</span></td><td>Shopify Duties API + 관세사 2차 검증, 보수적 표기</td></tr>
+      <tr><td>식약처 광고 심의 위반</td><td><span class="tag high">HIGH</span></td><td>상품 설명 템플릿 표준화, 금칙어 자동 검수 앱 빌트인</td></tr>
+      <tr><td>피크 트래픽 시 앱 지연</td><td><span class="tag med">MED</span></td><td>Cloudflare + Redis 캐시, 비동기 잡 큐(BullMQ)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>성공 지표 (North Star)</h3>
+  <div class="flow-grid">
+    <div class="flow-card green">
+      <h4>🔍 발견성 (Findability)</h4>
+      <p>검색→PDP 도달률 <strong>+15%</strong>, 필터 사용률 <strong>40%+</strong>, No-result 비율 <strong>&lt;3%</strong></p>
+    </div>
+    <div class="flow-card">
+      <h4>🌐 글로벌 전환</h4>
+      <p>해외 사용자 이탈률 <strong>-25%</strong>, 다통화 표시 정확도 <strong>99.9%</strong>, 해외 결제 성공률 <strong>95%+</strong></p>
+    </div>
+    <div class="flow-card blue">
+      <h4>⚡ 퍼포먼스</h4>
+      <p>LCP <strong>&lt;2.5s</strong>, CLS <strong>&lt;0.1</strong>, Lighthouse 모바일 <strong>90+</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 8: Next Actions -->
+<section>
+  <h2><span class="num">8</span> 즉시 착수 가능한 다음 액션</h2>
+  <ol class="steps">
+    <li>Shopify Partners 계정 생성 및 Development Store 개설</li>
+    <li>Dawn 테마 fork 후 GitHub 연동 (Online Store → Themes → Connect)</li>
+    <li>Remix 기반 앱 scaffolding: <span class="inline-code">npm init @shopify/app@latest ople-custom-app</span></li>
+    <li>Metaobject 정의서 작성 (ingredient, product_extension) 및 Admin에서 생성</li>
+    <li>Shopify Markets에 KR/US/JP/CN 4개 Market 초안 구성</li>
+    <li>Search & Discovery 앱 설치 후 동의어 사전 파일럿 (비타민/오메가3 카테고리)</li>
+    <li>관세/배송 파트너(관세사, 특송사) 컨택 및 API 스펙 확보</li>
+  </ol>
+</section>
+
+</div><!-- /container -->
+
+<div class="back-nav">
+  <a href="/">🏠 홈</a> |
+  <a href="/spec">📋 IT.OPLE 명세</a> |
+  <a href="/ople-spec">🟠 OPLE.COM 분석</a> |
+  <a href="/iherb-comparison">🔥 UX 비교 & 히트맵</a>
+</div>
+
+</body>
+</html>

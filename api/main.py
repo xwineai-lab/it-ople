@@ -81,6 +81,14 @@ async def iherb_comparison():
         return spec_path.read_text(encoding="utf-8")
     return "<h1>Comparison not found</h1>"
 
+
+@app.get("/iherb-shopify-flow", response_class=HTMLResponse)
+async def iherb_shopify_flow():
+    spec_path = static_dir / "iherb_shopify_flow.html"
+    if spec_path.exists():
+        return spec_path.read_text(encoding="utf-8")
+    return "<h1>Flow not found</h1>"
+
 # ── Dashboard APIs ───────────────────────────────────────
 @app.get("/api/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):

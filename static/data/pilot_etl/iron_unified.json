@@ -1,0 +1,178 @@
+{
+  "ingredient_key": "iron",
+  "name_i18n": {
+    "ko": "철",
+    "en": "Iron"
+  },
+  "dosage": {
+    "rda": "27 mg for adults and from 0",
+    "ai": "27 mg for adults and from 0",
+    "upper_limit": "27 mg for infants, children, and adolescents,",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Iron is a mineral that is naturally present in many foods, added to some food products, and available as a dietary supplement. Iron is an essential component of hemoglobin, an erythrocyte (red blood cell) protein that transfers oxygen from the lungs to the tissues [ 1 ]. As a component of myoglobin, another protein that provides oxygen, iron supports muscle metabolism and healthy connective tissue",
+    "deficiency": "There are several stages of iron depletion and deficiency; iron deficiency anemia occurs when the body’s iron stores are exhausted, and hematocrit and levels of hemoglobin decline. People with iron deficiency anemia may experience gastrointestinal disturbances, weakness, fatigue, and difficulty conc",
+    "health_effects": "This section focuses on the role of iron in IDA in pregnant women, infants, and toddlers as well as in anemia of chronic disease.",
+    "drug_interactions": "Iron supplements may interact with medications, including levodopa and levothyroxine. In addition, proton pump inhibitors can potentially reduce iron absorption. Iron can interact with certain medications, and some medications can have an adverse effect on iron levels. A few examples are provided be",
+    "toxicity": "The risk of iron overload from dietary sources of iron is low among adults who have normal intestinal function, but high doses of iron supplements can cause a range of gastrointestinal effects. With extremely high doses, these effects can be severe, including corrosive necrosis of the intestine, mul"
+  },
+  "allergens": [
+    "cacahuetes",
+    "milk",
+    "noisettes",
+    "nuts",
+    "peanuts",
+    "soybeans"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요",
+      "①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요\r\n①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요",
+      "①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "철맥",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요",
+      "intake_method_ko": "1일 2회, 1회 1캅셀을 물과 함께 섭취",
+      "warnings_ko": "특히 6세 이하는 과량섭취하지 않도록 주의",
+      "raw_materials_ko": "젖산철(철-16%), 헴철(철함량 1%이상), 글리세린, D-소르비톨액, 에틸바닐린, 이산화티타늄, 식용색소황색제5호, 식용색소적색제40호, 식용색소청색제1호, 젤라틴, 식용색소적색제2호, 식용색소황색제4호, 갈대뿌리추출분말, 엽산, 비타민B1염산염, 비타민B6염산염, 비타민B2, 밀납, 대두레시틴, 굴패각칼슘(칼슘함량 38%이상), 비타민C, 쌀발효추출물분말, 다슬기추출물, 포도씨유, 미강유",
+      "mfds_report_no": "20040015083103"
+    },
+    {
+      "name_ko": "맛있는철분",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요\r\n①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요",
+      "intake_method_ko": "1일 1회 1회 1정을 씹어서 섭취",
+      "warnings_ko": "①알레르기 체질인 경우 성분을 확인 하신 후 섭취하시기 바랍니다.\n②제품 개봉 또는 섭취 시 포장재에 의해 상처를 입을 수 있으니 주의하시기 바랍니다.\n③섭취량, 섭취방법을 준수하시기 바랍니다.특히 6세 이하는 과량섭취하지 않도록 주의",
+      "raw_materials_ko": "헴철(Fe 1%이상), 푸마르산제일철(Fe 33%이상), 정제포도당, 딸기맛분말(딸기엑기스분말(고형분30%)45%, 백설탕 40%, 덱스트린 10%, 구연산 4.4%, 스테이오사이드 0.5%, 잔탄껌 0.1%), 프락토올리고당, 자일리톨, 솔비톨, 비타민C, 딸기향분말(딸기향키베이스 4.5%, 덱스트린 86%, 유당 6.8%, 에틸말톨 2.5%, 펙틴 0.2%), 이산화규소, 비피도박테리움롱검, 산화마그네슘, 밀크향분말, 스테아린산마그네슘, 효",
+      "mfds_report_no": "20040015107284"
+    },
+    {
+      "name_ko": "맛있게씹어먹는철분",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요",
+      "intake_method_ko": "1일 1회 1회 1정을 씹어서 섭취",
+      "warnings_ko": "①알레르기 체질인 경우 성분을 확인 하신 후 섭취하시기 바랍니다.\n②제품 개봉 또는 섭취 시 포장재에 의해 상처를 입을 수 있으니 주의하시기 바랍니다.\n③섭취량, 섭취방법을 준수하시기 바랍니다.특히 6세 이하는 과량섭취하지 않도록 주의",
+      "raw_materials_ko": "피로인산제이철 (Fe 8%이상), 체리농축분말(체리농축액59%,덱스트린41%), 비타민C, 스테아린산마그네슘, 체리향분말(체리향키베이스6%,에틸말톨0.3%,벤츠알에하이드0.6%,저감미당60%,정제수33.1%), 아스파탐, 비타민B6염산염, 비타민B12, 엽산, 정제포도당, 혼합유당, 자일리톨",
+      "mfds_report_no": "20040015107288"
+    },
+    {
+      "name_ko": "웰빙철분",
+      "company_ko": "(주)유유헬스케어",
+      "form": "캡슐",
+      "functionality_claim_ko": "①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요\r\n①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요",
+      "intake_method_ko": "1일 1회 1회 1캅셀을 씹어서 섭취",
+      "warnings_ko": "임산부, 수유부, 환자, 영유아, 알레르기체질은 전문가와 상담 후 섭취하십시오.\n섭취 시 캅셀이 목에 걸릴 수 있으니 유의하시기 바랍니다.\n특히 6세 이하는 과량섭취하지 않도록 주의",
+      "raw_materials_ko": "젖산철(철분16%이상), 헴철(철분1%이상), 젤라틴, 글리세린, 이산화티타늄, 소르비톨액, 식용색소적색40호, 식용색소청색1호, 식용색소황색5호, 에틸바닐린, 대두유, 포도씨유, 밀납, 피로인산제이철(철분 8%이상), 대두레시틴, D-알파 토코페롤",
+      "mfds_report_no": "20040015107294"
+    },
+    {
+      "name_ko": "그린웨이브철분엽산",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[철]①체내 산소운반과 혈액생성에 필요②에너지 생성에 필요\r\n[엽산]①세포와 혈액생성에 필요②태아 신경관의 정상 발달에 필요③혈액의 호모시스테인 수준을 정상으로 유지하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "[철]특히 6세 이하는 과량섭취하지 않도록 주의\r\n① 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n② PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "피로인산제이철혼합제제(피로인산제이철 26.6%, 덱스트린 59.7%, 정제소금 7.1%, 글리세린지방산에스테르 5.3%, 대두레시틴 1.3%), 엽산, 정제포도당, 폴리덱스트로스, 자일리톨, D-소르비톨, 포도농축액분말(포도농축액 90%, 덱스트린 10%), 무수구연산, 블루베리향분말(블루베리향키베이스Ⅰ 10%, 블루베리향키베이스Ⅱ 0.2%, 아라비아검 4.95%, 덱스트린 84.85%), 이산화규소, 비타민C, 스테아린산마그네슘, 아스파탐, ",
+      "mfds_report_no": "20040015107389"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "8410076610737",
+      "name": "Nature Valley Protein Cacahuètes & Chocolat",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), chicory root extract, isolated soy protein, chocolate pieces (8%) (sugar, cocoa paste, emulsifier: soy lecithin), sugar, vegetable fat: palm, whey (milk), sunflower oil, fructos",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/661/0737/front_fr.68.400.jpg"
+    },
+    {
+      "barcode": "5060088700112",
+      "name": "Protein Cocoa Hazelnut Bars",
+      "brand": "Nakd",
+      "ingredients_text": "Dates (38%), Peanuts (35%), Chicory fibre (10%), Peanut flour (8%), Hazelnuts (5%), Fat-reduced cocoa powder (3%), natural flavouring.",
+      "allergens": [
+        "nuts",
+        "peanuts",
+        "cacahuetes",
+        "noisettes"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/0112/front_en.30.400.jpg"
+    },
+    {
+      "barcode": "5060088706022",
+      "name": "NAKD Cacahuètes - 140g (4x1p)",
+      "brand": "Nakd.",
+      "ingredients_text": "dates 53%, peanuts 46%, sea salt, a hint of natural flavourings",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/6022/front_fr.92.400.jpg"
+    },
+    {
+      "barcode": "8000500435670",
+      "name": "PROTEIN Arachidi e Cioccolato Fondente",
+      "brand": "EAT NATURAL",
+      "ingredients_text": "CACAHUETES 51%, flocons de SOja, sirop de riz, chocolat noir 12% (pâte de cacao, sucre de canne, beurre de cacao), miel, riz croustillant, cacao maigre en poudre, noix de coco râpée déshydratée 0,5%, ",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/800/050/043/5670/front_fr.63.400.jpg"
+    },
+    {
+      "barcode": "8410076901026",
+      "name": "Barre céréales Protéines peanut& chocolat🍫",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), oligofructose, soy protein isolate, chocolate chunks (8%) (sugar, cocoa mass, cocoa butter, emulsifier (soy lecithin)), vegetable oils and fats (palm, rapeseed, sunflower in var",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/690/1026/front_es.54.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:34:50Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://world.openfoodfacts.org/api/v2/search?search_terms=iron&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:34:50Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:34:51Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:34:49Z",
+    "pilot_version": "1.0"
+  }
+}

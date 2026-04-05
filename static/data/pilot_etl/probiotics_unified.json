@@ -1,0 +1,178 @@
+{
+  "ingredient_key": "probiotics",
+  "name_i18n": {
+    "ko": "프로바이오틱스",
+    "en": "Probiotics"
+  },
+  "dosage": {
+    "rda": null,
+    "ai": null,
+    "upper_limit": "200 g/day of fermented milk that contained 10",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/Probiotics-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "The International Scientific Association for Probiotics and Prebiotics defines probiotics as “live microorganisms that, when administered in adequate amounts, confer a health benefit on the host” [ 1 ]. These microorganisms, which consist mainly of bacteria but also include yeasts, are present in some fermented foods (e.g., yogurt), are added to certain food products, and are available as dietary ",
+    "deficiency": "",
+    "health_effects": "The potential health benefits of probiotics are the focus of a great deal of scientific research. This section focuses on eight health conditions: atopic dermatitis, pediatric acute infectious diarrhea, antibiotic-associated diarrhea (AAD), necrotizing enterocolitis (NEC), inflammatory bowel disease",
+    "drug_interactions": "",
+    "toxicity": "Probiotics are unlikely to cause harm in healthy people, and side effects are usually minor. However, the use of probiotics has been linked to a few cases of bacteremia, fungemia, and infections that have resulted in severe illness; most of these cases involved individuals who were severely ill or i"
+  },
+  "allergens": [
+    "cacahuetes",
+    "milk",
+    "noisettes",
+    "nuts",
+    "peanuts",
+    "soybeans"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "[프로바이오틱스 제품]①유익한 유산균 증식②유해균 억제 또는 배변활동 원활",
+      "[프로바이오틱스 제품①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 ③장건강에 도움을 줄 수 있음",
+      "[프로바이오틱스 제품]①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 [프로바이오틱스 제품]①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "프로바이오틱스 지엔엘",
+      "company_ko": "(주)비피도",
+      "form": "분말",
+      "functionality_claim_ko": "[프로바이오틱스 제품]①유익한 유산균 증식②유해균 억제 또는 배변활동 원활",
+      "intake_method_ko": "1일 1회, 1회 1g을 식후에 물이나 음용수와 함께 섭취",
+      "warnings_ko": "1. 살아있는 유산균이므로 37℃가 넘는 뜨거운 물은 사용에 주의\r\n2. 특이체질이거나 알레르기 체질 등이 있는 분은 섭취 금지\r\n3. 포장 끝이 날카로워 베일 수 있으니 주의",
+      "raw_materials_ko": "Lactobacillus acidophilus(고시형), Lacticaseibacillus casei(고시형), Bifidobacterium bifidum(고시형), Bifidobacterium animalis ssp. lactis(고시형)",
+      "mfds_report_no": "20040015070116"
+    },
+    {
+      "name_ko": "프로바이오틱스우먼",
+      "company_ko": "(주)비피도",
+      "form": "분말",
+      "functionality_claim_ko": "[프로바이오틱스 제품①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 ③장건강에 도움을 줄 수 있음",
+      "intake_method_ko": "1일 1회, 1회 1포를 식후에 섭취",
+      "warnings_ko": "1. 살아있는 유산균이므로 37도가 넘는 뜨거운 물은 사용에 주의한다.\n2. 특이체질이거나 알레르기 체질 등이 있는 분은 섭취를 금한다.\n3. 포장 부분이(끝부분) 날카로워 베일 수 있으니 주의한다.\n(가) 질환이 있거나 의약품 복용 시 전문가와 상담할 것\n(나) 알레르기 체질 등은 개인에 따라 과민반응을 나타낼 수 있음\n(다) 어린이가 함부로 섭취하지 않도록 일일섭취량 방법을 지도할 것\n(라) 이상사례 발생 시 섭취를 중단하고 전문가와 상담할",
+      "raw_materials_ko": "Bifidobacteriumbifidum(고시형), Bifidobacteriumlongum(고시형), Bifidobacterium animalis ssp. lactis(고시형), Lactobacillus acidophilus(고시형), Lacticaseibacillus casei(고시형), Limosilactobacillus fermentum(고시형), Lactobacillus helveticus(고시형), Lactococcus lactis(고",
+      "mfds_report_no": "20040015070125"
+    },
+    {
+      "name_ko": "닥터지 프로바이오틱스 유산균 프리미엄",
+      "company_ko": "(주)비피도",
+      "form": "분말",
+      "functionality_claim_ko": "[프로바이오틱스 제품]①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 [프로바이오틱스 제품]①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음",
+      "intake_method_ko": "1일 1회, 1회 1포를 식후에 섭취",
+      "warnings_ko": "(가) 질환이 있거나 의약품 복용 시 전문가와 상담할 것\n (나) 알레르기 체질 등은 개인에 따라 과민반응을 나타낼 수 있음\n (다) 어린이가 함부로 섭취하지 않도록 일일섭취량 방법을 지도할 것\n (라) 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것\n1. 살아있는 유산균이므로 37가 넘는 뜨거운 물은 사용에 주의한다.\n2. 특이체질이거나 알레르기 체질 등이 있는 분은 섭취를 금한다.\n3. 포장 부분이(끝부분) 날카로워 베일 수 있으니 주",
+      "raw_materials_ko": "Bifidobacteriumbifidum(고시형), Bifidobacteriumlongum(고시형), Lactobacillusacidophilus(고시형), Enterococcusfaecium(고시형), Lactobacillus helveticus(고시형), 올리고당가공품, 당류가공품, 스테아린산마그네슘, 프락토올리고당(고시형), 비타민 C, 올리고당가공품, 치커리뿌리추출물분말, 아라비아검(고시형), 요구르트향분말",
+      "mfds_report_no": "20040015070161"
+    },
+    {
+      "name_ko": "얼라이브10프로바이오틱스300",
+      "company_ko": "(주)유유헬스케어",
+      "form": "분말",
+      "functionality_claim_ko": "[프로바이오틱스 제품]①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 \r\n[비타민B1]①탄수화물과 에너지 대사에 필요\r\n[비타민B2]①체내 에너지 생성에 필요\r\n[비타민B6]①단백질 및 아미노산 이용에 필요②혈액의 호모시스테인 수준을 정상으로 유지하는데 필요\r\n[판토텐산]①지방, 탄수화물, 단백질 대사와 에너지 생성에 필요",
+      "intake_method_ko": "1일 1회, 1회 1포를 섭취하십시오.",
+      "warnings_ko": "1. 특이체질, 알레르기 체질인 경우에는 간혹 개인에 따라 과민반응을 나타낼 수 있으므로 원료를 확인한 후 섭취하십시오. \r\n2. 유통기한이 경과된 제품은 섭취하지 마십시오.",
+      "raw_materials_ko": "유산균 혼합분말(가루, 과립)(10종혼합유산균[100,000,000,000cfu/g이상(Lactobacillus acidophilus 1.2%, Lactobacillus casei 1.2%, Lactobacillus plantarum 1.2%, Lactobacillus rhamnosus 1.2%, Lactobacillus reuteri 1.2%, Streptococcus the, 비타민 B1염산염, 비타민 B2, 비타민 B6 염산염, 판토텐산칼",
+      "mfds_report_no": "20040015107600"
+    },
+    {
+      "name_ko": "프로바이오틱스 생(生)유산균 세븐원",
+      "company_ko": "(주)비피도",
+      "form": "분말",
+      "functionality_claim_ko": "[프로바이오틱스 제품]①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 ③장건강에 도움을 줄 수 있음\n[아연]①정상적인 면역기능에 필요②정상적인 세포분열에 필요",
+      "intake_method_ko": "1일 1회, 1회 1포를 식후에 섭취",
+      "warnings_ko": "1. 살아있는 유산균이므로 37가 넘는 뜨거운 물은 사용에 주의한다.\n2. 특이체질이거나 알레르기 체질 등이 있는 분은 섭취를 금한다.\n3. 포장 부분이(끝부분) 날카로워 베일 수 있으니 주의한다.\n가) 질환이 있거나 의약품 복용 시 전문가와 상담할 것\n(나) 알레르기 체질 등은 개인에 따라 과민반응을 나타낼 수 있음\n(다) 어린이가 함부로 섭취하지 않도록 일일섭취량 방법을 지도할 것\n(라) 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것",
+      "raw_materials_ko": "산화아연, Bifidobacteriumbifidum(고시형), Bifidobacteriumlongum(고시형), Lactobacillusacidophilus(고시형), Bifidobacterium animalis ssp. lactis(고시형), Lacticaseibacillus casei(고시형), Limosilactobacillus fermentum(고시형), Lactobacillus helveticus(고시형), Enterococcus fa",
+      "mfds_report_no": "20040015070212"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "8410076610737",
+      "name": "Nature Valley Protein Cacahuètes & Chocolat",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), chicory root extract, isolated soy protein, chocolate pieces (8%) (sugar, cocoa paste, emulsifier: soy lecithin), sugar, vegetable fat: palm, whey (milk), sunflower oil, fructos",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/661/0737/front_fr.68.400.jpg"
+    },
+    {
+      "barcode": "5060088700112",
+      "name": "Protein Cocoa Hazelnut Bars",
+      "brand": "Nakd",
+      "ingredients_text": "Dates (38%), Peanuts (35%), Chicory fibre (10%), Peanut flour (8%), Hazelnuts (5%), Fat-reduced cocoa powder (3%), natural flavouring.",
+      "allergens": [
+        "nuts",
+        "peanuts",
+        "cacahuetes",
+        "noisettes"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/0112/front_en.30.400.jpg"
+    },
+    {
+      "barcode": "5060088706022",
+      "name": "NAKD Cacahuètes - 140g (4x1p)",
+      "brand": "Nakd.",
+      "ingredients_text": "dates 53%, peanuts 46%, sea salt, a hint of natural flavourings",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/6022/front_fr.92.400.jpg"
+    },
+    {
+      "barcode": "8000500435670",
+      "name": "PROTEIN Arachidi e Cioccolato Fondente",
+      "brand": "EAT NATURAL",
+      "ingredients_text": "CACAHUETES 51%, flocons de SOja, sirop de riz, chocolat noir 12% (pâte de cacao, sucre de canne, beurre de cacao), miel, riz croustillant, cacao maigre en poudre, noix de coco râpée déshydratée 0,5%, ",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/800/050/043/5670/front_fr.63.400.jpg"
+    },
+    {
+      "barcode": "8410076901026",
+      "name": "Barre céréales Protéines peanut& chocolat🍫",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), oligofructose, soy protein isolate, chocolate chunks (8%) (sugar, cocoa mass, cocoa butter, emulsifier (soy lecithin)), vegetable oils and fats (palm, rapeseed, sunflower in var",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/690/1026/front_es.54.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Probiotics-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:34:59Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://world.openfoodfacts.org/api/v2/search?search_terms=probiotics&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:34:59Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:35:01Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:34:58Z",
+    "pilot_version": "1.0"
+  }
+}

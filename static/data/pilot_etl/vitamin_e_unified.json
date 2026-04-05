@@ -1,0 +1,178 @@
+{
+  "ingredient_key": "vitamin_e",
+  "name_i18n": {
+    "ko": "비타민E",
+    "en": "Vitamin E"
+  },
+  "dosage": {
+    "rda": null,
+    "ai": "400 IU [ 12 ]",
+    "upper_limit": "4 IU (15 mg x 1",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Vitamin E is found naturally in some foods, added to others, and available as a dietary supplement. Vitamin E is the collective name for a group of fat-soluble compounds with distinctive antioxidant activities [ 1 ]. Naturally occurring vitamin E exists in eight chemical forms (alpha-, beta-, gamma-, and delta-tocopherol and alpha-, beta-, gamma-, and delta-tocotrienol) that have varying levels of",
+    "deficiency": "Frank vitamin E deficiency is rare and overt deficiency symptoms have not been found in healthy people who obtain little vitamin E from their diets [ 6 ]. Premature babies of very low birth weight (<1,500 grams) might be deficient in vitamin E. Vitamin E supplementation in these infants might reduce",
+    "health_effects": "Many claims have been made about vitamin E's potential to promote health and prevent and treat disease. The mechanisms by which vitamin E might provide this protection include its function as an antioxidant and its roles in anti-inflammatory processes, inhibition of platelet aggregation, and immune ",
+    "drug_interactions": "Vitamin E supplements have the potential to interact with several types of medications. A few examples are provided below. People taking these and other medications on a regular basis should discuss their vitamin E intakes with their health care providers.",
+    "toxicity": "Research has not found any adverse effects from consuming vitamin E in food [ 6 ]. However, high doses of alpha-tocopherol supplements can cause hemorrhage and interrupt blood coagulation in animals, and in vitro data suggest that high doses inhibit platelet aggregation. Two clinical trials have fou"
+  },
+  "allergens": [
+    "cacahuetes",
+    "milk",
+    "noisettes",
+    "nuts",
+    "peanuts",
+    "soybeans"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "①유해산소로부터 세포를 보호하는데 필요",
+      "①정상적인 면역기능에 필요②정상적인 세포분열에 필요\n\n①항산화에 도움을 줄 수 있음\n\n①유해산소로부터 세포를 보호하는데 필요",
+      "항산화 작용을 하여 유해산소로부터 세포를 보호하는데 필요\n\n①유해산소로부터 세포를 보호하는데 필요"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "웰러스 비타민E (전량수출용)",
+      "company_ko": "(주)팜투팜2공장",
+      "form": "캡슐",
+      "functionality_claim_ko": "①유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1캡슐을 물과 함께 섭취하십시오.",
+      "warnings_ko": "1. 특이체질 및 과다 섭취 시 알레르기 등 발생우려가 있으니 성분 및 섭취량을 확인하시고 섭취하시기 바랍니다.\n2. 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의하십시오.\n3. 캡슐이 기도에 걸릴 수 있으니 섭취 시 유의하시기 바랍니다.\n4. 이상사례 발생 시 섭취를 중단하고 전문가와 상담하십시오.",
+      "raw_materials_ko": "D-알파-토코페롤(고시형), 젤라틴, 글리세린, D-소르비톨액, 에틸바닐린, 콩기름(대두유)",
+      "mfds_report_no": "2018000391526"
+    },
+    {
+      "name_ko": "프로폴리스 아연 비타민E 면역 플러스",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "①정상적인 면역기능에 필요②정상적인 세포분열에 필요\n\n①항산화에 도움을 줄 수 있음\n\n①유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1캡슐을 충분한 물과 함께 섭취.",
+      "warnings_ko": "프로폴리스에 알레르기를 나타내는 사람은 섭취에 주의",
+      "raw_materials_ko": "d-α-토코페롤, 산화아연, 프로폴리스추출물분말, 오징어먹물색소, 글리세린, 젤라틴, 스피루리나, 녹차추출물분말(고시형), 표고버섯추출물분말, 해조칼슘, 아미노산혼합분말, 과일채소혼합분말, 레시틴, 비타민 C, 비타민 B6 염산염, 비타민 B2, 비타민 B1염산염, 밀납, 콩기름(대두유), 홍삼농축액분말",
+      "mfds_report_no": "200400150831378"
+    },
+    {
+      "name_ko": "항산화건강 비타민E & 셀렌",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "항산화 작용을 하여 유해산소로부터 세포를 보호하는데 필요\n\n①유해산소로부터 세포를 보호하는데 필요",
+      "intake_method_ko": "1일 1회, 1회 1캡슐 물과 함께 섭취.",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다.",
+      "raw_materials_ko": "혼합제제, d-α-토코페롤, 젤라틴, 글리세린, D-소비톨액, 이산화티타늄, 에틸바닐린, 식용색소적색제40호, 식용색소적색제3호, 식용색소적색제2호, 식용색소황색제5호, 식용색소황색제4호, 식용색소청색제1호, 과일채소혼합분말, 밀납, 레시틴, 콩기름(대두유), 카로틴, 해조칼슘, 기타가공품, 비타민B1염산염, 비타민B6염산염, 비타민C, 비타민D3혼합제제",
+      "mfds_report_no": "200400150831709"
+    },
+    {
+      "name_ko": "마이코드 프로폴리스 아연 비타민E 면역 플러스",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "[프로폴리스추출물]\n항산화에 도움을 줄 수 있음\n[비타민E]\n항산화 작용을 하여 유해산소로부터 세포를 보호하는데 필요\n[아연]\n정상적인 면역기능에 필요\n정상적인 세포분열에 필요",
+      "intake_method_ko": "1일 1회, 1회 1캡슐을 충분한 물과 함께 섭취",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다.\n[프로폴리스추출물]\n프로폴리스에 알레르기를 나타내는 사람은 섭취에 주의\n이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것",
+      "raw_materials_ko": "프로폴리스추출물(고시형), 산화아연, d-α-토코페롤, 젤라틴, 글리세린, 오징어먹물색소, 해조칼슘, 아미노산혼합분말, 비타민B1염산염, 비타민B2, 비타민B6염산염, 비타민C, 표고버섯추출물분말, 홍삼농축액(고시형), 녹차추출물분말(고시형), 스피루리나(고시형), 콩기름(대두유), 밀납, 레시틴, 과일채소혼합분말",
+      "mfds_report_no": "200400150832052"
+    },
+    {
+      "name_ko": "프리미엄 비타민E 400IU(전량수출용)",
+      "company_ko": "(주)바이오 로제트",
+      "form": "캡슐",
+      "functionality_claim_ko": "[비타민E] 항산화 작용을 하여 유해산소로부터 세포를 보호하는데 필요\n\n[비타민B6] ①단백질 및 아미노산 이용에 필요②혈액의 호모시스테인 수준을 정상으로 유지하는데 필요\n\n[비타민B12] 정상적인 엽산 대사에 필요",
+      "intake_method_ko": "1일 1회, 1회 1캡슐을 충분한 물과 함께 섭취하십시오.",
+      "warnings_ko": "(1) 이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것",
+      "raw_materials_ko": "D-알파-토코페롤(고시형), 비타민 B6(고시형), 비타민B12혼합제제분말, 젤라틴, 정제수, 글리세린, 카카오색소, 콩기름(대두유), 레시틴, 밀납",
+      "mfds_report_no": "20040017015442"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "8410076610737",
+      "name": "Nature Valley Protein Cacahuètes & Chocolat",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), chicory root extract, isolated soy protein, chocolate pieces (8%) (sugar, cocoa paste, emulsifier: soy lecithin), sugar, vegetable fat: palm, whey (milk), sunflower oil, fructos",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/661/0737/front_fr.68.400.jpg"
+    },
+    {
+      "barcode": "5060088700112",
+      "name": "Protein Cocoa Hazelnut Bars",
+      "brand": "Nakd",
+      "ingredients_text": "Dates (38%), Peanuts (35%), Chicory fibre (10%), Peanut flour (8%), Hazelnuts (5%), Fat-reduced cocoa powder (3%), natural flavouring.",
+      "allergens": [
+        "nuts",
+        "peanuts",
+        "cacahuetes",
+        "noisettes"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/0112/front_en.30.400.jpg"
+    },
+    {
+      "barcode": "5060088706022",
+      "name": "NAKD Cacahuètes - 140g (4x1p)",
+      "brand": "Nakd.",
+      "ingredients_text": "dates 53%, peanuts 46%, sea salt, a hint of natural flavourings",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/6022/front_fr.92.400.jpg"
+    },
+    {
+      "barcode": "8000500435670",
+      "name": "PROTEIN Arachidi e Cioccolato Fondente",
+      "brand": "EAT NATURAL",
+      "ingredients_text": "CACAHUETES 51%, flocons de SOja, sirop de riz, chocolat noir 12% (pâte de cacao, sucre de canne, beurre de cacao), miel, riz croustillant, cacao maigre en poudre, noix de coco râpée déshydratée 0,5%, ",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/800/050/043/5670/front_fr.63.400.jpg"
+    },
+    {
+      "barcode": "8410076901026",
+      "name": "Barre céréales Protéines peanut& chocolat🍫",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), oligofructose, soy protein isolate, chocolate chunks (8%) (sugar, cocoa mass, cocoa butter, emulsifier (soy lecithin)), vegetable oils and fats (palm, rapeseed, sunflower in var",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/690/1026/front_es.54.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:34:47Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://world.openfoodfacts.org/api/v2/search?search_terms=vitamin+e&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:34:47Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:34:48Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:34:45Z",
+    "pilot_version": "1.0"
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "ingredient_key": "vitamin_b12",
+  "name_i18n": {
+    "ko": "비타민B12",
+    "en": "Vitamin B12"
+  },
+  "dosage": {
+    "rda": "8 mcg for adults and from 0",
+    "ai": "8 mcg for adults and from 0",
+    "upper_limit": "8 mcg for infants, children, and adolescents,",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Vitamin B12 is a water-soluble vitamin that is naturally present in some foods, added to others, and available as a dietary supplement and a prescription medication. Because vitamin B12 contains the mineral cobalt, compounds with vitamin B12 activity are collectively called cobalamins [ 1 ]. Methylcobalamin and 5-deoxyadenosylcobalamin are the metabolically active forms of vitamin B12. However, tw",
+    "deficiency": "Even people who have sufficient intakes of vitamin B12 may have vitamin B12 deficiency, due to factors such as difficulty absorbing the vitamin from food, lack of intrinsic factor due to pernicious anemia, or the prolonged use of certain medications. Vitamin B12 deficiency can cause a number of symp",
+    "health_effects": "This section focuses on areas of health in which vitamin B12 might be involved: cancer, cardiovascular disease (CVD), dementia and cognitive function, and energy and endurance.",
+    "drug_interactions": "Certain forms of vitamin B12 are available as prescription medications. These are generally used to treat vitamin B12 deficiency. Vitamin B12, in the forms of cyanocobalamin and hydroxycobalamin, can be administered parenterally as a prescription medication, usually by intramuscular injection [ 2 ].",
+    "toxicity": "Vitamin B12 does not have a tolerable upper intake level because it is generally considered to be safe, even at high doses. The FNB did not establish a UL for vitamin B12 because of its low potential for toxicity [ 1 ]. Even at large doses, vitamin B12 is generally considered to be safe because the "
+  },
+  "allergens": [
+    "milk",
+    "peanuts",
+    "soybeans"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "[비타민B1]①탄수화물과 에너지 대사에 필요\r\n[비타민B2]①체내 에너지 생성에 필요\r\n[비타민B6]①단백질 및 아미노산 이용에 필요②혈액의 호모시스테인 수준을 정상으로 유지하는데 필요\r\n[비타민B12]①정상적인 엽산 대사에 필요\r\n[나이아신]①체내 에너지 생성에 필요\r\n[판토텐산]①지방, 탄수화물, 단백질 대사와 에너지 생성에 필요",
+      "①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 \n\n①세포와 혈액생성에 필요②태아 신경관의 정상 발달에 필요③혈액의 호모시스테인 수준을 정상으로 유지하는데 필요\n\n①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌\n\n①정상적인 엽산 대사에 필요",
+      "[비타민B12]\n정상적인 엽산 대사에 필요"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "실리토닉 위드 비타민B12 (전량수출용)",
+      "company_ko": "고려인삼과학주식회사",
+      "form": "캡슐",
+      "functionality_claim_ko": "[비타민B1]①탄수화물과 에너지 대사에 필요\r\n[비타민B2]①체내 에너지 생성에 필요\r\n[비타민B6]①단백질 및 아미노산 이용에 필요②혈액의 호모시스테인 수준을 정상으로 유지하는데 필요\r\n[비타민B12]①정상적인 엽산 대사에 필요\r\n[나이아신]①체내 에너지 생성에 필요\r\n[판토텐산]①지방, 탄수화물, 단백질 대사와 에너지 생성에 필요",
+      "intake_method_ko": "1일 2회, 1회1캡슐(870㎎/캡슐)을 물과 함께 섭취하십시오",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인하신 후 섭취하여 주시기 바랍니다.\r\n제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의하시고 이상반응이 있을 시 제품에 기재된 고객상담실로 문의하시기 바랍니다.",
+      "raw_materials_ko": "판토텐산칼슘, 비타민B1염산염, 비타민B2, 비타민B6염산염, 비타민B12혼합제제[비타민B12로서 0.1%: 비타민B12 0.1%, 말토덱스트린 95.9%, 구연산삼나트륨 3%, 구연산 1%, 계100%], 니코틴산아미드, 글리세린, 소르비톨액, 이산화티타늄, 식용색소 적색3호, 식용색소 청색1호, 젤라틴, 에틸바닐린, 식용색소 황색4호, 식용색소 적색40호, 대두유, 밀크씨스&#47359;출분말, 정제팜유, 밀납, 레시틴",
+      "mfds_report_no": "20040015039132"
+    },
+    {
+      "name_ko": "천연스토리 엽산+비타민B12+비타민D+프로바이오틱스",
+      "company_ko": "주)팜크로스",
+      "form": "분말",
+      "functionality_claim_ko": "①유산균 증식 및 유해균 억제에 도움을 줄 수 있음 ②배변활동 원활에 도움을 줄 수 있음 \n\n①세포와 혈액생성에 필요②태아 신경관의 정상 발달에 필요③혈액의 호모시스테인 수준을 정상으로 유지하는데 필요\n\n①칼슘과 인이 흡수되고 이용되는데 필요②뼈의 형성과 유지에 필요③골다공증발생 위험 감소에 도움을 줌\n\n①정상적인 엽산 대사에 필요",
+      "intake_method_ko": "1일 1회, 1회 1포를 직접 또는 물과 함께 섭취하십시오.",
+      "warnings_ko": "특정질환이 있거나 특이체질, 알레르기 체질이신 분은 섭취 전 원료명을 확인하시고 의사, 약사 등 전문가와 상담 후 섭취여부를 결정하십시오. 섭취자의 신체 상태에 따라 특이반응이 나타날 경우 섭취를 중단하십시오. 어린이의 경우 보호자의 보호 아래 섭취시켜 주십시오. 제품 개봉 시 포장재에 의해 상처를 입을 수 있으니 주의하십시오",
+      "raw_materials_ko": "유산균혼합분말, 유산균혼합분말, 비타민 D 혼합, Bifidobacterium longum, Lactobacillus rhamnosus, Lactobacillus helveticus, 비타민B12혼합제제분말, Lactobacillus plantarum, 메틸테트라히드로엽산글루코사민, 과일채소혼합분말, 프락토올리고당, 구연산, 건조효모(아연함유), 포도당, 자일리톨, 블루베리농축분말, 치커리뿌리추출물분말, Lactobacillus plantaru",
+      "mfds_report_no": "20040015110714"
+    },
+    {
+      "name_ko": "NUTRIKIT 비타민B12 240",
+      "company_ko": "주식회사한미양행",
+      "form": "정",
+      "functionality_claim_ko": "[비타민B12]\n정상적인 엽산 대사에 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 충분한 물과 함께 섭취",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다.\n[비타민B12]\n이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것",
+      "raw_materials_ko": "비타민B12, 결정셀룰로스, 이산화규소, 스테아린산마그네슘, 히드록시프로필메틸셀룰로스",
+      "mfds_report_no": "200400150832030"
+    },
+    {
+      "name_ko": "메가 비타민B12 프리미엄 HMYH",
+      "company_ko": "주식회사한미양행",
+      "form": "정",
+      "functionality_claim_ko": "[비타민B12]\n정상적인 엽산 대사에 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 충분한 물과 함께 섭취",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다.\n[비타민B12]\n이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것",
+      "raw_materials_ko": "비타민B12, 히드록시프로필메틸셀룰로스, 스테아린산마그네슘, 카복시메틸셀룰로스칼슘, 이산화규소, 결정셀룰로스, 포도당, 해조칼슘, 비타민C",
+      "mfds_report_no": "200400150832244"
+    },
+    {
+      "name_ko": "비타민B12 맥스",
+      "company_ko": "주식회사한미양행",
+      "form": "정",
+      "functionality_claim_ko": "[비타민B12]\n정상적인 엽산 대사에 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 충분한 물과 함께 섭취",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다.\n[비타민B12]\n이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것",
+      "raw_materials_ko": "비타민B12, 결정셀룰로스, 포도당, 해조칼슘, 이산화규소, 카복시메틸셀룰로스칼슘, 스테아린산마그네슘, 히드록시프로필메틸셀룰로스, 비타민C",
+      "mfds_report_no": "200400150832283"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "8410076610737",
+      "name": "Nature Valley Protein Cacahuètes & Chocolat",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), chicory root extract, isolated soy protein, chocolate pieces (8%) (sugar, cocoa paste, emulsifier: soy lecithin), sugar, vegetable fat: palm, whey (milk), sunflower oil, fructos",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/661/0737/front_fr.68.400.jpg"
+    },
+    {
+      "barcode": "5060088706022",
+      "name": "NAKD Cacahuètes - 140g (4x1p)",
+      "brand": "Nakd.",
+      "ingredients_text": "dates 53%, peanuts 46%, sea salt, a hint of natural flavourings",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/506/008/870/6022/front_fr.92.400.jpg"
+    },
+    {
+      "barcode": "8000500435670",
+      "name": "PROTEIN Arachidi e Cioccolato Fondente",
+      "brand": "EAT NATURAL",
+      "ingredients_text": "CACAHUETES 51%, flocons de SOja, sirop de riz, chocolat noir 12% (pâte de cacao, sucre de canne, beurre de cacao), miel, riz croustillant, cacao maigre en poudre, noix de coco râpée déshydratée 0,5%, ",
+      "allergens": [
+        "peanuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/800/050/043/5670/front_fr.63.400.jpg"
+    },
+    {
+      "barcode": "8410076901026",
+      "name": "Barre céréales Protéines peanut& chocolat🍫",
+      "brand": "Nature Valley",
+      "ingredients_text": "roasted peanuts (39%), oligofructose, soy protein isolate, chocolate chunks (8%) (sugar, cocoa mass, cocoa butter, emulsifier (soy lecithin)), vegetable oils and fats (palm, rapeseed, sunflower in var",
+      "allergens": [
+        "milk",
+        "peanuts",
+        "soybeans"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/841/007/690/1026/front_fr.51.400.jpg"
+    },
+    {
+      "barcode": "3033491485756",
+      "name": "HiPRO",
+      "brand": "Danone",
+      "ingredients_text": "SPECIALITE LAITIERE & BOIRE AROMATISÉE SAVEUR FRAISE-FRAMBOISE, AVEC EDULCORANTS, 0% M.G., ENRICHIE EN MAGNESIUM ET VITAMINE B9",
+      "allergens": [
+        "milk"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/303/349/148/5756/front_fr.252.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:34:33Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://fr.openfoodfacts.org/api/v2/search?search_terms=vitamin+b12&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:34:33Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:34:40Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:34:32Z",
+    "pilot_version": "1.0"
+  }
+}

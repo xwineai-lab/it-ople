@@ -1,0 +1,168 @@
+{
+  "ingredient_key": "vitamin_a",
+  "name_i18n": {
+    "ko": "비타민A",
+    "en": "Vitamin A"
+  },
+  "dosage": {
+    "rda": "900 mcg RAE for adolescent and adult men is equ",
+    "ai": "900 mcg RAE provides between 3,000 and 36,000 I",
+    "upper_limit": "3,000 IU if the food or supplement source is pre",
+    "reference_authority": "NIH ODS (U.S.)",
+    "reference_url": "https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/"
+  },
+  "safety_notes": {
+    "description_en": "Vitamin A is the name of a group of fat-soluble retinoids, primarily retinol and retinyl esters [ 1 , 2 ]. Vitamin A is involved in immune function, cellular communication, growth and development, and male and female reproduction [ 1-3 ]. Vitamin A supports cell growth and differentiation, playing a critical role in the normal formation and maintenance of the heart, lungs, eyes, and other organs [",
+    "deficiency": "Frank vitamin A deficiency is rare in the United States. However, vitamin A deficiency is still common in many developing countries, often as a result of limited access to foods containing preformed vitamin A from animal-based food sources and to foods containing provitamin A carotenoids because of ",
+    "health_effects": "This section focuses on three diseases and disorders in which vitamin A or carotenoids might play a role: cancer, age-related macular degeneration (AMD), and measles.",
+    "drug_interactions": "Vitamin A has the potential to interact with certain medications. In addition, several types of medications might adversely affect vitamin A levels. A few examples are provided below. Individuals taking these and other medications on a regular basis should discuss their vitamin A status with their h",
+    "toxicity": "Because vitamin A is fat soluble, the body stores excess amounts, primarily in the liver, and these levels can accumulate. Acute vitamin A toxicity, also referred to as hypervitaminosis A, occurs within days to weeks after someone ingests one or a few very high doses (typically more than 100 times t"
+  },
+  "allergens": [
+    "eggs",
+    "gluten",
+    "milk",
+    "nuts"
+  ],
+  "kr_regulatory": {
+    "is_registered_in_kr": true,
+    "registered_product_count": 5,
+    "sample_functionality_claims": [
+      "①어두운 곳에서 시각 적응을 위해 필요②피부와 점막을 형성하고 기능을 유지하는데 필요③상피세포의 성장과 발달에 필요",
+      "①어두운 곳에서 시각 적응을 위해 필요②피부와 점막을 형성하고 기능을 유지하는데 필요③상피세포의 성장과 발달에 필요",
+      "①유해산소로부터 세포를 보호하는데 필요\n①어두운 곳에서 시각 적응을 위해 필요②피부와 점막을 형성하고 기능을 유지하는데 필요③상피세포의 성장과 발달에 필요\n[루테인]노화로 인해 감소될 수 있는 황반색소밀도를 유지하여 눈건강에 도움을 줌"
+    ]
+  },
+  "korean_registered_products": [
+    {
+      "name_ko": "밝은사랑비타민A",
+      "company_ko": "고려인삼과학주식회사",
+      "form": "정",
+      "functionality_claim_ko": "①어두운 곳에서 시각 적응을 위해 필요②피부와 점막을 형성하고 기능을 유지하는데 필요③상피세포의 성장과 발달에 필요",
+      "intake_method_ko": "1일3회 1회 1정(600mg/1정)물과 함께 섭취",
+      "warnings_ko": "① 섭취시 정제가 기도에 걸릴수 있으니 유의하시기 바랍니다.",
+      "raw_materials_ko": "분말비타민A(비타민A로서 9.75%함유), 정제포도당, 딸기맛분말<딸기엑기스분말 45%, 백설탕 40%, 덱스트린 10%, 구연산 4.4%, 스테비오사이드 0.5%, 잔탄검 0.1% 계100%>, 자일리톨, 태극삼분말, 딸기엑기스분말<딸기엑기스93%, 덱스트린 7% 계100%>, 말토덱스트린, 구연산, 비타민C, 결정셀룰로오스, 딸기향분말딸기향키베이스 〔에틸부티레이트 23%, 에틸2-메틸부티레이트 6.6%, 에틸 메틸페닐글리세테이트 3.8%, ",
+      "mfds_report_no": "2004001503956"
+    },
+    {
+      "name_ko": "눈영양비타민A",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "①어두운 곳에서 시각 적응을 위해 필요②피부와 점막을 형성하고 기능을 유지하는데 필요③상피세포의 성장과 발달에 필요",
+      "intake_method_ko": "1일 2회, 1회 1캅셀을 물과 함께 섭취.",
+      "warnings_ko": "알레르기 체질이신 경우 성분을 확인 한 후 섭취하시기 바랍니다.",
+      "raw_materials_ko": "레티닐팔미트산염혼합제제{비타민A함량 30%(레티닐팔미트산염 55.5%, DL-알파-토코페롤 1%, 땅콩오일 43.5%)}, 젤라틴, 글리세린, D-소르비톨액, 이산화티타늄, 에틸바닐린, 식용색소적색제40호, 식용색소황색제5호, 식용색소청색제1호 , 식용색소황색제4호, 식용색소적색제2호, 식용색소적색제3호, 대두유(대두유, 규소수지), 정제팜유, d-α-토코페롤, 비타민C(L-Ascorbic acid), 비타민B2(Riboflavin)",
+      "mfds_report_no": "20040015083388"
+    },
+    {
+      "name_ko": "눈건강 비타민A HMYH",
+      "company_ko": "주식회사한미양행",
+      "form": "캡슐",
+      "functionality_claim_ko": "①유해산소로부터 세포를 보호하는데 필요\n①어두운 곳에서 시각 적응을 위해 필요②피부와 점막을 형성하고 기능을 유지하는데 필요③상피세포의 성장과 발달에 필요\n[루테인]노화로 인해 감소될 수 있는 황반색소밀도를 유지하여 눈건강에 도움을 줌",
+      "intake_method_ko": "1일 1회, 1회 1캅셀을 물과 함께 섭취.",
+      "warnings_ko": "과다 섭취 시 일시적으로 피부가 황색으로 변할 수 있습니다.\n알레르기 체질이신 분은 원재료를 확인 후 섭취하십시오.",
+      "raw_materials_ko": "레티닐 팔미트산염 혼합제제, d-α-토코페롤, 마리골드 꽃(고시형), 식용색소적색제40호, 식용색소청색제1호, 식용색소황색제4호, 젤라틴, 글리세린, D-소르비톨액, 식용색소황색제5호, 식용색소적색제3호, 식용색소적색제2호, 이산화티타늄, 에틸바닐린, 엠에스엠(고시형), 푸마르산제일철, 황산망간, 판토텐산칼슘, 산화아연, 비오틴, 비타민B12, 혼합제제, 비타민 B6 염산염, 비타민 B1염산염, 비타민 B2, 헤마토코쿠스추출물(고시형), 미르틸",
+      "mfds_report_no": "20040015083409"
+    },
+    {
+      "name_ko": "밝은눈 비타민A",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민A] ①어두운 곳에서 시각 적응을 위해 필요 ②피부와 점막을 형성하고 기능을 유지하는데 필요 ③상피세포의 성장과 발달에 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 씹거나 녹여서 섭취하십시오.",
+      "warnings_ko": "1. 알레르기 체질이신 경우 성분을 확인한 후 섭취 여부를 결정\r\n2. PTP포장의 경우 제품 개봉 또는 섭취시 포장재에 의해 상처를 입을 수 있으니 주의",
+      "raw_materials_ko": "분말비타민A혼합제제[비타민A함량 9.75%(분말비타민A 11.5%, DL-알파-토코페롤 1.5%, 말토덱스트린 47%, 아라비아검 20%, 옥수수전분 20%)], 무수결정포도당, 자일리톨, 결정셀룰로오스, 자당지방산에스테르, 포도향분말(덱스트린 76.75%, 포도향키베이스 15.2%, 유당 7.67%, 펙틴 0.38%), 무수구연산, 결명자추출분말(결명자추출고형분 40%, 덱스트린 60%), 스테아린산마그네슘, 마리골드추출분말, 빌베리추출분말(",
+      "mfds_report_no": "20040015107367"
+    },
+    {
+      "name_ko": "블루베리맛 눈사랑 비타민A & C",
+      "company_ko": "(주)유유헬스케어",
+      "form": "정",
+      "functionality_claim_ko": "[비타민C]①결합조직 형성과 기능유지에 필요②철의 흡수에 필요③유해산소로부터 세포를 보호하는데 필요\r\n[비타민A]①어두운 곳에서 시각 적응을 위해 필요②피부와 점막을 형성하고 기능을 유지하는데 필요③상피세포의 성장과 발달에 필요",
+      "intake_method_ko": "1일 1회, 1회 1정을 씹어서 섭취하십시오.",
+      "warnings_ko": "① 알레르기 체질이신 분은 성분을 확인한 후, 섭취하시기 바랍니다.\r\n② 영ㆍ유아, 임신ㆍ수유부나 질환보유자 또는 약물 복용중이신 분은 섭취 전에 의사, 약사 등 전문가와 상의하십시오.",
+      "raw_materials_ko": "비타민 C, L-아스코르빈산나트륨, 분말비타민 A, 정제포도당, 유당혼합, 자일리톨, 블루베리향분말(가루, 과립)(블루베리향키베이스Ⅰ 10%, 블루베리향 키베이스Ⅱ 0.2%, 아라비아검 4.95%, 덱스트린 84.85%), 블루베리농축액(농축물)분말, 스테아린산마그네슘, 효소처리스테비아, 포도 과즙분말(가루, 과립), 레몬(열매)농축액(농축물)분말, 아세로라추출물(추출액)분말(분말 추출물), 마리골드추출물(추출액)분말(분말 추출물), 빌베리(열",
+      "mfds_report_no": "20040015107494"
+    }
+  ],
+  "market_samples": [
+    {
+      "barcode": "0811620022118",
+      "name": "Chocolate Nutrition Shake",
+      "brand": "fairlife nutrition plan",
+      "ingredients_text": "filtered lowfat grade A milk, alkalized cocoa, natural flavors, cellulose gel, cellulose gum, salt, carrageenan, lactase enzyme, monk fruit juice concentrate, acesulfame potassium",
+      "allergens": [
+        "gluten",
+        "milk"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/081/162/002/2118/front_en.2257.400.jpg"
+    },
+    {
+      "barcode": "0857777004232",
+      "name": "Chocolate Sea Salt Bar",
+      "brand": "RXBAR",
+      "ingredients_text": "Egg whites, almonds, cashews, dates",
+      "allergens": [
+        "eggs",
+        "nuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/777/700/4232/front_en.225.400.jpg"
+    },
+    {
+      "barcode": "0857777004195",
+      "name": "Blueberry",
+      "brand": "RXBAR",
+      "ingredients_text": "Dates, egg whites, almonds, cashews, blueberries, natural blueberry flavor.",
+      "allergens": [
+        "eggs",
+        "nuts"
+      ],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/777/700/4195/front_en.188.400.jpg"
+    },
+    {
+      "barcode": "0857273008666",
+      "name": "Collagen Peptides",
+      "brand": "Vital Proteins",
+      "ingredients_text": "collagen peptides",
+      "allergens": [],
+      "image_url": "https://images.openfoodfacts.org/images/products/085/727/300/8666/front_en.360.400.jpg"
+    },
+    {
+      "barcode": "0811620021951",
+      "name": "High Protein Milk Shake",
+      "brand": "Core Power",
+      "ingredients_text": "FILTERED LOW FAT GRADE A MILK, ALKALIZED COCOA, NATURAL FLAVORS, MONK FRUIT JUICE CONCENTRATE, STEVIA LEAF EXTRACT, CARRAGEENAN, CELLULOSE GEL, CELLULOSE GUM, ACESULFAME POTASSIUM, SUCRALOSE, LACTASE ",
+      "allergens": [],
+      "image_url": "https://images.openfoodfacts.org/images/products/081/162/002/1951/front_en.500.400.jpg"
+    }
+  ],
+  "sources_used": [
+    {
+      "source": "NIH_ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/",
+      "fetched_at": "2026-04-05T12:34:42Z"
+    },
+    {
+      "source": "OpenFoodFacts",
+      "url": "https://us.openfoodfacts.org/api/v2/search?search_terms=vitamin+a&fields=code%2Cproduct_name%2Cproduct_name_en%2Cbrands%2Ccategories_tags%2Cingredients_text%2Cingredients_text_en%2Callergens_tags%2Clabels_tags%2Ccountries_tags%2Cnutriments%2Cimage_front_url%2Cnutriscore_grade&page_size=5&sort_by=popularity_key&categories_tags_en=dietary-supplements",
+      "fetched_at": "2026-04-05T12:34:42Z"
+    },
+    {
+      "source": "MFDS_foodsafetykorea",
+      "service_id": "C003",
+      "fetched_at": "2026-04-05T12:34:45Z"
+    }
+  ],
+  "coverage_score": {
+    "score": "3/3",
+    "detail": {
+      "nih": "ok",
+      "off": "ok",
+      "mfds": "ok"
+    }
+  },
+  "meta": {
+    "pilot_run_at": "2026-04-05T12:34:41Z",
+    "pilot_version": "1.0"
+  }
+}

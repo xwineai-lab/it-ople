@@ -73,6 +73,14 @@ async def ople_spec():
         return spec_path.read_text(encoding="utf-8")
     return "<h1>OPLE Spec not found</h1>"
 
+
+@app.get("/iherb-comparison", response_class=HTMLResponse)
+async def iherb_comparison():
+    spec_path = static_dir / "iherb_comparison.html"
+    if spec_path.exists():
+        return spec_path.read_text(encoding="utf-8")
+    return "<h1>Comparison not found</h1>"
+
 # ── Dashboard APIs ───────────────────────────────────────
 @app.get("/api/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):

@@ -98,6 +98,14 @@ async def ingredients_page():
     return "<h1>Ingredients viewer not found</h1>"
 
 
+@app.get("/ops-dashboard", response_class=HTMLResponse)
+async def ops_dashboard():
+    spec_path = static_dir / "ops_dashboard.html"
+    if spec_path.exists():
+        return spec_path.read_text(encoding="utf-8")
+    return "<h1>Operations dashboard not found</h1>"
+
+
 @app.get("/api/ingredients/{key}")
 async def get_ingredient(key: str):
     """Serve unified ingredient JSON from pilot ETL output."""

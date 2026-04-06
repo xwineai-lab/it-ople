@@ -727,9 +727,135 @@
   </div>
 </section>
 
-<!-- Section 7: Risks & KPIs -->
+<!-- Section 8: Post-Launch Roadmap -->
 <section>
-  <h2><span class="num">8</span> 리스크 & 성공 지표</h2>
+  <h2><span class="num">8</span> 포스트런칭 로드맵 (W17-W32+)</h2>
+  <p>16주 런칭 이후 OPLE.COM을 <strong>운영 → 성장 → 확장</strong> 3단계로 진화시키는 중장기 로드맵입니다.</p>
+
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>기간</th><th>테마</th><th>주요 작업</th><th>핵심 KPI</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag phase">P5</span></td>
+        <td>W17-W20</td>
+        <td><strong>안정화 & 데이터 수집</strong></td>
+        <td>
+          • 성능 모니터링 (Datadog/Sentry) 세팅<br>
+          • 검색 로그 분석 → 동의어 사전 1차 확장<br>
+          • GA4/Hotjar 히트맵 분석 → UX 병목 식별<br>
+          • CS 인입 패턴 분류 → FAQ/챗봇 자동화 기획<br>
+          • 3-Source ETL(NIH/OFF/식약처) 자동 스케줄링 (주 1회)
+        </td>
+        <td>서버 안정성 99.5%+<br>장바구니 이탈률 측정</td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P6</span></td>
+        <td>W21-W24</td>
+        <td><strong>리뷰 & 로열티 시스템</strong></td>
+        <td>
+          • 상품 리뷰 시스템 구축 (Judge.me 또는 커스텀 앱)<br>
+          • 사진 리뷰/영상 리뷰 업로드<br>
+          • iHerb 리뷰 데이터 → OPLE 리뷰에 크로스 표시<br>
+          • 포인트/리워드 프로그램 (Smile.io 또는 커스텀)<br>
+          • 추천인 코드 & 친구 초대 기능
+        </td>
+        <td>리뷰 작성률 5%+<br>재구매율 30%+</td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P7</span></td>
+        <td>W25-W28</td>
+        <td><strong>AI 개인화 & 추천 엔진</strong></td>
+        <td>
+          • 구매/검색 이력 기반 개인화 추천 (Collaborative Filtering)<br>
+          • "나에게 맞는 비타민" 퀴즈 → 맞춤 번들 생성<br>
+          • 성분 기반 크로스셀 ("비타민D 구매자 → 칼슘 추천")<br>
+          • 이메일/카카오 알림톡 자동 리마케팅<br>
+          • 재구매 주기 예측 → 자동 리마인더 발송
+        </td>
+        <td>추천 클릭률 8%+<br>객단가(AOV) +20%</td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P8</span></td>
+        <td>W29-W32</td>
+        <td><strong>구독 & 자동 보충</strong></td>
+        <td>
+          • 정기 구독(Subscribe & Save) 기능 (Shopify Subscriptions)<br>
+          • 구독 주기 커스터마이징 (30/60/90일)<br>
+          • 구독자 전용 할인 & 전용 번들<br>
+          • 구독 대시보드 (고객 마이페이지에서 관리)<br>
+          • 구독 이탈 예측 → 선제 대응 (쿠폰/업그레이드 제안)
+        </td>
+        <td>구독 전환률 10%+<br>월 구독 MRR 측정</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>W33+ 확장 비전</h3>
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>시기</th><th>테마</th><th>주요 작업</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag phase">P9</span></td>
+        <td>W33-W40</td>
+        <td><strong>B2B & 도매 채널</strong></td>
+        <td>
+          Shopify B2B 카탈로그 활성화 · 도매 가격표 · 벌크 주문 프로세스 · 거래처 포탈 (회원 등급별 가격) · 인보이스 자동 발행
+        </td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P10</span></td>
+        <td>W41-W48</td>
+        <td><strong>자체 브랜드(PB) 런칭</strong></td>
+        <td>
+          OEM/ODM 파트너십 · 성분 DB 기반 최적 포뮬라 설계 · 식약처 품목제조신고 · 패키지 디자인 · PB 전용 랜딩/스토리텔링 페이지
+        </td>
+      </tr>
+      <tr>
+        <td><span class="tag phase">P11</span></td>
+        <td>W49+</td>
+        <td><strong>옴니채널 & 생태계</strong></td>
+        <td>
+          쿠팡/네이버 스마트스토어 연동 · 오프라인 팝업스토어 · 건강 데이터 연동 (Apple Health/Google Fit → 맞춤 추천) · API 파트너 프로그램
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>간트 차트 (전체 W1-W48)</h3>
+  <div style="margin: 16px 0;">
+    <div style="font-size:0.85rem; margin-bottom:4px; color:#64748b;">── 런칭 전 (W1-16) ──</div>
+    <div style="font-size:0.8rem; margin-bottom:2px;">P1 기반 구축</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:0%; width:6.25%; font-size:0.7rem;">W1-3</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P2 카탈로그/검색</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:6.25%; width:10.4%; font-size:0.7rem;">W4-8</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P3 글로벌화</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:16.7%; width:8.3%; font-size:0.7rem;">W9-12</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P4 런칭</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:25%; width:8.3%; font-size:0.7rem;">W13-16</div></div>
+
+    <div style="font-size:0.85rem; margin:12px 0 4px; color:#64748b;">── 포스트런칭 (W17-48) ──</div>
+    <div style="font-size:0.8rem; margin-bottom:2px;">P5 안정화 & 데이터 수집</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:33.3%; width:8.3%; background:linear-gradient(90deg, #3b82f6, #60a5fa); font-size:0.7rem;">W17-20</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P6 리뷰 & 로열티</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:41.6%; width:8.3%; background:linear-gradient(90deg, #3b82f6, #60a5fa); font-size:0.7rem;">W21-24</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P7 AI 개인화 & 추천</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:50%; width:8.3%; background:linear-gradient(90deg, #8b5cf6, #a78bfa); font-size:0.7rem;">W25-28</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P8 구독 & 자동보충</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:58.3%; width:8.3%; background:linear-gradient(90deg, #8b5cf6, #a78bfa); font-size:0.7rem;">W29-32</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P9 B2B & 도매</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:66.6%; width:16.7%; background:linear-gradient(90deg, #f59e0b, #fbbf24); font-size:0.7rem;">W33-40</div></div>
+    <div style="font-size:0.8rem; margin-bottom:2px; margin-top:4px;">P10 PB 브랜드 런칭</div>
+    <div class="roadmap-bar"><div class="roadmap-fill" style="left:83.3%; width:16.7%; background:linear-gradient(90deg, #f59e0b, #fbbf24); font-size:0.7rem;">W41-48</div></div>
+  </div>
+</section>
+
+<!-- Section 9: Risks & KPIs -->
+<section>
+  <h2><span class="num">9</span> 리스크 & 성공 지표</h2>
 
   <h3>주요 리스크</h3>
   <table>
@@ -762,7 +888,7 @@
 
 <!-- Section 8: Next Actions -->
 <section>
-  <h2><span class="num">9</span> 즉시 착수 가능한 다음 액션</h2>
+  <h2><span class="num">10</span> 즉시 착수 가능한 다음 액션</h2>
   <ol class="steps">
     <li>Shopify Partners 계정 생성 및 Development Store 개설</li>
     <li>Dawn 테마 fork 후 GitHub 연동 (Online Store → Themes → Connect)</li>

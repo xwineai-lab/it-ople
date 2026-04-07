@@ -35,7 +35,12 @@
             width: 240px; background: #fff; border-right: 1px solid #e8ecf1;
             display: flex; flex-direction: column; padding: 24px 0; position: fixed;
             top: 0; left: 0; bottom: 0; z-index: 50;
+            overflow-y: auto; overflow-x: hidden;
         }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
         .sidebar-logo {
             padding: 0 24px 16px; border-bottom: 1px solid #e8ecf1;
         }

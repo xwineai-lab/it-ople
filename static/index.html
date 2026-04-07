@@ -966,13 +966,6 @@
                         <SvgIcon path="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" /> 성분 DB
                     </a>
 
-                    <div className="sidebar-section">관리</div>
-                    {currentUser?.role === 'admin' && (
-                        <button className={`sidebar-link ${activeTab==='users'?'active':''}`} onClick={()=>setActiveTab('users')}>
-                            <SvgIcon path="M17 21h2a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2h2m3-6h2m0 0h2m-2 0v2m0-2v-2m-6 6h.01M5 20h10a2 2 0 002-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /> 사용자 관리
-                        </button>
-                    )}
-
                     <div className="sidebar-section">쇼피파이</div>
                     <a className="sidebar-link" href="/spec" style={{textDecoration:'none'}}>
                         <SvgIcon path="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h4" /> 명세
@@ -992,6 +985,13 @@
                     <button className={`sidebar-link ${activeTab==='tagStrategy'?'active':''}`} onClick={()=>setActiveTab('tagStrategy')}>
                         <SvgIcon path="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" /> 태그 전략
                     </button>
+
+                    <div className="sidebar-section">관리</div>
+                    {currentUser?.role === 'admin' && (
+                        <button className={`sidebar-link ${activeTab==='users'?'active':''}`} onClick={()=>setActiveTab('users')}>
+                            <SvgIcon path="M17 21h2a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2h2m3-6h2m0 0h2m-2 0v2m0-2v-2m-6 6h.01M5 20h10a2 2 0 002-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /> 사용자 관리
+                        </button>
+                    )}
 
                     <div className="sidebar-bottom" style={{marginTop:'auto',padding:'16px 20px',borderTop:'1px solid #e8ecf1'}}>
                         <div className="sidebar-team" style={{display:'flex',alignItems:'center',gap:'10px',fontSize:'0.85rem'}}>

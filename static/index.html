@@ -974,6 +974,9 @@
                     <a className="sidebar-link" href="/iherb-shopify-flow" style={{textDecoration:'none'}}>
                         <SvgIcon path="M6 2l1.5 4.5L12 8l-4.5 1.5L6 14l-1.5-4.5L0 8l4.5-1.5zM18 8l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" /> 쇼피파이
                     </a>
+                    <button className={`sidebar-link ${activeTab==='navCompare'?'active':''}`} onClick={()=>setActiveTab('navCompare')}>
+                        <SvgIcon path="M4 6h16M4 12h8m-8 6h16M13 12h3l2-2 2 2h0" /> 네비게이션 비교
+                    </button>
 
                     <div className="sidebar-bottom" style={{marginTop:'auto',padding:'16px 20px',borderTop:'1px solid #e8ecf1'}}>
                         <div className="sidebar-team" style={{display:'flex',alignItems:'center',gap:'10px',fontSize:'0.85rem'}}>
@@ -2090,6 +2093,191 @@
             );
         };
 
+        // ============= NAV COMPARE PAGE =============
+        const NavComparePage = () => {
+            const sectionStyle = {marginBottom:'32px'};
+            const sectionTitle = (num, text) => React.createElement('div', {style:{fontSize:'18px',fontWeight:700,marginBottom:'14px',color:'#0f172a',display:'flex',alignItems:'center',gap:'8px'}},
+                React.createElement('span', {style:{background:'#3b82f6',color:'#fff',width:'26px',height:'26px',borderRadius:'50%',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'13px'}}, num),
+                text
+            );
+            const Th = ({children, type}) => React.createElement('th', {style:{background:type==='ople'?'#fef3c7':type==='iherb'?'#dcfce7':'#f1f5f9', padding:'12px 16px', textAlign:'left', fontSize:'12px', fontWeight:600, color:type==='ople'?'#92400e':type==='iherb'?'#166534':'#475569', textTransform:'uppercase', letterSpacing:'0.05em'}}, children);
+            const Td = ({children, feature}) => React.createElement('td', {style:{padding:'12px 16px', borderBottom:'1px solid #f1f5f9', fontSize:'13px', verticalAlign:'top', ...(feature?{fontWeight:600,color:'#334155',background:'#f8fafc',whiteSpace:'nowrap',width:'150px'}:{})}}, children);
+            const Tag = ({type, children}) => React.createElement('span', {style:{display:'inline-block',fontSize:'11px',padding:'2px 8px',borderRadius:'10px',fontWeight:500,marginRight:'4px', background:type==='yes'?'#dcfce7':type==='no'?'#fee2e2':'#fef3c7', color:type==='yes'?'#166534':type==='no'?'#991b1b':'#92400e'}}, children);
+            const tableWrap = {background:'#fff',borderRadius:'10px',overflow:'hidden',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',marginBottom:'8px'};
+            const tableStyle = {width:'100%',borderCollapse:'collapse'};
+
+            return React.createElement('div', null,
+                // Title
+                React.createElement('h1', {style:{fontSize:'24px',fontWeight:700,color:'#0f172a',marginBottom:'4px'}}, '오플닷컴 vs 아이허브 — 네비게이션 비교 분석'),
+                React.createElement('p', {style:{color:'#64748b',fontSize:'14px',marginBottom:'32px'}}, 'Shopify 마이그레이션을 위한 네비게이션 구조 비교'),
+
+                // 1. Header Structure
+                React.createElement('div', {style:sectionStyle},
+                    sectionTitle('1', '헤더 구조 비교'),
+                    React.createElement('div', {style:tableWrap},
+                        React.createElement('table', {style:tableStyle},
+                            React.createElement('thead', null, React.createElement('tr', null, Th({children:'구분'}), Th({children:'오플닷컴 (현재)',type:'ople'}), Th({children:'아이허브 (목표)',type:'iherb'}))),
+                            React.createElement('tbody', null,
+                                ...[
+                                    ['프로모션 바','없음','상단 슬라이딩 배너 (세일, 베스트셀러 할인, 무료배송 안내)'],
+                                    ['로케일 설정','없음 (한국어 전용)','국가/언어/통화 선택 가능 (KR | KO | KRW)'],
+                                    ['로고 위치','중앙 배치 (큰 로고)','좌측 배치 (컴팩트 로고)'],
+                                    ['검색창','작은 검색창 (우측)','넓은 중앙 검색창 + 자동완성 지원'],
+                                    ['유틸리티 링크','로그인, 회원가입, 고객센터, 마이페이지, 장바구니, 찜목록, 주문내역','로그인 아이콘, 장바구니 아이콘 (미니멀)'],
+                                    ['스티키 헤더','없음','있음 — 스크롤 시 고정']
+                                ].map((r,i) => React.createElement('tr', {key:i}, Td({children:r[0],feature:true}), Td({children:r[1]}), Td({children:r[2]})))
+                            )
+                        )
+                    )
+                ),
+
+                // 2. Main Navigation
+                React.createElement('div', {style:sectionStyle},
+                    sectionTitle('2', '메인 네비게이션 비교'),
+                    React.createElement('div', {style:tableWrap},
+                        React.createElement('table', {style:tableStyle},
+                            React.createElement('thead', null, React.createElement('tr', null, Th({children:'구분'}), Th({children:'오플닷컴',type:'ople'}), Th({children:'아이허브',type:'iherb'}))),
+                            React.createElement('tbody', null,
+                                ...[
+                                    ['네비 구조','2단: 상단바 (베스트100, 브랜드 등) + 카테고리바 (6개 메인)','3단: 프로모 바 + 카테고리 바 (8개 + 2 특수) + 세컨더리 바'],
+                                    ['메인 카테고리 수','6개 + 특가존','8개 + 브랜드A-Z + 건강주제'],
+                                    ['세컨더리 네비','없음 (상단바로 대체)','슈퍼세일, 베스트셀러, 특가상품, 신상품, 웰니스허브'],
+                                    ['메가메뉴','단순 드롭다운 리스트','카드형 메가메뉴 + 이미지 + 아이콘'],
+                                    ['브레드크럼','없음','있음 — 전체 경로 표시']
+                                ].map((r,i) => React.createElement('tr', {key:i}, Td({children:r[0],feature:true}), Td({children:r[1]}), Td({children:r[2]})))
+                            )
+                        )
+                    )
+                ),
+
+                // 3. Category Structure
+                React.createElement('div', {style:sectionStyle},
+                    sectionTitle('3', '카테고리 구조 상세'),
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}},
+                        // Ople card
+                        React.createElement('div', {style:{background:'#fff',borderRadius:'10px',padding:'20px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',borderTop:'3px solid #f59e0b'}},
+                            React.createElement('h3', {style:{fontSize:'15px',fontWeight:700,marginBottom:'14px'}}, '오플닷컴 ', React.createElement('span', {style:{fontSize:'11px',fontWeight:600,padding:'2px 8px',borderRadius:'12px',background:'#fef3c7',color:'#92400e'}}, '6개 메인 / 39개 서브')),
+                            ...[
+                                {name:'건강식품', subs:'대상별, 성분별, 증상별, 비타민&미네랄, 오메가-3, 유산균, 허브/추출물, 항산화·면역력, 동종요법, 다이어트/스포츠 (10)'},
+                                {name:'생활', subs:'주방/식기, 청소/세탁, 욕실/위생, 생활잡화, 반려동물 (5)'},
+                                {name:'출산/육아', subs:'베이비용품, 베이비케어, 출산/임부용품, 영유아식품 (4)'},
+                                {name:'뷰티용품', subs:'스킨케어, 바디케어, 헤어케어, 메이크업, 뷰티소품, 남성화장품 (6)'},
+                                {name:'식품', subs:'커피/차/음료, 가공식품, 간편식품, 과자/간식, 다이어트보조, 베이비푸드, 잡곡/혼합곡 (7)'},
+                                {name:'헬스/다이어트', subs:'프로틴, 게이너, 아미노산, BCAA, 식사대용, 다이어트, 기타 (7)'}
+                            ].map((c,i) => React.createElement('div', {key:i, style:{marginBottom:'12px'}},
+                                React.createElement('div', {style:{fontWeight:600,fontSize:'13px',color:'#1e293b',marginBottom:'3px'}}, c.name),
+                                React.createElement('div', {style:{fontSize:'12px',color:'#64748b',paddingLeft:'10px',borderLeft:'2px solid #e2e8f0'}}, c.subs)
+                            ))
+                        ),
+                        // iHerb card
+                        React.createElement('div', {style:{background:'#fff',borderRadius:'10px',padding:'20px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',borderTop:'3px solid #22c55e'}},
+                            React.createElement('h3', {style:{fontSize:'15px',fontWeight:700,marginBottom:'14px'}}, '아이허브 ', React.createElement('span', {style:{fontSize:'11px',fontWeight:600,padding:'2px 8px',borderRadius:'12px',background:'#dcfce7',color:'#166534'}}, '8개 메인 + 2 특수')),
+                            ...[
+                                {name:'보충제', subs:'비타민, 미네랄, 장 건강, 두뇌&인지, 허브, 수면, 항산화제, 뼈·관절·연골, 오메가&피쉬오일, 아미노산, 어린이건강, 모발·피부·손발톱 (12)'},
+                                {name:'스포츠', subs:'프로틴, 운동 전/후, 아미노산, 크레아틴, 체중관리 등'},
+                                {name:'목욕 & 퍼스널케어', subs:'바디워시, 구강위생, 데오드란트, 핸드케어 등'},
+                                {name:'뷰티', subs:'스킨케어, 메이크업, 헤어케어, K-뷰티 등'},
+                                {name:'식료품', subs:'차/커피, 조미료, 간식, 꿀/감미료, 오일 등'},
+                                {name:'생활용품', subs:'세탁, 청소, 공기정화, 방충 등'},
+                                {name:'유아동', subs:'영유아 건강, 수유용품, 기저귀, 유아식 등'},
+                                {name:'반려동물', subs:'강아지, 고양이, 보충제, 간식 등'},
+                                {name:'+ 브랜드 A-Z', subs:'전체 브랜드 알파벳 인덱스'},
+                                {name:'+ 건강 주제', subs:'증상/목적별 탐색 페이지'}
+                            ].map((c,i) => React.createElement('div', {key:i, style:{marginBottom:'10px', ...(i===8?{marginTop:'10px',paddingTop:'10px',borderTop:'1px dashed #e2e8f0'}:{})}},
+                                React.createElement('div', {style:{fontWeight:600,fontSize:'13px',color:'#1e293b',marginBottom:'3px'}}, c.name),
+                                React.createElement('div', {style:{fontSize:'12px',color:'#64748b',paddingLeft:'10px',borderLeft:'2px solid #e2e8f0'}}, c.subs)
+                            ))
+                        )
+                    )
+                ),
+
+                // 4. Filtering
+                React.createElement('div', {style:sectionStyle},
+                    sectionTitle('4', '카테고리 페이지 & 필터링'),
+                    React.createElement('div', {style:tableWrap},
+                        React.createElement('table', {style:tableStyle},
+                            React.createElement('thead', null, React.createElement('tr', null, Th({children:'구분'}), Th({children:'오플닷컴',type:'ople'}), Th({children:'아이허브',type:'iherb'}))),
+                            React.createElement('tbody', null,
+                                ...[
+                                    ['레이아웃','상품 그리드 (필터 없음)','좌측 필터 사이드바 + 서브카테고리 칩 + 4열 그리드'],
+                                    ['필터 기능','없음','인기필터, 별점, 브랜드, 가격, 정기배송, 성분 등'],
+                                    ['정렬','기본 정렬만','베스트셀러, 가격순, 별점순, 최신순 등'],
+                                    ['서브카테고리 칩','없음','카테고리 상단 시각적 칩으로 빠른 이동'],
+                                    ['상품 카드','이미지 + 상품명 + 가격','이미지 + 브랜드 + 상품명 + 가격 + 별점 + 리뷰수 + 할인배지']
+                                ].map((r,i) => React.createElement('tr', {key:i}, Td({children:r[0],feature:true}), Td({children:r[1]}), Td({children:r[2]})))
+                            )
+                        )
+                    )
+                ),
+
+                // 5. Gap Analysis
+                React.createElement('div', {style:sectionStyle},
+                    sectionTitle('5', '핵심 Gap 분석 & Shopify 구현 방안'),
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
+                        ...[
+                            {type:'gap', title:'프로모션 바 없음', desc:'아이허브는 세일/무료배송을 상시 상단 노출. Shopify Announcement Bar로 구현.'},
+                            {type:'action', title:'스티키 헤더 구현', desc:'Dawn 테마 기본 스티키 헤더 지원. 검색+카테고리 고정 노출.'},
+                            {type:'gap', title:'메가메뉴 부재', desc:'아이허브 카드형 메가메뉴 구현 → Qikify 앱 또는 커스텀 Liquid.'},
+                            {type:'action', title:'카테고리 재구성', desc:'6개→8개 확장. 반려동물 분리, 헬스→스포츠 리브랜딩.'},
+                            {type:'gap', title:'필터/정렬 시스템 부재', desc:'Search & Discovery 앱 + 메타필드로 브랜드/별점/가격 필터.'},
+                            {type:'action', title:'브레드크럼 + 서브카테고리 칩', desc:'Liquid 커스텀으로 카테고리 탐색 UX 향상.'},
+                            {type:'gap', title:'검색 기능 미흡', desc:'Predictive Search API 또는 Algolia/Searchanise 앱.'},
+                            {type:'action', title:'브랜드 A-Z + 건강 주제', desc:'Shopify 컬렉션으로 브랜드별/증상별 탐색 페이지 구현.'}
+                        ].map((item,i) => React.createElement('div', {key:i, style:{background:'#fff',borderRadius:'10px',padding:'16px 20px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',borderLeft:`4px solid ${item.type==='gap'?'#ef4444':'#3b82f6'}`}},
+                            React.createElement('h4', {style:{fontSize:'13px',fontWeight:600,marginBottom:'4px',color:item.type==='gap'?'#dc2626':'#2563eb'}}, item.type==='gap'?'Gap: ':'Action: ', item.title),
+                            React.createElement('p', {style:{fontSize:'12px',color:'#475569'}}, item.desc)
+                        ))
+                    )
+                ),
+
+                // 6. Category Mapping
+                React.createElement('div', {style:sectionStyle},
+                    sectionTitle('6', '카테고리 매핑 (오플 → Shopify 아이허브 스타일)'),
+                    React.createElement('div', {style:tableWrap},
+                        React.createElement('table', {style:tableStyle},
+                            React.createElement('thead', null, React.createElement('tr', null, Th({children:'오플닷컴 (현재)',type:'ople'}), Th({children:'Shopify 신규 (아이허브 스타일)',type:'iherb'}), Th({children:'비고'}))),
+                            React.createElement('tbody', null,
+                                ...[
+                                    ['건강식품','보충제','서브를 성분/기능 기반으로 재분류'],
+                                    ['헬스/다이어트','스포츠','프로틴, 아미노산, BCAA를 스포츠로 통합'],
+                                    ['생활 (욕실/위생)','목욕 & 퍼스널케어','욕실/위생품을 독립 카테고리로'],
+                                    ['뷰티용품','뷰티','구조 유사, K-뷰티 서브 추가 고려'],
+                                    ['식품','식료품','다이어트보조식품은 보충제로 이동'],
+                                    ['생활 (나머지)','생활용품','주방, 청소, 세탁 유지'],
+                                    ['출산/육아','유아동','어린이 건강 보충제 통합 고려'],
+                                    ['생활 (반려동물)','반려동물','생활에서 분리 → 독립 카테고리'],
+                                    ['— (신규)','+ 브랜드 A-Z','전체 브랜드 알파벳 인덱스 추가'],
+                                    ['— (신규)','+ 건강 주제','증상/목적별 탐색 (오플 대상별/증상별 확장)']
+                                ].map((r,i) => React.createElement('tr', {key:i, style:i>=8?{background:'#f0f9ff'}:{}}, Td({children:r[0]}), Td({children:React.createElement('strong',null,r[1])}), Td({children:r[2]})))
+                            )
+                        )
+                    )
+                ),
+
+                // 7. Implementation Roadmap
+                React.createElement('div', {style:sectionStyle},
+                    sectionTitle('7', 'Shopify 네비게이션 구현 로드맵'),
+                    React.createElement('div', {style:{background:'linear-gradient(135deg, #eff6ff, #f0fdf4)',border:'1px solid #bfdbfe',borderRadius:'10px',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'16px',fontWeight:700,marginBottom:'12px',color:'#1e40af'}}, '추천 구현 순서'),
+                        React.createElement('ol', {style:{paddingLeft:'20px'}},
+                            ...[
+                                ['Shopify 테마 선택:', 'Dawn 또는 건강식품 전문 테마 (Flavor, Taste 등)'],
+                                ['3단 헤더 구현:', 'Announcement Bar → 메인 헤더 → 카테고리 네비 (스티키)'],
+                                ['메가메뉴 설정:', '8개 메인 카테고리 + 이미지 카드형 서브카테고리'],
+                                ['세컨더리 네비:', '세일, 베스트셀러, 신상품 등 프로모션 링크 바'],
+                                ['컬렉션 구조:', '오플 카테고리를 아이허브 스타일로 재매핑'],
+                                ['필터 시스템:', 'Search & Discovery + 메타필드 활용'],
+                                ['검색 강화:', 'Predictive Search + 인기검색어/추천상품'],
+                                ['브랜드 A-Z / 건강 주제:', '커스텀 페이지로 브랜드 인덱스 및 증상별 탐색']
+                            ].map((s,i) => React.createElement('li', {key:i, style:{fontSize:'13px',color:'#334155',marginBottom:'6px'}},
+                                React.createElement('strong', null, s[0]), ' ', s[1]
+                            ))
+                        )
+                    )
+                )
+            );
+        };
+
         // ============= MAIN APP =============
         const Main = ({ currentUser, onLogout }) => {
             const [activeTab, setActiveTab] = useState('dashboard');
@@ -2098,7 +2286,7 @@
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
                     <main style={{flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
-                        {activeTab !== 'dashboard' && activeTab !== 'users' && (
+                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
                                 {activeTab === 'products' && 'OPLE 제품'}
@@ -2106,6 +2294,7 @@
                                 {activeTab === 'mapping' && 'iHerb 매핑'}
                                 {activeTab === 'analytics' && '분석'}
                                 {activeTab === 'scraper' && '스크래퍼'}
+                                {activeTab === 'navCompare' && '네비게이션 비교'}
                             </h1>
                         </div>
                         )}
@@ -2116,6 +2305,7 @@
                         {activeTab === 'analytics' && <AnalyticsPage />}
                         {activeTab === 'scraper' && <ScraperPage />}
                         {activeTab === 'users' && <UsersPage currentUser={currentUser} />}
+                        {activeTab === 'navCompare' && <NavComparePage />}
                     </main>
                 </div>
             );

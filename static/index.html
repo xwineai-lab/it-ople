@@ -1059,6 +1059,70 @@
         };
 
         // ============= DASHBOARD (Nexus-style Ops Dashboard) =============
+        // ============= PREP CHECKLIST (interactive) =============
+        const PrepChecklist = () => {
+            const storageKey = 'ople_prep_checklist';
+            const items = [
+                {text:'OPLE 상품 DB 구조 분석', due:'완료', defaultDone:true},
+                {text:'iHerb 매핑 파이프라인 구축', due:'완료', defaultDone:true},
+                {text:'3-Source 성분 DB (NIH/OFF/MFDS)', due:'완료', defaultDone:true},
+                {text:'Shopify 구현 플로우 문서', due:'완료', defaultDone:true},
+                {text:'통합 DB 스키마 설계 (catalog_v2)', due:'완료', defaultDone:true},
+                {text:'포스트런칭 로드맵 (P5-P11)', due:'완료', defaultDone:true},
+                {text:'1차 프로젝트 제안서 정리', due:'완료', defaultDone:true},
+                {text:'Shopify 계정 개설 & 플랜 결정', due:'W1 전', defaultDone:false},
+                {text:'우선 SKU 선정 (100~200개)', due:'W1 전', defaultDone:false},
+                {text:'결제 PG사 계약 (한국/일본)', due:'W2', defaultDone:false},
+                {text:'배송 파트너 확정', due:'W2', defaultDone:false},
+                {text:'내부 운영 담당자 지정', due:'W1 전', defaultDone:false}
+            ];
+
+            const loadState = () => {
+                try {
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) return JSON.parse(saved);
+                } catch(e) {}
+                return items.map(i => i.defaultDone);
+            };
+
+            const [checked, setChecked] = useState(loadState);
+
+            const toggle = (idx) => {
+                setChecked(prev => {
+                    const next = [...prev];
+                    next[idx] = !next[idx];
+                    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch(e) {}
+                    return next;
+                });
+            };
+
+            const doneCount = checked.filter(Boolean).length;
+
+            return React.createElement('div', {className:'ops-card'},
+                React.createElement('div', {className:'ops-card-header'},
+                    React.createElement('div', {className:'ops-card-title'}, '\u2705 1차 프로젝트 준비 체크리스트'),
+                    React.createElement('span', {className:'ops-card-badge'}, doneCount + ' / ' + items.length)
+                ),
+                React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'2px'}},
+                    ...items.map((item, idx) => {
+                        const isChecked = checked[idx] || false;
+                        return React.createElement('label', {key:idx, style:{display:'flex',alignItems:'center',gap:'10px',cursor:'pointer',padding:'5px 0',fontSize:'0.8rem',color: isChecked ? '#94a3b8' : '#334155',userSelect:'none'}},
+                            React.createElement('div', {
+                                onClick: (e) => { e.preventDefault(); toggle(idx); },
+                                style:{width:'18px',height:'18px',borderRadius:'4px',border: isChecked ? '2px solid #22c55e' : '2px solid #cbd5e1',background: isChecked ? '#22c55e' : '#fff',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all 0.15s',cursor:'pointer'}
+                            },
+                                isChecked && React.createElement('svg', {width:12,height:12,viewBox:'0 0 12 12',fill:'none'},
+                                    React.createElement('path', {d:'M2.5 6l2.5 2.5 4.5-5', stroke:'#fff', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round'})
+                                )
+                            ),
+                            React.createElement('span', {style:{flex:1, ...(isChecked ? {textDecoration:'line-through'} : {})}}, item.text),
+                            React.createElement('span', {style:{fontSize:'0.7rem',color: isChecked ? '#bbf7d0' : item.due==='완료' ? '#86efac' : '#fbbf24',background: isChecked ? '#f0fdf4' : item.due==='완료' ? '#f0fdf4' : '#fffbeb',padding:'2px 8px',borderRadius:'8px',fontWeight:600,flexShrink:0}}, isChecked && item.due!=='완료' ? '완료' : item.due)
+                        );
+                    })
+                )
+            );
+        };
+
         // ============= SHOPIFY PROGRESS (interactive) =============
         const ShopifyProgress = () => {
             const storageKey = 'ople_shopify_phases';
@@ -1235,35 +1299,8 @@
                 ),
                 // Charts Row (2-col grid)
                 React.createElement('div', {className:'ops-grid-2'},
-                    // Checklist (moved here from bottom)
-                    React.createElement('div', {className:'ops-card'},
-                        React.createElement('div', {className:'ops-card-header'},
-                            React.createElement('div', {className:'ops-card-title'}, '\u2705 1차 프로젝트 준비 체크리스트'),
-                            React.createElement('span', {className:'ops-card-badge'}, '7 / 12')
-                        ),
-                        React.createElement('div', {className:'ops-checklist'},
-                            ...[
-                                {done:true, text:'OPLE 상품 DB 구조 분석', due:'완료'},
-                                {done:true, text:'iHerb 매핑 파이프라인 구축', due:'완료'},
-                                {done:true, text:'3-Source 성분 DB (NIH/OFF/MFDS)', due:'완료'},
-                                {done:true, text:'Shopify 구현 플로우 문서', due:'완료'},
-                                {done:true, text:'통합 DB 스키마 설계 (catalog_v2)', due:'완료'},
-                                {done:true, text:'포스트런칭 로드맵 (P5-P11)', due:'완료'},
-                                {done:true, text:'1차 프로젝트 제안서 정리', due:'완료'},
-                                {done:false, text:'Shopify 계정 개설 & 플랜 결정', due:'W1 전'},
-                                {done:false, text:'우선 SKU 선정 (100~200개)', due:'W1 전'},
-                                {done:false, text:'결제 PG사 계약 (한국/일본)', due:'W2'},
-                                {done:false, text:'배송 파트너 확정', due:'W2'},
-                                {done:false, text:'내부 운영 담당자 지정', due:'W1 전'}
-                            ].map((c, i) =>
-                                React.createElement('div', {key:i, className:'ops-check-item' + (c.done?' done':'')},
-                                    React.createElement('div', {className:'ops-check-box' + (c.done?' checked':'')}, c.done ? '\u2713' : ''),
-                                    c.text,
-                                    React.createElement('span', {className:'ops-check-due'}, c.due)
-                                )
-                            )
-                        )
-                    ),
+                    // Checklist (interactive)
+                    React.createElement(PrepChecklist),
                     // Shopify project progress (interactive)
                     React.createElement(ShopifyProgress)
                 ),

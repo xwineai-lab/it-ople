@@ -235,6 +235,22 @@ class ScrapeJob(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class User(Base):
+    """User accounts with Google OAuth and role-based access."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(320), unique=True, nullable=False, index=True)
+    name = Column(String(200))
+    picture = Column(Text)               # Google profile picture URL
+    google_uid = Column(String(128), unique=True, index=True)
+    role = Column(String(20), default="viewer")  # admin | editor | viewer
+    is_active = Column(Boolean, default=True)
+    last_login = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # ── DB Initialization ────────────────────────────────────
 
 def init_db():

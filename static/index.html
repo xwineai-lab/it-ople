@@ -1235,7 +1235,41 @@
                 ),
                 // Charts Row (2-col grid)
                 React.createElement('div', {className:'ops-grid-2'},
-                    // Category bar chart
+                    // Checklist (moved here from bottom)
+                    React.createElement('div', {className:'ops-card'},
+                        React.createElement('div', {className:'ops-card-header'},
+                            React.createElement('div', {className:'ops-card-title'}, '\u2705 1차 프로젝트 준비 체크리스트'),
+                            React.createElement('span', {className:'ops-card-badge'}, '7 / 12')
+                        ),
+                        React.createElement('div', {className:'ops-checklist'},
+                            ...[
+                                {done:true, text:'OPLE 상품 DB 구조 분석', due:'완료'},
+                                {done:true, text:'iHerb 매핑 파이프라인 구축', due:'완료'},
+                                {done:true, text:'3-Source 성분 DB (NIH/OFF/MFDS)', due:'완료'},
+                                {done:true, text:'Shopify 구현 플로우 문서', due:'완료'},
+                                {done:true, text:'통합 DB 스키마 설계 (catalog_v2)', due:'완료'},
+                                {done:true, text:'포스트런칭 로드맵 (P5-P11)', due:'완료'},
+                                {done:true, text:'1차 프로젝트 제안서 정리', due:'완료'},
+                                {done:false, text:'Shopify 계정 개설 & 플랜 결정', due:'W1 전'},
+                                {done:false, text:'우선 SKU 선정 (100~200개)', due:'W1 전'},
+                                {done:false, text:'결제 PG사 계약 (한국/일본)', due:'W2'},
+                                {done:false, text:'배송 파트너 확정', due:'W2'},
+                                {done:false, text:'내부 운영 담당자 지정', due:'W1 전'}
+                            ].map((c, i) =>
+                                React.createElement('div', {key:i, className:'ops-check-item' + (c.done?' done':'')},
+                                    React.createElement('div', {className:'ops-check-box' + (c.done?' checked':'')}, c.done ? '\u2713' : ''),
+                                    c.text,
+                                    React.createElement('span', {className:'ops-check-due'}, c.due)
+                                )
+                            )
+                        )
+                    ),
+                    // Shopify project progress (interactive)
+                    React.createElement(ShopifyProgress)
+                ),
+                // Bottom Row (2-col grid)
+                React.createElement('div', {className:'ops-grid-2'},
+                    // Category bar chart (moved here from top)
                     React.createElement('div', {className:'ops-card'},
                         React.createElement('div', {className:'ops-card-header'},
                             React.createElement('div', {className:'ops-card-title'}, '\uD83D\uDCCA 카테고리별 상품 현황'),
@@ -1255,11 +1289,6 @@
                             React.createElement('div', {className:'ops-legend-item'}, React.createElement('div', {className:'ops-legend-dot',style:{background:'#3b82f6'}}), ' iHerb 매핑')
                         )
                     ),
-                    // Shopify project progress (interactive)
-                    React.createElement(ShopifyProgress)
-                ),
-                // Bottom Row (2-col grid)
-                React.createElement('div', {className:'ops-grid-2'},
                     // Market donut
                     React.createElement('div', {className:'ops-card'},
                         React.createElement('div', {className:'ops-card-header'},
@@ -1311,35 +1340,6 @@
                                             React.createElement('td', null, React.createElement('span', {className:'ops-tag '+r.tag}, r.phase))
                                         )
                                     )
-                                )
-                            )
-                        )
-                    ),
-                    // Checklist
-                    React.createElement('div', {className:'ops-card'},
-                        React.createElement('div', {className:'ops-card-header'},
-                            React.createElement('div', {className:'ops-card-title'}, '\u2705 1차 프로젝트 준비 체크리스트'),
-                            React.createElement('span', {className:'ops-card-badge'}, '7 / 12')
-                        ),
-                        React.createElement('div', {className:'ops-checklist'},
-                            ...[
-                                {done:true, text:'OPLE 상품 DB 구조 분석', due:'완료'},
-                                {done:true, text:'iHerb 매핑 파이프라인 구축', due:'완료'},
-                                {done:true, text:'3-Source 성분 DB (NIH/OFF/MFDS)', due:'완료'},
-                                {done:true, text:'Shopify 구현 플로우 문서', due:'완료'},
-                                {done:true, text:'통합 DB 스키마 설계 (catalog_v2)', due:'완료'},
-                                {done:true, text:'포스트런칭 로드맵 (P5-P11)', due:'완료'},
-                                {done:true, text:'1차 프로젝트 제안서 정리', due:'완료'},
-                                {done:false, text:'Shopify 계정 개설 & 플랜 결정', due:'W1 전'},
-                                {done:false, text:'우선 SKU 선정 (100~200개)', due:'W1 전'},
-                                {done:false, text:'결제 PG사 계약 (한국/일본)', due:'W2'},
-                                {done:false, text:'배송 파트너 확정', due:'W2'},
-                                {done:false, text:'내부 운영 담당자 지정', due:'W1 전'}
-                            ].map((c, i) =>
-                                React.createElement('div', {key:i, className:'ops-check-item' + (c.done?' done':'')},
-                                    React.createElement('div', {className:'ops-check-box' + (c.done?' checked':'')}, c.done ? '\u2713' : ''),
-                                    c.text,
-                                    React.createElement('span', {className:'ops-check-due'}, c.due)
                                 )
                             )
                         )

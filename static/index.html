@@ -2807,6 +2807,8 @@
             const [newMember, setNewMember] = useState({ name:'', initials:'', role:'담당자' });
             const [assignDropdown, setAssignDropdown] = useState(null); // {pId, gId, tId}
             const [priorityDropdown, setPriorityDropdown] = useState(null); // {pId, gId}
+            const [viewMode, setViewMode] = useState('spreadsheet'); // 'spreadsheet' | 'board'
+            const [dragTask, setDragTask] = useState(null); // {pId, gId, tId}
 
             useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(projects)); }, [projects]);
             useEffect(() => { localStorage.setItem(membersKey, JSON.stringify(members)); }, [members]);
@@ -2821,6 +2823,30 @@
                 setProjects(prev => prev.map(p => p.id !== pId ? p : {...p, groups: p.groups.map(g => g.id !== gId ? g : {...g, priority: newPriority})}));
                 setPriorityDropdown(null);
             };
+
+            const changeTaskStatus = (pId, gId, tId, newStatus) => {
+                setProjects(prev => prev.map(p => p.id !== pId ? p : {...p, groups: p.groups.map(g => g.id !== gId ? g : {...g, tasks: g.tasks.map(t => {
+                    if (t.id !== tId) return t;
+                    return {...t, status: newStatus, done: newStatus === 'complete'};
+                })})}));
+            };
+
+            const getAllTasks = () => {
+                const all = [];
+                projects.forEach(p => p.groups.forEach(g => g.tasks.forEach(t => {
+                    all.push({...t, projectName: p.name, projectId: p.id, groupName: g.name, groupId: g.id, groupPriority: g.priority});
+                })));
+                return all;
+            };
+
+            const boardColumns = [
+                { id: 'todo', label: 'To Do', color: '#64748b', bg: '#f8fafc' },
+                { id: 'in_progress', label: 'In Progress', color: '#2563eb', bg: '#eff6ff' },
+                { id: 'review', label: 'Review', color: '#d97706', bg: '#fffbeb' },
+                { id: 'complete', label: 'Complete', color: '#16a34a', bg: '#f0fdf4' },
+            ];
+
+            const getTaskStatus = (t) => t.status || (t.done ? 'complete' : 'todo');
 
             const toggleAssignee = (pId, gId, tId, mId) => {
                 setProjects(prev => prev.map(p => p.id !== pId ? p : {...p, groups: p.groups.map(g => g.id !== gId ? g : {...g, tasks: g.tasks.map(t => {
@@ -2912,6 +2938,15 @@
                         </div>
                     </div>
 
+                    {/* View Tabs */}
+                    <div style={{display:'flex',gap:'4px',marginBottom:'20px',background:'#f1f5f9',borderRadius:'8px',padding:'3px',width:'fit-content'}}>
+                        {[{id:'spreadsheet',icon:'☰',label:'List'},{id:'board',icon:'▦',label:'Board'}].map(v => (
+                            <button key={v.id} onClick={()=>setViewMode(v.id)} style={{padding:'6px 16px',borderRadius:'6px',border:'none',background:viewMode===v.id?'#fff':'transparent',color:viewMode===v.id?'#1e293b':'#94a3b8',fontSize:'0.8rem',fontWeight:600,cursor:'pointer',boxShadow:viewMode===v.id?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all 0.15s',display:'flex',alignItems:'center',gap:'6px'}}>
+                                <span style={{fontSize:'0.9rem'}}>{v.icon}</span>{v.label}
+                            </button>
+                        ))}
+                    </div>
+
                     {/* Member Modal */}
                     {showMemberModal && (
                         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.3)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200}} onClick={()=>setShowMemberModal(false)}>
@@ -2952,15 +2987,14 @@
                         </div>
                     )}
 
-                    {/* Projects */}
-                    {projects.map(project => {
+                    {/* ═══ SPREADSHEET VIEW ═══ */}
+                    {viewMode === 'spreadsheet' && projects.map(project => {
                         const pp = getProjectProgress(project);
                         const autoStatus = pp.pct === 100 ? 'completed' : pp.pct > 0 ? 'in_progress' : 'pending';
                         const asc = statusColors[autoStatus];
 
                         return (
                             <div key={project.id} style={{background:'#fff',borderRadius:'12px',border:'1px solid #e8ecf1',marginBottom:'16px',overflow:'hidden'}}>
-                                {/* Project Header */}
                                 <div style={{padding:'14px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                                     <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
                                         <span style={{padding:'3px 10px',borderRadius:'12px',fontSize:'0.7rem',fontWeight:600,background:asc.bg,color:asc.text}}>{asc.label}</span>
@@ -2971,12 +3005,10 @@
                                     <PBar pct={pp.pct} sz="lg" />
                                 </div>
 
-                                {/* Table Header */}
                                 <div style={{display:'grid',gridTemplateColumns:'36px 1fr 1.3fr 90px 60px 72px 110px',padding:'7px 20px',background:'#f8fafc',borderBottom:'1px solid #f1f5f9',fontSize:'0.7rem',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.03em'}}>
                                     <div></div><div>Task</div><div>Description</div><div>Assignee</div><div>Due</div><div>Priority</div><div>Progress</div>
                                 </div>
 
-                                {/* Groups */}
                                 {project.groups.map(group => {
                                     const gp = getGroupProgress(group);
                                     const pc = priorityColors[group.priority] || priorityColors.normal;
@@ -2991,9 +3023,7 @@
                                                     <span style={{fontWeight:700,fontSize:'0.85rem',color:gp.pct===100?'#94a3b8':'#1e293b',textDecoration:gp.pct===100?'line-through':'none'}}>{group.name}</span>
                                                     <span style={{fontSize:'0.68rem',color:'#94a3b8',background:'#f1f5f9',padding:'1px 5px',borderRadius:'8px'}}>{group.tasks.length}</span>
                                                 </div>
-                                                <div></div>
-                                                <div></div>
-                                                <div></div>
+                                                <div></div><div></div><div></div>
                                                 <div style={{position:'relative'}}>
                                                     <span onClick={(e)=>{e.stopPropagation();setPriorityDropdown(priorityDropdown&&priorityDropdown.gId===group.id?null:{pId:project.id,gId:group.id})}} style={{padding:'2px 8px',borderRadius:'10px',fontSize:'0.68rem',fontWeight:600,background:pc.bg,color:pc.text,cursor:'pointer'}}>{pc.label}</span>
                                                     {priorityDropdown && priorityDropdown.gId===group.id && (
@@ -3027,6 +3057,76 @@
                             </div>
                         );
                     })}
+
+                    {/* ═══ BOARD VIEW (Kanban) ═══ */}
+                    {viewMode === 'board' && (
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'16px',alignItems:'start'}}>
+                            {boardColumns.map(col => {
+                                const tasks = getAllTasks().filter(t => getTaskStatus(t) === col.id);
+                                return (
+                                    <div key={col.id}
+                                        onDragOver={(e)=>e.preventDefault()}
+                                        onDrop={(e)=>{
+                                            e.preventDefault();
+                                            if (dragTask) { changeTaskStatus(dragTask.pId, dragTask.gId, dragTask.tId, col.id); setDragTask(null); }
+                                        }}
+                                        style={{background:col.bg,borderRadius:'12px',padding:'12px',minHeight:'400px'}}
+                                    >
+                                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px',padding:'0 4px'}}>
+                                            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                                                <div style={{width:'8px',height:'8px',borderRadius:'50%',background:col.color}}></div>
+                                                <span style={{fontSize:'0.88rem',fontWeight:700,color:'#1e293b'}}>{col.label}</span>
+                                                <span style={{fontSize:'0.72rem',fontWeight:600,color:'#94a3b8',background:'#fff',padding:'1px 7px',borderRadius:'10px'}}>{tasks.length}</span>
+                                            </div>
+                                        </div>
+
+                                        {tasks.map(task => {
+                                            const pc = priorityColors[task.groupPriority] || priorityColors.normal;
+                                            return (
+                                                <div key={task.id}
+                                                    draggable
+                                                    onDragStart={()=>setDragTask({pId:task.projectId,gId:task.groupId,tId:task.id})}
+                                                    onDragEnd={()=>setDragTask(null)}
+                                                    style={{background:'#fff',borderRadius:'10px',padding:'14px',marginBottom:'10px',border:'1px solid #e8ecf1',cursor:'grab',boxShadow:'0 1px 3px rgba(0,0,0,0.04)',transition:'box-shadow 0.15s,transform 0.15s'}}
+                                                    onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';e.currentTarget.style.transform='translateY(-1px)';}}
+                                                    onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)';e.currentTarget.style.transform='translateY(0)';}}
+                                                >
+                                                    {/* Tags */}
+                                                    <div style={{display:'flex',gap:'4px',marginBottom:'8px',flexWrap:'wrap'}}>
+                                                        <span style={{padding:'2px 8px',borderRadius:'10px',fontSize:'0.65rem',fontWeight:600,background:pc.bg,color:pc.text}}>{pc.label}</span>
+                                                        <span style={{padding:'2px 8px',borderRadius:'10px',fontSize:'0.65rem',fontWeight:500,background:'#f1f5f9',color:'#64748b'}}>{task.groupName}</span>
+                                                    </div>
+
+                                                    {/* Title */}
+                                                    <div style={{fontSize:'0.88rem',fontWeight:700,color:'#1e293b',marginBottom:'6px',lineHeight:1.3}}>{task.name}</div>
+
+                                                    {/* Description */}
+                                                    <div style={{fontSize:'0.76rem',color:'#94a3b8',marginBottom:'12px',lineHeight:1.4}}>{task.desc}</div>
+
+                                                    {/* Footer */}
+                                                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                                                        <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                            <span style={{fontSize:'0.72rem',color:'#94a3b8',fontWeight:500}}>{task.due}</span>
+                                                        </div>
+                                                        <div style={{display:'flex',alignItems:'center'}}>
+                                                            {(task.assignees||[]).map(mId => <Avatar key={mId} mId={mId} size={24} />)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {tasks.length === 0 && (
+                                            <div style={{padding:'20px',textAlign:'center',color:'#cbd5e1',fontSize:'0.78rem',border:'2px dashed #e2e8f0',borderRadius:'10px'}}>
+                                                드래그하여 여기에 놓기
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             );
         };

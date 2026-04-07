@@ -1074,13 +1074,26 @@
                 {text:'우선 SKU 선정 (100~200개)', due:'W1 전', defaultDone:false},
                 {text:'결제 PG사 계약 (한국/일본)', due:'W2', defaultDone:false},
                 {text:'배송 파트너 확정', due:'W2', defaultDone:false},
-                {text:'내부 운영 담당자 지정', due:'W1 전', defaultDone:false}
+                {text:'내부 운영 담당자 지정', due:'W1 전', defaultDone:false},
+                {text:'담당자 인터뷰 진행', due:'W1', defaultDone:false},
+                {text:'담당자 통한 내부 정보 체크', due:'W1', defaultDone:false},
+                {text:'엑세스 권한 부여 (시스템/관리자)', due:'W1', defaultDone:false},
+                {text:'일시적 서버 또는 장비 확보', due:'W1', defaultDone:false},
+                {text:'상품 DB 확보', due:'W1', defaultDone:false},
+                {text:'리뷰 DB 확보', due:'W1', defaultDone:false},
+                {text:'주문 DATA 확보', due:'W1', defaultDone:false}
             ];
 
             const loadState = () => {
                 try {
                     const saved = localStorage.getItem(storageKey);
-                    if (saved) return JSON.parse(saved);
+                    if (saved) {
+                        const arr = JSON.parse(saved);
+                        if (arr.length < items.length) {
+                            return [...arr, ...items.slice(arr.length).map(i => i.defaultDone)];
+                        }
+                        return arr;
+                    }
                 } catch(e) {}
                 return items.map(i => i.defaultDone);
             };

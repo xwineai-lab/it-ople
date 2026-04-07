@@ -665,19 +665,23 @@
 
         const Login = ({ onLoginSuccess }) => {
             useEffect(() => {
-                if (window.google) {
-                    google.accounts.id.initialize({
-                        client_id: GOOGLE_CLIENT_ID,
-                        callback: handleGoogleResponse
-                    });
-                    google.accounts.id.renderButton(
-                        document.getElementById('google-signin-btn'),
-                        {
-                            theme: 'outline',
-                            size: 'large',
-                            width: 300
-                        }
-                    );
+                const tryRenderBtn = () => {
+                    const el = document.getElementById('google-signin-btn');
+                    if (window.google && window.google.accounts && el) {
+                        google.accounts.id.initialize({
+                            client_id: GOOGLE_CLIENT_ID,
+                            callback: handleGoogleResponse
+                        });
+                        google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: 300 });
+                        return true;
+                    }
+                    return false;
+                };
+                if (!tryRenderBtn()) {
+                    const interval = setInterval(() => {
+                        if (tryRenderBtn()) clearInterval(interval);
+                    }, 200);
+                    return () => clearInterval(interval);
                 }
             }, []);
 
@@ -707,7 +711,9 @@
                     alignItems: 'center',
                     justifyContent: 'center',
                     minHeight: '100vh',
-                    background: '#ffffff'
+                    background: '#ffffff',
+                    marginLeft: '-240px',
+                    width: 'calc(100% + 240px)'
                 }}>
                     <div style={{
                         textAlign: 'center',

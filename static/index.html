@@ -1063,14 +1063,46 @@
         const ShopifyProgress = () => {
             const storageKey = 'ople_shopify_phases';
             const defaultPhases = [
-                {id:'p1', name:'Phase 1 \u2014 설계 & 개발환경 세팅', detail:'W1-W2 \u00B7 스토어 개설, IA 정의, 메타필드 설계',
-                 tasks:['Shopify 계정 개설 & 플랜 결정','IA(정보구조) 정의','메타필드 스키마 설계','태그 네임스페이스 확정','개발 테마 세팅']},
-                {id:'p2', name:'Phase 2 \u2014 한국/일본몰 구축', detail:'W3-W5 \u00B7 PDP, Collection, Filter, 결제/배송',
-                 tasks:['PDP(상품 상세) 템플릿','컬렉션 페이지 & 메가메뉴','필터 & 정렬 시스템','결제/배송 설정 (KR/JP)','다국어 콘텐츠 세팅']},
-                {id:'p3', name:'Phase 3 \u2014 라이브 오픈 & 인수인계', detail:'W6-W10 \u00B7 오픈, 안정화, 운영팀 인수, 2차 문서화',
-                 tasks:['스테이징 QA & 버그 수정','도메인 연결 & DNS 설정','라이브 오픈','운영팀 인수인계 & 교육','2차 확장 문서화']},
-                {id:'bonus', name:'성과보너스', detail:'오픈 후 6주 \u00B7 실주문 + 운영 이관 + 확장 문서 완료',
-                 tasks:['실주문 처리 안정화','운영 이관 완료 확인','확장 문서 최종 전달']}
+                {id:'p1', name:'Phase 1 \u2014 설계 및 개발환경 세팅', detail:'W1-W2 \u00B7 검수 후 지급',
+                 tasks:[
+                    'Shopify 개발 스토어 개설',
+                    '한국 / 일본 기준 정보구조(IA) 정의',
+                    '상품 DB 구조, 메타필드/메타오브젝트 설계',
+                    'Markets 기본 구조 세팅',
+                    '우선 SKU 선정 기준 및 등록 방식 정리',
+                    '태그 네임스페이스 확정',
+                    '내부 전담 PM 지정 & 담당자 인터뷰'
+                ]},
+                {id:'p2', name:'Phase 2 \u2014 한국몰 구축', detail:'W3-W5 \u00B7 검수 후 지급',
+                 tasks:[
+                    '프론트엔드 구축 (테마 커스터마이징)',
+                    'PDP(상품 상세) 템플릿 구현',
+                    'Collection / Filter / Search 기본 구현',
+                    '한국 기준 결제/배송/정책 페이지 반영',
+                    '우선 SKU 적재 (상품 등록)',
+                    '테스트 주문 가능한 상태까지 구축',
+                    '메가메뉴 & 네비게이션 구현'
+                ]},
+                {id:'p3', name:'Phase 3 \u2014 라이브 오픈 및 인수인계', detail:'W6-W10 \u00B7 검수 후 지급',
+                 tasks:[
+                    '한국몰 라이브 오픈',
+                    '실주문 테스트 및 안정화',
+                    '일본몰 운영 준비 완료 상태 구축',
+                    '\u2514 일본용 상품/카탈로그 구조',
+                    '\u2514 Market 세팅 (JP)',
+                    '\u2514 테스트 주문 가능 상태',
+                    '\u2514 정책/배송/결제 반영 가능한 구조',
+                    '\u2514 후속 라이브 전환 가능한 상태',
+                    '내부 운영팀 인수인계 & 교육',
+                    '후속 국가 확장 가능한 구조 정리',
+                    '2차 확장 로드맵 문서화'
+                ]},
+                {id:'bonus', name:'성과보너스', detail:'오픈 후 6주 \u00B7 조건부 지급',
+                 tasks:[
+                    '실주문 처리 안정화 확인',
+                    '운영 이관 완료 확인',
+                    '확장 문서 최종 전달'
+                ]}
             ];
 
             const loadState = () => {
@@ -1107,7 +1139,12 @@
             return React.createElement('div', {className:'ops-card'},
                 React.createElement('div', {className:'ops-card-header'},
                     React.createElement('div', {className:'ops-card-title'}, '\uD83D\uDE80 Shopify 1차 프로젝트 진행'),
-                    React.createElement('span', {className:'ops-card-badge'}, totalDone + '/' + totalTasks + ' \u00B7 ' + totalPct + '%')
+                    React.createElement('span', {className:'ops-card-badge'}, totalDone + '/' + totalTasks + ' \u00B7 ' + totalPct + '% \u00B7 8~10주')
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'8px',marginBottom:'14px',flexWrap:'wrap'}},
+                    React.createElement('span', {style:{fontSize:'0.7rem',padding:'3px 10px',borderRadius:'12px',background:'#dbeafe',color:'#2563eb',fontWeight:600}}, '\uD83C\uDDF0\uD83C\uDDF7 한국몰: 라이브 오픈'),
+                    React.createElement('span', {style:{fontSize:'0.7rem',padding:'3px 10px',borderRadius:'12px',background:'#fef3c7',color:'#92400e',fontWeight:600}}, '\uD83C\uDDEF\uD83C\uDDF5 일본몰: 운영 준비 완료'),
+                    React.createElement('span', {style:{fontSize:'0.7rem',padding:'3px 10px',borderRadius:'12px',background:'#f1f5f9',color:'#64748b',fontWeight:600}}, '\uD83C\uDF0D 후속 국가: 2차 로드맵')
                 ),
                 React.createElement('div', {className:'ops-phase-list'},
                     ...defaultPhases.map(p => {

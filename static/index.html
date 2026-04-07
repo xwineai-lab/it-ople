@@ -11,6 +11,9 @@
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <!-- React & ReactDOM from CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -636,6 +639,7 @@
 
         // ============= API HELPER =============
         const API_BASE = '';
+        const GOOGLE_CLIENT_ID = '301424841541-qrji29v6k3s7bsdqaqtql6c5fjlbhpqg.apps.googleusercontent.com';
 
         const apiFetch = async (url, options = {}) => {
             try {
@@ -648,13 +652,231 @@
             }
         };
 
+        const apiAuthFetch = async (url, options = {}) => {
+            const token = localStorage.getItem('ople_token');
+            const headers = {
+                ...options.headers,
+                ...(token && { 'Authorization': `Bearer ${token}` }),
+            };
+            return apiFetch(url, { ...options, headers });
+        };
+
         // ============= COMPONENTS =============
+
+        const Login = ({ onLoginSuccess }) => {
+            useEffect(() => {
+                if (window.google) {
+                    google.accounts.id.initialize({
+                        client_id: GOOGLE_CLIENT_ID,
+                        callback: handleGoogleResponse
+                    });
+                    google.accounts.id.renderButton(
+                        document.getElementById('google-signin-btn'),
+                        {
+                            theme: 'outline',
+                            size: 'large',
+                            width: 300
+                        }
+                    );
+                }
+            }, []);
+
+            const handleGoogleResponse = async (response) => {
+                try {
+                    const authResponse = await apiFetch('/api/auth/google', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: response.credential })
+                    });
+
+                    if (authResponse && authResponse.token) {
+                        localStorage.setItem('ople_token', authResponse.token);
+                        onLoginSuccess(authResponse.user);
+                    } else {
+                        alert('로그인 실패');
+                    }
+                } catch (err) {
+                    console.error('Login error:', err);
+                    alert('로그인 중 오류가 발생했습니다');
+                }
+            };
+
+            return (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '100vh',
+                    background: '#ffffff'
+                }}>
+                    <div style={{
+                        textAlign: 'center',
+                        maxWidth: '400px',
+                        padding: '40px 30px'
+                    }}>
+                        <div style={{
+                            fontSize: '36px',
+                            fontWeight: '800',
+                            color: '#1a202c',
+                            marginBottom: '12px',
+                            letterSpacing: '-1px'
+                        }}>
+                            OPLE
+                        </div>
+                        <div style={{
+                            fontSize: '18px',
+                            fontWeight: '600',
+                            color: '#64748b',
+                            marginBottom: '40px',
+                            letterSpacing: '-0.5px'
+                        }}>
+                            Operations Platform
+                        </div>
+                        <div id="google-signin-btn" style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const UsersPage = ({ currentUser }) => {
+            const [users, setUsers] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                loadUsers();
+            }, []);
+
+            const loadUsers = async () => {
+                const data = await apiAuthFetch('/api/users');
+                if (data) setUsers(data);
+                setLoading(false);
+            };
+
+            const handleRoleChange = async (userId, newRole) => {
+                const result = await apiAuthFetch(`/api/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: newRole })
+                });
+                if (result) loadUsers();
+            };
+
+            const handleActiveToggle = async (userId, isActive) => {
+                const result = await apiAuthFetch(`/api/users/${userId}/active`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_active: !isActive })
+                });
+                if (result) loadUsers();
+            };
+
+            return (
+                <div style={{ padding: '28px 32px' }}>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b', marginBottom: '24px' }}>
+                        사용자 관리
+                    </h1>
+
+                    <div className="card" style={{ overflow: 'hidden' }}>
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
+                                        <tr>
+                                            <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>사용자</th>
+                                            <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>이메일</th>
+                                            <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>역할</th>
+                                            <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>상태</th>
+                                            <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>마지막 로그인</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {users.map(user => (
+                                            <tr key={user.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                <td style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    {user.picture ? (
+                                                        <img src={user.picture} alt={user.name} style={{
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            borderRadius: '50%',
+                                                            objectFit: 'cover'
+                                                        }} />
+                                                    ) : (
+                                                        <div style={{
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            borderRadius: '50%',
+                                                            background: '#e5e7eb',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: '#64748b',
+                                                            fontSize: '12px',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            {user.name?.charAt(0) || '?'}
+                                                        </div>
+                                                    )}
+                                                    <span style={{ fontWeight: '500', color: '#1e293b' }}>{user.name || 'N/A'}</span>
+                                                </td>
+                                                <td style={{ padding: '16px', color: '#64748b', fontSize: '0.9rem' }}>{user.email}</td>
+                                                <td style={{ padding: '16px' }}>
+                                                    <select
+                                                        value={user.role}
+                                                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                                        style={{
+                                                            padding: '6px 10px',
+                                                            border: '1px solid #d1d5db',
+                                                            borderRadius: '4px',
+                                                            fontSize: '0.9rem',
+                                                            fontWeight: '500',
+                                                            color: '#374151',
+                                                            background: '#fff',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <option value="admin">관리자</option>
+                                                        <option value="editor">편집자</option>
+                                                        <option value="viewer">뷰어</option>
+                                                    </select>
+                                                </td>
+                                                <td style={{ padding: '16px' }}>
+                                                    <button
+                                                        onClick={() => handleActiveToggle(user.id, user.is_active)}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: '500',
+                                                            cursor: 'pointer',
+                                                            background: user.is_active ? '#dcfce7' : '#fee2e2',
+                                                            color: user.is_active ? '#166534' : '#991b1b'
+                                                        }}
+                                                    >
+                                                        {user.is_active ? '활성' : '비활성'}
+                                                    </button>
+                                                </td>
+                                                <td style={{ padding: '16px', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                                    {user.last_login ? new Date(user.last_login).toLocaleDateString('ko-KR') : '-'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
 
         const SvgIcon = ({path}) => (
             <span className="icon" dangerouslySetInnerHTML={{__html: `<svg viewBox="0 0 24 24"><path d="${path}"/></svg>`}} />
         );
 
-        const Sidebar = ({ activeTab, setActiveTab }) => {
+        const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout }) => {
             const productItems = [
                 { id: 'products', label: 'OPLE 제품', path: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
                 { id: 'iherb', label: 'iHerb 상품', path: 'M9 21a1 1 0 110-2 1 1 0 010 2zm11 0a1 1 0 110-2 1 1 0 010 2zM1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6' },
@@ -683,6 +905,13 @@
                         <SvgIcon path="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" /> 성분 DB
                     </a>
 
+                    <div className="sidebar-section">관리</div>
+                    {currentUser?.role === 'admin' && (
+                        <button className={`sidebar-link ${activeTab==='users'?'active':''}`} onClick={()=>setActiveTab('users')}>
+                            <SvgIcon path="M17 21h2a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2h2m3-6h2m0 0h2m-2 0v2m0-2v-2m-6 6h.01M5 20h10a2 2 0 002-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /> 사용자 관리
+                        </button>
+                    )}
+
                     <div className="sidebar-section">쇼피파이</div>
                     <a className="sidebar-link" href="/spec" style={{textDecoration:'none'}}>
                         <SvgIcon path="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h4" /> 명세
@@ -699,11 +928,35 @@
 
                     <div className="sidebar-bottom" style={{marginTop:'auto',padding:'16px 20px',borderTop:'1px solid #e8ecf1'}}>
                         <div className="sidebar-team" style={{display:'flex',alignItems:'center',gap:'10px',fontSize:'0.85rem'}}>
-                            <div className="avatar" style={{width:'36px',height:'36px',borderRadius:'10px',background:'linear-gradient(135deg,#E46728,#00A651)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:'0.8rem'}}>OP</div>
-                            <div>
-                                <div style={{fontWeight:700,fontSize:'0.85rem'}}>Team OPLE</div>
-                                <div style={{fontSize:'0.72rem',color:'#94a3b8'}}>Operations</div>
+                            {currentUser?.picture ? (
+                                <img src={currentUser.picture} alt={currentUser.name} style={{width:'36px',height:'36px',borderRadius:'8px',objectFit:'cover'}} />
+                            ) : (
+                                <div style={{width:'36px',height:'36px',borderRadius:'8px',background:'linear-gradient(135deg,#E46728,#00A651)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:'0.8rem'}}>
+                                    {currentUser?.name?.charAt(0) || 'U'}
+                                </div>
+                            )}
+                            <div style={{flex:1}}>
+                                <div style={{fontWeight:700,fontSize:'0.85rem'}}>{currentUser?.name || 'User'}</div>
+                                <div style={{fontSize:'0.72rem',color:'#94a3b8'}}>{currentUser?.role === 'admin' ? '관리자' : currentUser?.role === 'editor' ? '편집자' : '뷰어'}</div>
                             </div>
+                            <button
+                                onClick={onLogout}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#94a3b8',
+                                    padding: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '16px',
+                                    marginLeft: '4px'
+                                }}
+                                title="Logout"
+                            >
+                                <span dangerouslySetInnerHTML={{__html: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>'}} />
+                            </button>
                         </div>
                     </div>
                 </aside>
@@ -1789,14 +2042,14 @@
         };
 
         // ============= MAIN APP =============
-        const Main = () => {
+        const Main = ({ currentUser, onLogout }) => {
             const [activeTab, setActiveTab] = useState('dashboard');
 
             return (
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
-                    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+                    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
                     <main style={{marginLeft:'240px',flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
-                        {activeTab !== 'dashboard' && (
+                        {activeTab !== 'dashboard' && activeTab !== 'users' && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
                                 {activeTab === 'products' && 'OPLE 제품'}
@@ -1813,15 +2066,53 @@
                         {activeTab === 'mapping' && <MappingPage />}
                         {activeTab === 'analytics' && <AnalyticsPage />}
                         {activeTab === 'scraper' && <ScraperPage />}
+                        {activeTab === 'users' && <UsersPage currentUser={currentUser} />}
                     </main>
                 </div>
             );
         };
 
         const App = () => {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [authChecking, setAuthChecking] = useState(true);
+
+            useEffect(() => {
+                checkAuth();
+            }, []);
+
+            const checkAuth = async () => {
+                const token = localStorage.getItem('ople_token');
+                if (token) {
+                    const user = await apiAuthFetch('/api/auth/me');
+                    if (user) {
+                        setCurrentUser(user);
+                    } else {
+                        localStorage.removeItem('ople_token');
+                    }
+                }
+                setAuthChecking(false);
+            };
+
+            const handleLoginSuccess = (user) => {
+                setCurrentUser(user);
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('ople_token');
+                setCurrentUser(null);
+            };
+
+            if (authChecking) {
+                return <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh'}}>로딩 중...</div>;
+            }
+
+            if (!currentUser) {
+                return <Login onLoginSuccess={handleLoginSuccess} />;
+            }
+
             return (
                 <AppProvider>
-                    <Main />
+                    <Main currentUser={currentUser} onLogout={handleLogout} />
                 </AppProvider>
             );
         };

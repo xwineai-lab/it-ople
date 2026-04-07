@@ -7,7 +7,7 @@ import sys
 import json
 import asyncio
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -17,12 +17,47 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, case
+import httpx
+from jose import jwt, JWTError
 
-from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob, SessionLocal
+from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob, User, SessionLocal
 
 # Add scraper module to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scraper"))
 from iherb_scraper import run_iherb_scrape, SUPPLEMENT_CATEGORIES
+
+# ── Auth Configuration ───────────────────────────────────
+JWT_SECRET = os.getenv("JWT_SECRET", "ople-dev-secret-change-in-prod")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_HOURS = 24 * 7  # 7 days
+ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "xwine.ai@gmail.com").split(",")
+
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """Dependency to get current user from JWT token."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        scheme, token = auth_header.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid auth scheme")
+
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id: int = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="User is inactive")
+
+        return user
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # ── App Setup ────────────────────────────────────────────
 app = FastAPI(title="IT.OPLE", version="1.1.0", description="OPLE 상품 분석 & iHerb 매핑 인트라넷")
@@ -842,6 +877,176 @@ def review_keywords(db: Session = Depends(get_db)):
                 keyword_counts[kw] = keyword_counts.get(kw, 0) + 1
     sorted_kw = sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:50]
     return [{"keyword": k, "count": v} for k, v in sorted_kw]
+
+# ── Auth Endpoints ───────────────────────────────────────
+
+@app.post("/api/auth/google")
+async def google_auth(data: dict, db: Session = Depends(get_db)):
+    """Verify Google ID token and create/update user."""
+    token = data.get("token")
+    if not token:
+        raise HTTPException(status_code=400, detail="No token provided")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://oauth2.googleapis.com/tokeninfo?id_token={token}",
+                timeout=10.0
+            )
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google token")
+
+        token_info = response.json()
+        email = token_info.get("email")
+        name = token_info.get("name")
+        picture = token_info.get("picture")
+        google_uid = token_info.get("sub")
+
+        if not email or not google_uid:
+            raise HTTPException(status_code=400, detail="Missing email or google_uid")
+
+        # Get or create user
+        user = db.query(User).filter(User.google_uid == google_uid).first()
+
+        if not user:
+            # Determine role: first user or emails in ADMIN_EMAILS get admin role
+            is_first_user = db.query(User).count() == 0
+            is_admin_email = email.lower() in [e.lower().strip() for e in ADMIN_EMAILS]
+            role = "admin" if (is_first_user or is_admin_email) else "viewer"
+
+            user = User(
+                email=email,
+                name=name,
+                picture=picture,
+                google_uid=google_uid,
+                role=role,
+                is_active=True,
+            )
+            db.add(user)
+        else:
+            # Update existing user
+            user.name = name
+            user.picture = picture
+
+        user.last_login = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
+
+        # Create JWT token
+        token_data = {
+            "sub": user.id,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+        }
+        expires = datetime.utcnow() + timedelta(hours=JWT_EXPIRE_HOURS)
+        token_data["exp"] = expires
+        jwt_token = jwt.encode(token_data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+        return {
+            "token": jwt_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "picture": user.picture,
+                "role": user.role,
+                "is_active": user.is_active,
+                "last_login": user.last_login.isoformat() if user.last_login else None,
+            },
+        }
+
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to verify token: {str(e)}")
+
+
+@app.get("/api/auth/me")
+def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current authenticated user info."""
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "name": current_user.name,
+        "picture": current_user.picture,
+        "role": current_user.role,
+        "is_active": current_user.is_active,
+        "last_login": current_user.last_login.isoformat() if current_user.last_login else None,
+    }
+
+
+@app.get("/api/users")
+def list_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """List all users (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    users = db.query(User).all()
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "name": u.name,
+            "picture": u.picture,
+            "role": u.role,
+            "is_active": u.is_active,
+            "last_login": u.last_login.isoformat() if u.last_login else None,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+        }
+        for u in users
+    ]
+
+
+@app.put("/api/users/{user_id}/role")
+def update_user_role(user_id: int, data: dict, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update user role (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    role = data.get("role")
+    if role not in ["admin", "editor", "viewer"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.role = role
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+    }
+
+
+@app.put("/api/users/{user_id}/active")
+def toggle_user_active(user_id: int, data: dict, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Toggle user active status (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    is_active = data.get("is_active")
+    if is_active is None:
+        raise HTTPException(status_code=400, detail="Missing is_active field")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_active = is_active
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "is_active": user.is_active,
+    }
 
 # ── Demo Data Seeding ─────────────────────────────────────
 def seed_demo_data(db: Session):

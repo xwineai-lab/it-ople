@@ -31,6 +31,7 @@ JWT_SECRET = os.getenv("JWT_SECRET", "ople-dev-secret-change-in-prod")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_HOURS = 24 * 7  # 7 days
 ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "xwine.ai@gmail.com").split(",")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "3242")
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     """Dependency to get current user from JWT token."""
@@ -963,14 +964,20 @@ async def google_auth(data: dict, db: Session = Depends(get_db)):
 
 @app.post("/api/auth/email-login")
 async def email_login(data: dict, db: Session = Depends(get_db)):
-    """Admin email login — only for pre-approved admin emails."""
+    """Admin email + password login."""
     email = (data.get("email") or "").strip().lower()
+    password = (data.get("password") or "").strip()
     if not email:
         raise HTTPException(status_code=400, detail="No email provided")
+    if not password:
+        raise HTTPException(status_code=400, detail="비밀번호를 입력해주세요")
 
     allowed = [e.lower().strip() for e in ADMIN_EMAILS]
     if email not in allowed:
         raise HTTPException(status_code=403, detail="이 이메일은 관리자 로그인이 허용되지 않습니다")
+
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="비밀번호가 올바르지 않습니다")
 
     user = db.query(User).filter(User.email == email).first()
     if not user:

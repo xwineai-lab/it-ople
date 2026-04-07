@@ -988,6 +988,11 @@
                         <SvgIcon path="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" /> 태그 전략
                     </button>
 
+                    <div className="sidebar-section">프로젝트</div>
+                    <button className={`sidebar-link ${activeTab==='projectShopify'?'active':''}`} onClick={()=>setActiveTab('projectShopify')}>
+                        <SvgIcon path="M13 10V3L4 14h7v7l9-11h-7z" /> Shopify 1차 프로젝트
+                    </button>
+
                     <div className="sidebar-section">관리</div>
                     {currentUser?.role === 'admin' && (
                         <button className={`sidebar-link ${activeTab==='users'?'active':''}`} onClick={()=>setActiveTab('users')}>
@@ -2704,6 +2709,305 @@
             );
         };
 
+        // ============= PROJECT MANAGER =============
+        const ProjectManager = () => {
+            const storageKey = 'ople_project_manager_v2';
+            const membersKey = 'ople_project_members';
+
+            const defaultMembers = [
+                { id: 'm1', name: 'Peter', initials: 'PT', color: '#E46728', role: '관리자' },
+                { id: 'm2', name: 'Claude', initials: 'CL', color: '#8b5cf6', role: '개발' },
+            ];
+
+            const defaultProjects = [
+                {
+                    id: 'p1', name: 'Phase 1 — 설계 및 개발환경 세팅', dueDate: 'W1-W2',
+                    groups: [
+                        { id:'p1g1', name:'스토어 & IA 설계', priority:'urgent', tasks:[
+                            { id:'p1g1t1', name:'Shopify 개발 스토어 개설', desc:'개발 스토어 생성 및 초기 설정', assignees:['m2'], due:'W1', done:false },
+                            { id:'p1g1t2', name:'한국/일본 기준 정보구조(IA) 정의', desc:'사이트맵, 카테고리 구조 설계', assignees:['m2'], due:'W1', done:false },
+                            { id:'p1g1t3', name:'상품 DB 구조 설계', desc:'메타필드/메타오브젝트 스키마 확정', assignees:['m2'], due:'W1', done:false },
+                            { id:'p1g1t4', name:'Markets 기본 구조 세팅', desc:'한국/일본 마켓 구조 설계', assignees:['m2'], due:'W2', done:false },
+                            { id:'p1g1t5', name:'태그 네임스페이스 확정', desc:'12개 태그 prefix 규칙 최종 확인', assignees:['m2'], due:'W2', done:false },
+                        ]},
+                        { id:'p1g2', name:'내부 기획 & 조사', priority:'urgent', tasks:[
+                            { id:'p1g2t1', name:'내부 전담 PM 지정', desc:'프로젝트 담당자 확정', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g2t2', name:'담당자 인터뷰 진행', desc:'내부 담당자 미팅 및 요구사항 수집', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g2t3', name:'담당자 통한 내부 정보 체크', desc:'기존 시스템 현황, 데이터 구조 파악', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g2t4', name:'엑세스 권한 부여 (시스템/관리자)', desc:'필요 시스템 접근 권한 확보', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g2t5', name:'일시적 서버 또는 장비 확보', desc:'개발 서버 / 장비 세팅', assignees:['m1'], due:'W1', done:false },
+                        ]},
+                        { id:'p1g3', name:'데이터 확보', priority:'normal', tasks:[
+                            { id:'p1g3t1', name:'상품 DB 확보', desc:'OPLE 상품 데이터 전체 추출', assignees:['m1','m2'], due:'W1', done:false },
+                            { id:'p1g3t2', name:'리뷰 DB 확보', desc:'고객 리뷰 데이터 수집 및 정리', assignees:['m1','m2'], due:'W1', done:false },
+                            { id:'p1g3t3', name:'주문 DATA 확보', desc:'주문 이력 데이터 확보', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g3t4', name:'iHerb 상품 매핑 데이터', desc:'iHerb 매핑 파이프라인 결과물', assignees:['m2'], due:'W2', done:false },
+                            { id:'p1g3t5', name:'우선 SKU 선정 기준 정리', desc:'100~200개 우선 SKU 기준 확정', assignees:['m1','m2'], due:'W2', done:false },
+                        ]},
+                        { id:'p1g4', name:'Shopify 계정 & 플랜', priority:'normal', tasks:[
+                            { id:'p1g4t1', name:'Shopify 계정 개설', desc:'Shopify 파트너/스토어 계정 생성', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g4t2', name:'플랜 결정', desc:'Basic/Shopify/Advanced 플랜 확정', assignees:['m1'], due:'W1', done:false },
+                        ]},
+                    ]
+                },
+                {
+                    id: 'p2', name: 'Phase 2 — 한국몰 구축', dueDate: 'W3-W5',
+                    groups: [
+                        { id:'p2g1', name:'프론트엔드 개발', priority:'urgent', tasks:[
+                            { id:'p2g1t1', name:'테마 커스터마이징', desc:'Shopify 테마 선정 및 커스텀 개발', assignees:['m2'], due:'W3', done:false },
+                            { id:'p2g1t2', name:'PDP(상품 상세) 템플릿 구현', desc:'상품 상세 페이지 템플릿 개발', assignees:['m2'], due:'W3', done:false },
+                            { id:'p2g1t3', name:'메가메뉴 & 네비게이션 구현', desc:'카테고리 메가메뉴 개발', assignees:['m2'], due:'W4', done:false },
+                            { id:'p2g1t4', name:'Collection / Filter / Search 구현', desc:'컬렉션, 필터링, 검색 기능', assignees:['m2'], due:'W4', done:false },
+                        ]},
+                        { id:'p2g2', name:'상품 & 운영 세팅', priority:'normal', tasks:[
+                            { id:'p2g2t1', name:'우선 SKU 적재 (100~200개)', desc:'상품 등록 및 데이터 적재', assignees:['m2'], due:'W4', done:false },
+                            { id:'p2g2t2', name:'결제/배송/정책 페이지 반영', desc:'한국 기준 PG, 배송, 약관 반영', assignees:['m2'], due:'W5', done:false },
+                            { id:'p2g2t3', name:'테스트 주문 가능 상태 구축', desc:'결제~배송 전 과정 테스트 가능', assignees:['m2'], due:'W5', done:false },
+                        ]},
+                        { id:'p2g3', name:'외부 파트너 연동', priority:'low', tasks:[
+                            { id:'p2g3t1', name:'PG사 계약 (한국/일본)', desc:'결제 PG 연동 계약', assignees:['m1'], due:'W4', done:false },
+                            { id:'p2g3t2', name:'배송 파트너 확정', desc:'배송 업체 선정 및 연동', assignees:['m1'], due:'W4', done:false },
+                        ]},
+                    ]
+                },
+                {
+                    id: 'p3', name: 'Phase 3 — 라이브 오픈 & 인수인계', dueDate: 'W6-W10',
+                    groups: [
+                        { id:'p3g1', name:'한국몰 라이브', priority:'urgent', tasks:[
+                            { id:'p3g1t1', name:'한국몰 라이브 오픈', desc:'도메인 연결, 최종 점검 후 오픈', assignees:['m2'], due:'W6', done:false },
+                            { id:'p3g1t2', name:'실주문 테스트 및 안정화', desc:'실제 주문 처리 테스트 및 안정화', assignees:['m2'], due:'W7', done:false },
+                        ]},
+                        { id:'p3g2', name:'일본몰 운영 준비', priority:'normal', tasks:[
+                            { id:'p3g2t1', name:'일본용 상품/카탈로그 구조', desc:'일본 시장 맞춤 카탈로그', assignees:['m2'], due:'W7', done:false },
+                            { id:'p3g2t2', name:'Market 세팅 (JP)', desc:'Shopify Markets 일본 설정', assignees:['m2'], due:'W8', done:false },
+                            { id:'p3g2t3', name:'JP 테스트 주문 가능 상태', desc:'일본몰 테스트 주문 검증', assignees:['m2'], due:'W8', done:false },
+                            { id:'p3g2t4', name:'정책/배송/결제 반영 (JP)', desc:'일본 기준 정책 적용', assignees:['m1'], due:'W9', done:false },
+                        ]},
+                        { id:'p3g3', name:'인수인계 & 문서화', priority:'normal', tasks:[
+                            { id:'p3g3t1', name:'내부 운영팀 인수인계 & 교육', desc:'운영 매뉴얼 작성, 교육 세션', assignees:['m1','m2'], due:'W9', done:false },
+                            { id:'p3g3t2', name:'후속 국가 확장 구조 정리', desc:'다국가 확장 아키텍처 문서', assignees:['m2'], due:'W10', done:false },
+                            { id:'p3g3t3', name:'2차 확장 로드맵 문서화', desc:'향후 로드맵 및 예산 가이드', assignees:['m2'], due:'W10', done:false },
+                        ]},
+                    ]
+                },
+            ];
+
+            const loadProjects = () => { try { const s = localStorage.getItem(storageKey); if (s) return JSON.parse(s); } catch(e){} return defaultProjects; };
+            const loadMembers = () => { try { const s = localStorage.getItem(membersKey); if (s) return JSON.parse(s); } catch(e){} return defaultMembers; };
+
+            const [projects, setProjects] = useState(loadProjects);
+            const [members, setMembers] = useState(loadMembers);
+            const [expandedGroups, setExpandedGroups] = useState({});
+            const [showMemberModal, setShowMemberModal] = useState(false);
+            const [newMember, setNewMember] = useState({ name:'', initials:'', role:'담당자' });
+            const [assignDropdown, setAssignDropdown] = useState(null); // {projectId, groupId, taskId}
+
+            useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(projects)); }, [projects]);
+            useEffect(() => { localStorage.setItem(membersKey, JSON.stringify(members)); }, [members]);
+
+            const toggleTask = (pId, gId, tId) => {
+                setProjects(prev => prev.map(p => p.id !== pId ? p : {...p, groups: p.groups.map(g => g.id !== gId ? g : {...g, tasks: g.tasks.map(t => t.id === tId ? {...t, done: !t.done} : t)})}));
+            };
+
+            const toggleGroup = (gId) => setExpandedGroups(prev => ({...prev, [gId]: !prev[gId]}));
+
+            const toggleAssignee = (pId, gId, tId, mId) => {
+                setProjects(prev => prev.map(p => p.id !== pId ? p : {...p, groups: p.groups.map(g => g.id !== gId ? g : {...g, tasks: g.tasks.map(t => {
+                    if (t.id !== tId) return t;
+                    const a = t.assignees || [];
+                    return {...t, assignees: a.includes(mId) ? a.filter(x => x !== mId) : [...a, mId]};
+                })})}));
+            };
+
+            const addMember = () => {
+                if (!newMember.name.trim()) return;
+                const colors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+                const m = { id: 'm' + Date.now(), name: newMember.name.trim(), initials: newMember.initials.trim() || newMember.name.trim().substring(0,2).toUpperCase(), color: colors[members.length % colors.length], role: newMember.role };
+                setMembers(prev => [...prev, m]);
+                setNewMember({ name:'', initials:'', role:'담당자' });
+            };
+
+            const removeMember = (mId) => {
+                if (mId === 'm1') return; // can't remove admin
+                setMembers(prev => prev.filter(m => m.id !== mId));
+                // remove from tasks
+                setProjects(prev => prev.map(p => ({...p, groups: p.groups.map(g => ({...g, tasks: g.tasks.map(t => ({...t, assignees: (t.assignees||[]).filter(a => a !== mId)}))}))})));
+            };
+
+            const getMember = (mId) => members.find(m => m.id === mId) || { name:'?', initials:'?', color:'#94a3b8' };
+            const getGroupProgress = (g) => { const t = g.tasks.length, d = g.tasks.filter(x=>x.done).length; return {done:d,total:t,pct:t>0?Math.round(d/t*100):0}; };
+            const getProjectProgress = (p) => { let t=0,d=0; p.groups.forEach(g=>{g.tasks.forEach(x=>{t++;if(x.done)d++})}); return {done:d,total:t,pct:t>0?Math.round(d/t*100):0}; };
+
+            const priorityColors = { urgent:{bg:'#fef2f2',text:'#dc2626',label:'Urgent'}, normal:{bg:'#fffbeb',text:'#d97706',label:'Normal'}, low:{bg:'#eff6ff',text:'#3b82f6',label:'Low'} };
+            const statusColors = { in_progress:{bg:'#dbeafe',text:'#2563eb',label:'In Progress'}, pending:{bg:'#f1f5f9',text:'#64748b',label:'Pending'}, completed:{bg:'#dcfce7',text:'#16a34a',label:'Completed'} };
+
+            const PBar = ({pct,sz}) => (
+                <div style={{display:'flex',alignItems:'center',gap:'8px',minWidth:sz==='lg'?'140px':'100px'}}>
+                    <div style={{flex:1,height:sz==='lg'?'8px':'6px',background:'#e2e8f0',borderRadius:'4px',overflow:'hidden'}}>
+                        <div style={{height:'100%',width:`${pct}%`,background:pct===100?'#16a34a':pct>50?'#3b82f6':'#f59e0b',borderRadius:'4px',transition:'width 0.3s'}}></div>
+                    </div>
+                    <span style={{fontSize:'0.75rem',fontWeight:600,color:'#64748b',minWidth:'36px',textAlign:'right'}}>{pct}%</span>
+                </div>
+            );
+
+            const CBox = ({checked,onClick}) => (
+                <div onClick={onClick} style={{width:'18px',height:'18px',borderRadius:'4px',border:checked?'none':'2px solid #cbd5e1',background:checked?'#3b82f6':'#fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
+                    {checked && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </div>
+            );
+
+            const Avatar = ({mId,size}) => {
+                const m = getMember(mId);
+                const s = size||26;
+                return <div title={m.name+' ('+m.role+')'} style={{width:s+'px',height:s+'px',borderRadius:'6px',background:m.color,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:(s*0.28)+'px',fontWeight:700,border:'2px solid #fff',marginLeft:'-4px',flexShrink:0}}>{m.initials}</div>;
+            };
+
+            const AssigneeCell = ({task,pId,gId}) => {
+                const isOpen = assignDropdown && assignDropdown.tId === task.id;
+                return (
+                    <div style={{position:'relative'}}>
+                        <div onClick={(e)=>{e.stopPropagation(); setAssignDropdown(isOpen ? null : {pId,gId,tId:task.id});}} style={{display:'flex',alignItems:'center',cursor:'pointer',paddingLeft:'4px'}}>
+                            {(task.assignees||[]).length > 0 ? (task.assignees||[]).map(mId => <Avatar key={mId} mId={mId} size={26} />) : <div style={{width:'26px',height:'26px',borderRadius:'6px',border:'2px dashed #cbd5e1',display:'flex',alignItems:'center',justifyContent:'center',color:'#cbd5e1',fontSize:'14px',cursor:'pointer'}}>+</div>}
+                        </div>
+                        {isOpen && (
+                            <div style={{position:'absolute',top:'32px',left:0,background:'#fff',border:'1px solid #e2e8f0',borderRadius:'8px',boxShadow:'0 4px 12px rgba(0,0,0,0.1)',padding:'6px',zIndex:100,minWidth:'160px'}} onClick={e=>e.stopPropagation()}>
+                                {members.map(m => {
+                                    const sel = (task.assignees||[]).includes(m.id);
+                                    return <div key={m.id} onClick={()=>toggleAssignee(pId,gId,task.id,m.id)} style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 8px',borderRadius:'6px',cursor:'pointer',background:sel?'#eff6ff':'transparent',fontSize:'0.8rem'}}>
+                                        <Avatar mId={m.id} size={22} />
+                                        <span style={{flex:1,fontWeight:sel?600:400,color:sel?'#2563eb':'#334155'}}>{m.name}</span>
+                                        {sel && <span style={{color:'#3b82f6',fontWeight:700}}>✓</span>}
+                                    </div>;
+                                })}
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            return (
+                <div style={{padding:0}} onClick={()=>setAssignDropdown(null)}>
+                    {/* Header */}
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}>
+                        <div>
+                            <h1 style={{fontSize:'1.4rem',fontWeight:800,color:'#1e293b',margin:0}}>Shopify 1차 프로젝트</h1>
+                            <p style={{fontSize:'0.82rem',color:'#94a3b8',margin:'4px 0 0'}}>Phase 1~3 · 전체 {projects.reduce((a,p)=>{p.groups.forEach(g=>{a+=g.tasks.length});return a;},0)}개 태스크</p>
+                        </div>
+                        <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
+                            <div style={{display:'flex',alignItems:'center',marginRight:'8px'}}>
+                                {members.map(m => <Avatar key={m.id} mId={m.id} size={30} />)}
+                            </div>
+                            <button onClick={()=>setShowMemberModal(true)} style={{padding:'6px 14px',borderRadius:'6px',border:'1px solid #e2e8f0',background:'#fff',color:'#64748b',fontSize:'0.78rem',fontWeight:600,cursor:'pointer'}}>+ 담당자 관리</button>
+                        </div>
+                    </div>
+
+                    {/* Member Modal */}
+                    {showMemberModal && (
+                        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.3)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200}} onClick={()=>setShowMemberModal(false)}>
+                            <div style={{background:'#fff',borderRadius:'14px',padding:'28px',width:'420px',maxHeight:'70vh',overflowY:'auto',boxShadow:'0 20px 60px rgba(0,0,0,0.15)'}} onClick={e=>e.stopPropagation()}>
+                                <h3 style={{fontSize:'1.1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}>담당자 관리</h3>
+
+                                {/* List */}
+                                {members.map(m => (
+                                    <div key={m.id} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid #f1f5f9'}}>
+                                        <Avatar mId={m.id} size={32} />
+                                        <div style={{flex:1}}>
+                                            <div style={{fontWeight:600,fontSize:'0.88rem'}}>{m.name}</div>
+                                            <div style={{fontSize:'0.72rem',color:'#94a3b8'}}>{m.role}</div>
+                                        </div>
+                                        {m.id !== 'm1' && <button onClick={()=>removeMember(m.id)} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:'0.78rem',fontWeight:600}}>삭제</button>}
+                                    </div>
+                                ))}
+
+                                {/* Add */}
+                                <div style={{marginTop:'16px',padding:'14px',background:'#f8fafc',borderRadius:'8px'}}>
+                                    <div style={{fontSize:'0.82rem',fontWeight:600,marginBottom:'10px',color:'#475569'}}>새 담당자 추가</div>
+                                    <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+                                        <input value={newMember.name} onChange={e=>setNewMember({...newMember,name:e.target.value})} placeholder="이름" style={{flex:1,padding:'7px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',minWidth:'80px'}} />
+                                        <input value={newMember.initials} onChange={e=>setNewMember({...newMember,initials:e.target.value})} placeholder="이니셜(2자)" maxLength={3} style={{width:'70px',padding:'7px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem'}} />
+                                        <select value={newMember.role} onChange={e=>setNewMember({...newMember,role:e.target.value})} style={{padding:'7px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem'}}>
+                                            <option value="담당자">담당자</option>
+                                            <option value="개발">개발</option>
+                                            <option value="디자인">디자인</option>
+                                            <option value="PM">PM</option>
+                                            <option value="관리자">관리자</option>
+                                        </select>
+                                        <button onClick={addMember} style={{padding:'7px 16px',borderRadius:'6px',border:'none',background:'#3b82f6',color:'#fff',fontSize:'0.82rem',fontWeight:600,cursor:'pointer'}}>추가</button>
+                                    </div>
+                                </div>
+
+                                <button onClick={()=>setShowMemberModal(false)} style={{marginTop:'16px',width:'100%',padding:'10px',borderRadius:'8px',border:'none',background:'#1e293b',color:'#fff',fontSize:'0.88rem',fontWeight:600,cursor:'pointer'}}>닫기</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Projects */}
+                    {projects.map(project => {
+                        const pp = getProjectProgress(project);
+                        const autoStatus = pp.pct === 100 ? 'completed' : pp.pct > 0 ? 'in_progress' : 'pending';
+                        const asc = statusColors[autoStatus];
+
+                        return (
+                            <div key={project.id} style={{background:'#fff',borderRadius:'12px',border:'1px solid #e8ecf1',marginBottom:'16px',overflow:'hidden'}}>
+                                {/* Project Header */}
+                                <div style={{padding:'14px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                                        <span style={{padding:'3px 10px',borderRadius:'12px',fontSize:'0.7rem',fontWeight:600,background:asc.bg,color:asc.text}}>{asc.label}</span>
+                                        <span style={{fontSize:'0.92rem',fontWeight:700,color:'#1e293b'}}>{project.name}</span>
+                                        <span style={{fontSize:'0.72rem',color:'#94a3b8',background:'#f1f5f9',padding:'2px 8px',borderRadius:'8px'}}>{project.dueDate}</span>
+                                        <span style={{fontSize:'0.72rem',color:'#94a3b8'}}>{pp.done}/{pp.total}</span>
+                                    </div>
+                                    <PBar pct={pp.pct} sz="lg" />
+                                </div>
+
+                                {/* Table Header */}
+                                <div style={{display:'grid',gridTemplateColumns:'36px 1fr 1.3fr 90px 60px 72px 110px',padding:'7px 20px',background:'#f8fafc',borderBottom:'1px solid #f1f5f9',fontSize:'0.7rem',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.03em'}}>
+                                    <div></div><div>Task</div><div>Description</div><div>Assignee</div><div>Due</div><div>Priority</div><div>Progress</div>
+                                </div>
+
+                                {/* Groups */}
+                                {project.groups.map(group => {
+                                    const gp = getGroupProgress(group);
+                                    const pc = priorityColors[group.priority] || priorityColors.normal;
+                                    const isExp = expandedGroups[group.id] !== false;
+
+                                    return (
+                                        <div key={group.id}>
+                                            <div onClick={()=>toggleGroup(group.id)} style={{display:'grid',gridTemplateColumns:'36px 1fr 1.3fr 90px 60px 72px 110px',padding:'9px 20px',background:gp.pct===100?'#f0fdf4':'#fff',borderBottom:'1px solid #f1f5f9',cursor:'pointer',alignItems:'center'}}>
+                                                <div><CBox checked={gp.pct===100} onClick={e=>e.stopPropagation()} /></div>
+                                                <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                                    <svg width="10" height="10" viewBox="0 0 12 12" style={{transform:isExp?'rotate(90deg)':'rotate(0)',transition:'transform 0.2s',fill:'#94a3b8'}}><path d="M4 2l5 4-5 4V2z"/></svg>
+                                                    <span style={{fontWeight:700,fontSize:'0.85rem',color:gp.pct===100?'#94a3b8':'#1e293b',textDecoration:gp.pct===100?'line-through':'none'}}>{group.name}</span>
+                                                    <span style={{fontSize:'0.68rem',color:'#94a3b8',background:'#f1f5f9',padding:'1px 5px',borderRadius:'8px'}}>{group.tasks.length}</span>
+                                                </div>
+                                                <div></div>
+                                                <div></div>
+                                                <div></div>
+                                                <div><span style={{padding:'2px 8px',borderRadius:'10px',fontSize:'0.68rem',fontWeight:600,background:pc.bg,color:pc.text}}>{pc.label}</span></div>
+                                                <div><PBar pct={gp.pct} sz="sm" /></div>
+                                            </div>
+
+                                            {isExp && group.tasks.map(task => (
+                                                <div key={task.id} style={{display:'grid',gridTemplateColumns:'36px 1fr 1.3fr 90px 60px 72px 110px',padding:'8px 20px 8px 48px',borderBottom:'1px solid #f8fafc',alignItems:'center',background:task.done?'#fafffe':'#fff'}}>
+                                                    <div><CBox checked={task.done} onClick={()=>toggleTask(project.id,group.id,task.id)} /></div>
+                                                    <div style={{fontSize:'0.82rem',color:task.done?'#94a3b8':'#334155',textDecoration:task.done?'line-through':'none',fontWeight:500}}>{task.name}</div>
+                                                    <div style={{fontSize:'0.76rem',color:'#94a3b8'}}>{task.desc}</div>
+                                                    <div><AssigneeCell task={task} pId={project.id} gId={group.id} /></div>
+                                                    <div style={{fontSize:'0.73rem',color:'#64748b',fontWeight:500}}>{task.due}</div>
+                                                    <div></div>
+                                                    <div>{task.done ? <span style={{fontSize:'0.73rem',color:'#16a34a',fontWeight:600}}>Done ✓</span> : <span style={{fontSize:'0.73rem',color:'#cbd5e1'}}>—</span>}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+
         // ============= MAIN APP =============
         const Main = ({ currentUser, onLogout }) => {
             const [activeTab, setActiveTab] = useState('dashboard');
@@ -2712,7 +3016,7 @@
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
                     <main style={{flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
-                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && (
+                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && activeTab !== 'projectShopify' && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
                                 {activeTab === 'products' && 'OPLE 제품'}
@@ -2733,6 +3037,7 @@
                         {activeTab === 'users' && <UsersPage currentUser={currentUser} />}
                         {activeTab === 'navCompare' && <NavComparePage />}
                         {activeTab === 'tagStrategy' && <TagStrategyPage />}
+                        {activeTab === 'projectShopify' && <ProjectManager />}
                     </main>
                 </div>
             );

@@ -977,6 +977,9 @@
                     <button className={`sidebar-link ${activeTab==='navCompare'?'active':''}`} onClick={()=>setActiveTab('navCompare')}>
                         <SvgIcon path="M4 6h16M4 12h8m-8 6h16M13 12h3l2-2 2 2h0" /> 네비게이션 비교
                     </button>
+                    <button className={`sidebar-link ${activeTab==='tagStrategy'?'active':''}`} onClick={()=>setActiveTab('tagStrategy')}>
+                        <SvgIcon path="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" /> 태그 전략
+                    </button>
 
                     <div className="sidebar-bottom" style={{marginTop:'auto',padding:'16px 20px',borderTop:'1px solid #e8ecf1'}}>
                         <div className="sidebar-team" style={{display:'flex',alignItems:'center',gap:'10px',fontSize:'0.85rem'}}>
@@ -2278,6 +2281,263 @@
             );
         };
 
+        // ============= TAG STRATEGY PAGE =============
+        const TagStrategyPage = () => {
+            const sWrap = {marginBottom:'32px'};
+            const sTitle = (num, text) => React.createElement('div', {style:{fontSize:'18px',fontWeight:700,marginBottom:'14px',color:'#0f172a',display:'flex',alignItems:'center',gap:'8px'}},
+                React.createElement('span', {style:{background:'#8b5cf6',color:'#fff',width:'26px',height:'26px',borderRadius:'50%',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'13px'}}, num), text
+            );
+            const card = {background:'#fff',borderRadius:'10px',padding:'20px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)'};
+            const tWrap = {background:'#fff',borderRadius:'10px',overflow:'hidden',boxShadow:'0 1px 3px rgba(0,0,0,0.06)'};
+            const tStyle = {width:'100%',borderCollapse:'collapse'};
+            const Th = ({children,c}) => React.createElement('th', {style:{background:c||'#f1f5f9',padding:'10px 14px',textAlign:'left',fontSize:'12px',fontWeight:600,color:'#475569',letterSpacing:'0.03em'}}, children);
+            const Td = ({children,mono,bold,bg}) => React.createElement('td', {style:{padding:'10px 14px',borderBottom:'1px solid #f1f5f9',fontSize:'13px',verticalAlign:'top',...(mono?{fontFamily:'monospace',fontSize:'12px',color:'#7c3aed'}:{}), ...(bold?{fontWeight:600,color:'#1e293b'}:{}), ...(bg?{background:bg}:{})}}, children);
+            const TagBadge = ({prefix,value,color}) => React.createElement('span', {style:{display:'inline-block',fontSize:'11px',padding:'2px 8px',borderRadius:'10px',fontWeight:500,marginRight:'4px',marginBottom:'3px',background:color||'#ede9fe',color:color?'#fff':'#6d28d9',fontFamily:'monospace'}}, prefix+':'+value);
+
+            return React.createElement('div', null,
+                React.createElement('h1', {style:{fontSize:'24px',fontWeight:700,color:'#0f172a',marginBottom:'4px'}}, 'Shopify 태그 전략 설계'),
+                React.createElement('p', {style:{color:'#64748b',fontSize:'14px',marginBottom:'32px'}}, '상품 DB → Shopify Tags 매핑 · 태그 기반 컬렉션 & 메뉴 구조'),
+
+                // 1. Tag Namespace Convention
+                React.createElement('div', {style:sWrap},
+                    sTitle('1', '태그 네임스페이스 규칙'),
+                    React.createElement('div', {style:{...card, border:'1px solid #ede9fe'}},
+                        React.createElement('p', {style:{fontSize:'13px',color:'#475569',marginBottom:'16px',lineHeight:'1.7'}},
+                            'Shopify 태그는 단순 문자열이지만, ', React.createElement('strong',null,'prefix:value'), ' 형태로 네임스페이스를 만들면 자동 컬렉션과 필터에서 강력하게 활용할 수 있습니다. 아래 규칙으로 모든 상품에 태그를 일관되게 부여합니다.'
+                        ),
+                        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'12px'}},
+                            ...[
+                                {prefix:'cat', label:'메인 카테고리', ex:'cat:보충제', color:'#8b5cf6', desc:'Shopify 메뉴의 1차 카테고리'},
+                                {prefix:'sub', label:'서브 카테고리', ex:'sub:비타민', color:'#6366f1', desc:'2차 분류, 메가메뉴 서브항목'},
+                                {prefix:'sub2', label:'3차 카테고리', ex:'sub2:비타민C', color:'#818cf8', desc:'세부 분류, 필터에서 활용'},
+                                {prefix:'brand', label:'브랜드', ex:'brand:Solgar', color:'#0ea5e9', desc:'브랜드 A-Z 페이지 & 필터'},
+                                {prefix:'form', label:'제형', ex:'form:캡슐', color:'#14b8a6', desc:'상품 형태별 필터'},
+                                {prefix:'badge', label:'인증/뱃지', ex:'badge:Non-GMO', color:'#22c55e', desc:'인증 마크 필터'},
+                                {prefix:'concern', label:'건강 고민', ex:'concern:면역력', color:'#f59e0b', desc:'건강주제 메뉴 & 필터'},
+                                {prefix:'target', label:'대상', ex:'target:여성', color:'#ec4899', desc:'대상별 추천 페이지'},
+                                {prefix:'ingredient', label:'핵심 성분', ex:'ingredient:오메가3', color:'#ef4444', desc:'성분별 탐색 & 필터'},
+                                {prefix:'promo', label:'프로모션', ex:'promo:세일', color:'#f97316', desc:'세일/특가 자동 컬렉션'},
+                                {prefix:'market', label:'마켓', ex:'market:KR', color:'#64748b', desc:'국가별 노출 제어'},
+                                {prefix:'season', label:'시즌', ex:'season:봄', color:'#a3e635', desc:'시즌별 추천'}
+                            ].map((t,i) => React.createElement('div', {key:i, style:{background:'#faf5ff',borderRadius:'8px',padding:'12px',border:'1px solid #ede9fe'}},
+                                React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'6px',marginBottom:'6px'}},
+                                    React.createElement('span', {style:{background:t.color,color:'#fff',fontSize:'11px',padding:'2px 8px',borderRadius:'6px',fontFamily:'monospace',fontWeight:600}}, t.prefix+':'),
+                                    React.createElement('span', {style:{fontSize:'13px',fontWeight:600,color:'#1e293b'}}, t.label)
+                                ),
+                                React.createElement('div', {style:{fontSize:'11px',color:'#7c3aed',fontFamily:'monospace',marginBottom:'4px'}}, t.ex),
+                                React.createElement('div', {style:{fontSize:'11px',color:'#64748b'}}, t.desc)
+                            ))
+                        )
+                    )
+                ),
+
+                // 2. DB Field → Tag Mapping
+                React.createElement('div', {style:sWrap},
+                    sTitle('2', '현재 DB 필드 → Shopify 태그 매핑'),
+                    React.createElement('div', {style:tWrap},
+                        React.createElement('table', {style:tStyle},
+                            React.createElement('thead', null, React.createElement('tr', null,
+                                Th({children:'DB 테이블'}), Th({children:'DB 필드'}), Th({children:'→ Shopify 태그',c:'#f5f3ff'}), Th({children:'변환 로직'}), Th({children:'예시'})
+                            )),
+                            React.createElement('tbody', null,
+                                ...[
+                                    ['Product','parent_category','cat:{매핑값}','오플 카테고리 → 아이허브 스타일 매핑','건강식품 → cat:보충제'],
+                                    ['Product','category_name','sub:{값}','서브카테고리 직접 매핑','비타민&미네랄 → sub:비타민-미네랄'],
+                                    ['Product','brand','brand:{값}','브랜드명 그대로 사용','brand:Solgar'],
+                                    ['IHerbProduct','category','cat:{매핑값}','iHerb 카테고리 → 한글 매핑','Supplements → cat:보충제'],
+                                    ['IHerbProduct','sub_category','sub:{값}','서브카테고리 한글 변환','Vitamins → sub:비타민'],
+                                    ['IHerbProduct','category_path','sub2:{마지막 세그먼트}','경로 마지막 값을 3차 태그로','Vitamins > Vitamin C → sub2:비타민C'],
+                                    ['IHerbProduct','brand','brand:{값}','영문 브랜드 유지','brand:NOW Foods'],
+                                    ['IHerbProduct','badges (JSON)','badge:{각 뱃지}','JSON 배열 → 태그 여러개','badge:Non-GMO, badge:Vegan'],
+                                    ['IHerbProduct','product_form','form:{값}','제형 한글화','Capsule → form:캡슐'],
+                                    ['IHerbProduct','tags (JSON)','concern:{분석값}','기존 태그에서 건강 고민 추출','concern:면역력, concern:소화'],
+                                    ['IHerbProduct','supplement_facts','ingredient:{핵심성분}','보충 성분표에서 주요 성분 추출','ingredient:비타민D, ingredient:오메가3'],
+                                    ['Mapping','match_method','—','매핑 여부를 메타필드로 저장','metafield: ople_mapped=true']
+                                ].map((r,i) => React.createElement('tr', {key:i},
+                                    Td({children:r[0],bold:true}), Td({children:r[1],mono:true}), Td({children:r[2],mono:true,bg:'#faf5ff'}), Td({children:r[3]}), Td({children:r[4]})
+                                ))
+                            )
+                        )
+                    )
+                ),
+
+                // 3. Sample Product Tag Set
+                React.createElement('div', {style:sWrap},
+                    sTitle('3', '상품 태그 예시'),
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
+                        // Example 1
+                        React.createElement('div', {style:{...card, borderTop:'3px solid #8b5cf6'}},
+                            React.createElement('div', {style:{fontSize:'13px',fontWeight:700,marginBottom:'4px'}}, 'Solgar 어드밴스드 칼슘 컴플렉스 + 비타민 D3, K2'),
+                            React.createElement('div', {style:{fontSize:'11px',color:'#64748b',marginBottom:'12px'}}, '오플 상품 → Shopify 태그 변환'),
+                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'4px'}},
+                                ...[
+                                    {p:'cat',v:'보충제'},{p:'sub',v:'비타민-미네랄'},{p:'sub2',v:'칼슘'},
+                                    {p:'brand',v:'Solgar'},{p:'form',v:'타블렛'},{p:'badge',v:'Non-GMO'},
+                                    {p:'badge',v:'Gluten-Free'},{p:'concern',v:'뼈건강'},{p:'concern',v:'관절'},
+                                    {p:'target',v:'시니어'},{p:'ingredient',v:'칼슘'},{p:'ingredient',v:'비타민D3'},
+                                    {p:'ingredient',v:'비타민K2'},{p:'market',v:'KR'},{p:'market',v:'JP'}
+                                ].map((t,i) => TagBadge({key:i,prefix:t.p,value:t.v}))
+                            )
+                        ),
+                        // Example 2
+                        React.createElement('div', {style:{...card, borderTop:'3px solid #0ea5e9'}},
+                            React.createElement('div', {style:{fontSize:'13px',fontWeight:700,marginBottom:'4px'}}, 'NOW Foods 오메가-3 피쉬 오일 1000mg'),
+                            React.createElement('div', {style:{fontSize:'11px',color:'#64748b',marginBottom:'12px'}}, 'iHerb 상품 → Shopify 태그 변환'),
+                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'4px'}},
+                                ...[
+                                    {p:'cat',v:'보충제'},{p:'sub',v:'오메가-피쉬오일'},{p:'sub2',v:'피쉬오일'},
+                                    {p:'brand',v:'NOW Foods'},{p:'form',v:'소프트젤'},{p:'badge',v:'GMP'},
+                                    {p:'badge',v:'Non-GMO'},{p:'concern',v:'심장건강'},{p:'concern',v:'두뇌건강'},
+                                    {p:'target',v:'성인'},{p:'ingredient',v:'오메가3'},{p:'ingredient',v:'EPA'},
+                                    {p:'ingredient',v:'DHA'},{p:'market',v:'KR'},{p:'promo',v:'베스트셀러'}
+                                ].map((t,i) => TagBadge({key:i,prefix:t.p,value:t.v}))
+                            )
+                        )
+                    )
+                ),
+
+                // 4. Tag → Shopify Collection Auto-rules
+                React.createElement('div', {style:sWrap},
+                    sTitle('4', '태그 → Shopify 자동 컬렉션 규칙'),
+                    React.createElement('div', {style:tWrap},
+                        React.createElement('table', {style:tStyle},
+                            React.createElement('thead', null, React.createElement('tr', null,
+                                Th({children:'컬렉션 이름'}), Th({children:'조건 (태그 규칙)',c:'#f5f3ff'}), Th({children:'메뉴 위치'}), Th({children:'용도'})
+                            )),
+                            React.createElement('tbody', null,
+                                ...[
+                                    ['보충제','cat:보충제','메인 카테고리 1번','1차 카테고리 페이지'],
+                                    ['보충제 > 비타민','cat:보충제 AND sub:비타민','메가메뉴 서브항목','2차 카테고리 페이지'],
+                                    ['보충제 > 비타민 > 비타민C','cat:보충제 AND sub2:비타민C','필터 또는 칩','3차 세부 필터'],
+                                    ['브랜드: Solgar','brand:Solgar','브랜드 A-Z 페이지','브랜드별 상품 모아보기'],
+                                    ['건강 주제: 면역력','concern:면역력','건강주제 메뉴','증상/목적별 큐레이션'],
+                                    ['대상: 여성 건강','target:여성','대상별 추천 페이지','타겟 큐레이션'],
+                                    ['세일 상품','promo:세일','세컨더리 네비 "슈퍼세일"','프로모션 자동 노출'],
+                                    ['베스트셀러','promo:베스트셀러','세컨더리 네비','인기 상품 자동 수집'],
+                                    ['캡슐 제형','form:캡슐','필터 사이드바','제형별 필터링'],
+                                    ['Non-GMO 인증','badge:Non-GMO','필터 사이드바','인증 필터링'],
+                                    ['한국 마켓','market:KR','—','KR 마켓에서만 노출'],
+                                    ['봄 시즌 추천','season:봄','홈 배너/추천 영역','시즌별 큐레이션']
+                                ].map((r,i) => React.createElement('tr', {key:i}, Td({children:r[0],bold:true}), Td({children:r[1],mono:true,bg:'#faf5ff'}), Td({children:r[2]}), Td({children:r[3]})))
+                            )
+                        )
+                    )
+                ),
+
+                // 5. Tag generation pipeline
+                React.createElement('div', {style:sWrap},
+                    sTitle('5', '태그 자동 생성 파이프라인'),
+                    React.createElement('div', {style:{...card, border:'1px solid #e2e8f0'}},
+                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap',justifyContent:'center',marginBottom:'20px'}},
+                            ...[
+                                {label:'OPLE DB\n+ iHerb DB',bg:'#f59e0b'},
+                                {label:'→',bg:'transparent',text:true},
+                                {label:'카테고리\n매핑 엔진',bg:'#8b5cf6'},
+                                {label:'→',bg:'transparent',text:true},
+                                {label:'태그\n생성기',bg:'#6366f1'},
+                                {label:'→',bg:'transparent',text:true},
+                                {label:'Shopify\nProducts API',bg:'#22c55e'},
+                                {label:'→',bg:'transparent',text:true},
+                                {label:'자동 컬렉션\n생성',bg:'#0ea5e9'}
+                            ].map((s,i) => s.text
+                                ? React.createElement('span', {key:i, style:{fontSize:'18px',color:'#94a3b8'}}, s.label)
+                                : React.createElement('div', {key:i, style:{background:s.bg,color:'#fff',padding:'12px 16px',borderRadius:'10px',fontSize:'12px',fontWeight:600,textAlign:'center',whiteSpace:'pre-line',minWidth:'90px'}}, s.label)
+                            )
+                        ),
+                        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
+                            React.createElement('div', {style:{background:'#f8fafc',borderRadius:'8px',padding:'16px'}},
+                                React.createElement('div', {style:{fontSize:'13px',fontWeight:700,marginBottom:'8px',color:'#1e293b'}}, '자동 태그 생성 규칙'),
+                                ...[
+                                    'parent_category → cat: 매핑 테이블 조회',
+                                    'category_name → sub: 한글 변환 테이블',
+                                    'category_path → sub2: 마지막 세그먼트 추출',
+                                    'brand → brand: 그대로 사용',
+                                    'product_form → form: 한글 변환 (Capsule→캡슐)',
+                                    'badges[] → badge: 각 항목을 개별 태그로',
+                                    'supplement_facts → ingredient: 상위 3~5개 추출'
+                                ].map((t,i) => React.createElement('div', {key:i, style:{fontSize:'12px',color:'#475569',padding:'4px 0',borderBottom:'1px solid #e2e8f0',fontFamily:'monospace'}}, t))
+                            ),
+                            React.createElement('div', {style:{background:'#f8fafc',borderRadius:'8px',padding:'16px'}},
+                                React.createElement('div', {style:{fontSize:'13px',fontWeight:700,marginBottom:'8px',color:'#1e293b'}}, 'AI 보강 태그 (2차)'),
+                                ...[
+                                    'concern: 상품명+설명에서 건강 고민 추론',
+                                    'target: 설명+카테고리에서 대상 추론',
+                                    'season: 시즌성 상품 자동 분류',
+                                    'promo: 할인율/판매량 기준 자동 부여',
+                                    '동의어 통합: "Omega-3"="오메가3"="Fish Oil"',
+                                    '태그 정규화: 공백→하이픈, 소문자 통일',
+                                    '중복 방지: 같은 의미 태그 자동 병합'
+                                ].map((t,i) => React.createElement('div', {key:i, style:{fontSize:'12px',color:'#475569',padding:'4px 0',borderBottom:'1px solid #e2e8f0'}}, t))
+                            )
+                        )
+                    )
+                ),
+
+                // 6. DB Schema Enhancement Recommendations
+                React.createElement('div', {style:sWrap},
+                    sTitle('6', 'DB 스키마 확장 권장사항'),
+                    React.createElement('div', {style:{background:'linear-gradient(135deg, #f5f3ff, #eff6ff)',border:'1px solid #c4b5fd',borderRadius:'10px',padding:'24px'}},
+                        React.createElement('p', {style:{fontSize:'13px',color:'#475569',marginBottom:'16px'}}, 'Shopify 태그 마이그레이션을 위해 현재 DB에 다음 필드/테이블을 추가하면 좋습니다:'),
+                        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
+                            React.createElement('div', {style:{background:'#fff',borderRadius:'8px',padding:'16px',border:'1px solid #e2e8f0'}},
+                                React.createElement('div', {style:{fontSize:'14px',fontWeight:700,marginBottom:'10px',color:'#7c3aed'}}, 'A. shopify_tags 컬럼 추가'),
+                                React.createElement('pre', {style:{fontSize:'11px',background:'#1e293b',color:'#e2e8f0',borderRadius:'6px',padding:'12px',overflow:'auto',lineHeight:'1.6'}},
+                                    '# Product 모델에 추가\nshopify_tags = Column(JSON)\n# → ["cat:보충제","sub:비타민",\n#    "brand:Solgar","badge:Non-GMO"]\n\nshopify_handle = Column(String(500))\n# → "solgar-calcium-complex-d3-k2"\n\nshopify_synced = Column(Boolean, \n  default=False)\n# → 동기화 상태 추적'
+                                )
+                            ),
+                            React.createElement('div', {style:{background:'#fff',borderRadius:'8px',padding:'16px',border:'1px solid #e2e8f0'}},
+                                React.createElement('div', {style:{fontSize:'14px',fontWeight:700,marginBottom:'10px',color:'#7c3aed'}}, 'B. tag_mapping 테이블 신규'),
+                                React.createElement('pre', {style:{fontSize:'11px',background:'#1e293b',color:'#e2e8f0',borderRadius:'6px',padding:'12px',overflow:'auto',lineHeight:'1.6'}},
+                                    '# 카테고리/성분 → 태그 매핑 테이블\nclass TagMapping(Base):\n  id = Column(Integer, PK)\n  source_type = Column(String)\n  # "ople_cat"|"iherb_cat"|"form"\n  source_value = Column(String)\n  # "건강식품"|"Supplements"\n  tag_prefix = Column(String)\n  # "cat"|"sub"|"form"\n  tag_value = Column(String)\n  # "보충제"|"비타민"|"캡슐"'
+                                )
+                            ),
+                            React.createElement('div', {style:{background:'#fff',borderRadius:'8px',padding:'16px',border:'1px solid #e2e8f0'}},
+                                React.createElement('div', {style:{fontSize:'14px',fontWeight:700,marginBottom:'10px',color:'#7c3aed'}}, 'C. IHerbProduct에 concern 추가'),
+                                React.createElement('pre', {style:{fontSize:'11px',background:'#1e293b',color:'#e2e8f0',borderRadius:'6px',padding:'12px',overflow:'auto',lineHeight:'1.6'}},
+                                    '# 건강 고민 태그 (AI 분석 결과)\nconcerns = Column(JSON)\n# → ["면역력","소화","뼈건강"]\n\ntarget_audience = Column(JSON)\n# → ["성인","시니어"]\n\nshopify_tags = Column(JSON)\n# → 최종 생성된 태그 목록 저장'
+                                )
+                            ),
+                            React.createElement('div', {style:{background:'#fff',borderRadius:'8px',padding:'16px',border:'1px solid #e2e8f0'}},
+                                React.createElement('div', {style:{fontSize:'14px',fontWeight:700,marginBottom:'10px',color:'#7c3aed'}}, 'D. Shopify Sync 상태 관리'),
+                                React.createElement('pre', {style:{fontSize:'11px',background:'#1e293b',color:'#e2e8f0',borderRadius:'6px',padding:'12px',overflow:'auto',lineHeight:'1.6'}},
+                                    '# Shopify 동기화 추적 테이블\nclass ShopifySync(Base):\n  id = Column(Integer, PK)\n  product_id = Column(String, FK)\n  shopify_product_id = Column(String)\n  shopify_handle = Column(String)\n  tags_synced = Column(JSON)\n  last_synced_at = Column(DateTime)\n  sync_status = Column(String)\n  # "synced"|"pending"|"error"'
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                // 7. Metafields
+                React.createElement('div', {style:sWrap},
+                    sTitle('7', 'Shopify 메타필드 활용 (태그 보완)'),
+                    React.createElement('div', {style:{...card, border:'1px solid #e2e8f0'}},
+                        React.createElement('p', {style:{fontSize:'13px',color:'#475569',marginBottom:'14px'}}, '태그는 문자열 배열이라 구조화 데이터에 한계가 있습니다. 다음은 메타필드로 보완할 항목입니다:'),
+                        React.createElement('div', {style:tWrap},
+                            React.createElement('table', {style:tStyle},
+                                React.createElement('thead', null, React.createElement('tr', null,
+                                    Th({children:'메타필드 (namespace.key)'}), Th({children:'타입'}), Th({children:'용도'}), Th({children:'DB 소스'})
+                                )),
+                                React.createElement('tbody', null,
+                                    ...[
+                                        ['custom.ople_id','single_line_text','오플 상품 ID 연결','Product.it_id'],
+                                        ['custom.iherb_id','single_line_text','아이허브 상품 ID 연결','IHerbProduct.iherb_id'],
+                                        ['custom.supplement_facts','json','보충 성분표 전체','IHerbProduct.supplement_facts'],
+                                        ['custom.rating','number_decimal','별점 (0~5)','IHerbProduct.rating'],
+                                        ['custom.review_count','number_integer','리뷰 수','IHerbProduct.review_count'],
+                                        ['custom.suggested_use','multi_line_text','복용법/사용법','IHerbProduct.suggested_use_ko'],
+                                        ['custom.warnings','multi_line_text','주의사항','IHerbProduct.warnings_ko'],
+                                        ['custom.allergen_info','multi_line_text','알레르겐 정보','IHerbProduct.allergen_info_ko'],
+                                        ['custom.match_score','number_decimal','OPLE↔iHerb 매칭 점수','IHerbMapping.match_score'],
+                                        ['custom.price_comparison','json','가격 비교 데이터','IHerbMapping.price_diff_pct']
+                                    ].map((r,i) => React.createElement('tr', {key:i}, Td({children:r[0],mono:true}), Td({children:r[1]}), Td({children:r[2]}), Td({children:r[3],mono:true})))
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        };
+
         // ============= MAIN APP =============
         const Main = ({ currentUser, onLogout }) => {
             const [activeTab, setActiveTab] = useState('dashboard');
@@ -2286,7 +2546,7 @@
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
                     <main style={{flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
-                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && (
+                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
                                 {activeTab === 'products' && 'OPLE 제품'}
@@ -2306,6 +2566,7 @@
                         {activeTab === 'scraper' && <ScraperPage />}
                         {activeTab === 'users' && <UsersPage currentUser={currentUser} />}
                         {activeTab === 'navCompare' && <NavComparePage />}
+                        {activeTab === 'tagStrategy' && <TagStrategyPage />}
                     </main>
                 </div>
             );

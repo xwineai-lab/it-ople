@@ -1229,7 +1229,7 @@ def seed_demo_data(db: Session):
             warnings=ip.get("warnings", ""),
             badges=ip.get("badges", []),
         )
-        db.add(iherb_product)
+        db.merge(iherb_product)
 
     db.commit()
     print(f"Seeded {len(demo_products)} products, {len(demo_mappings)} mappings, {len(demo_reviews)} reviews, {len(demo_iherb_products)} iHerb products (incl. {len(chrome_scraped_products)} Chrome-scraped)")

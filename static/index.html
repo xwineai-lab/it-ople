@@ -949,7 +949,9 @@
             return (
                 <aside className="sidebar" style={{position:'fixed',top:0,left:0,bottom:0,width:'240px',background:'#fff',borderRight:'1px solid #e8ecf1',display:'flex',flexDirection:'column',padding:'24px 0',zIndex:50}}>
                     <div className="sidebar-logo" style={{padding:'0 24px 16px',borderBottom:'1px solid #e8ecf1'}}>
-                        <img src="https://img.ople.com/ople/main/ople_logo.png" alt="Ople.com" style={{height:'32px',objectFit:'contain'}} />
+                        <a href="https://it-ople.onrender.com/#" style={{display:'inline-block'}}>
+                            <img src="https://img.ople.com/ople/main/ople_logo.png" alt="Ople.com" style={{height:'32px',objectFit:'contain'}} />
+                        </a>
                     </div>
 
                     <button className={`sidebar-link ${activeTab==='dashboard'?'active':''}`} onClick={()=>setActiveTab('dashboard')}>

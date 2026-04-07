@@ -2805,7 +2805,8 @@
             const [expandedGroups, setExpandedGroups] = useState({});
             const [showMemberModal, setShowMemberModal] = useState(false);
             const [newMember, setNewMember] = useState({ name:'', initials:'', role:'담당자' });
-            const [assignDropdown, setAssignDropdown] = useState(null); // {projectId, groupId, taskId}
+            const [assignDropdown, setAssignDropdown] = useState(null); // {pId, gId, tId}
+            const [priorityDropdown, setPriorityDropdown] = useState(null); // {pId, gId}
 
             useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(projects)); }, [projects]);
             useEffect(() => { localStorage.setItem(membersKey, JSON.stringify(members)); }, [members]);
@@ -2815,6 +2816,11 @@
             };
 
             const toggleGroup = (gId) => setExpandedGroups(prev => ({...prev, [gId]: !prev[gId]}));
+
+            const changeGroupPriority = (pId, gId, newPriority) => {
+                setProjects(prev => prev.map(p => p.id !== pId ? p : {...p, groups: p.groups.map(g => g.id !== gId ? g : {...g, priority: newPriority})}));
+                setPriorityDropdown(null);
+            };
 
             const toggleAssignee = (pId, gId, tId, mId) => {
                 setProjects(prev => prev.map(p => p.id !== pId ? p : {...p, groups: p.groups.map(g => g.id !== gId ? g : {...g, tasks: g.tasks.map(t => {
@@ -2891,7 +2897,7 @@
             };
 
             return (
-                <div style={{padding:0}} onClick={()=>setAssignDropdown(null)}>
+                <div style={{padding:0}} onClick={()=>{setAssignDropdown(null);setPriorityDropdown(null)}}>
                     {/* Header */}
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}>
                         <div>
@@ -2988,7 +2994,19 @@
                                                 <div></div>
                                                 <div></div>
                                                 <div></div>
-                                                <div><span style={{padding:'2px 8px',borderRadius:'10px',fontSize:'0.68rem',fontWeight:600,background:pc.bg,color:pc.text}}>{pc.label}</span></div>
+                                                <div style={{position:'relative'}}>
+                                                    <span onClick={(e)=>{e.stopPropagation();setPriorityDropdown(priorityDropdown&&priorityDropdown.gId===group.id?null:{pId:project.id,gId:group.id})}} style={{padding:'2px 8px',borderRadius:'10px',fontSize:'0.68rem',fontWeight:600,background:pc.bg,color:pc.text,cursor:'pointer'}}>{pc.label}</span>
+                                                    {priorityDropdown && priorityDropdown.gId===group.id && (
+                                                        <div style={{position:'absolute',top:'24px',left:0,background:'#fff',border:'1px solid #e2e8f0',borderRadius:'8px',boxShadow:'0 4px 12px rgba(0,0,0,0.1)',padding:'4px',zIndex:100,minWidth:'100px'}} onClick={e=>e.stopPropagation()}>
+                                                            {Object.entries(priorityColors).map(([k,v]) => (
+                                                                <div key={k} onClick={()=>changeGroupPriority(project.id,group.id,k)} style={{padding:'5px 10px',borderRadius:'6px',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px',background:group.priority===k?v.bg:'transparent',fontSize:'0.76rem'}}>
+                                                                    <span style={{width:'8px',height:'8px',borderRadius:'50%',background:v.text}}></span>
+                                                                    <span style={{fontWeight:group.priority===k?600:400,color:group.priority===k?v.text:'#334155'}}>{v.label}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <div><PBar pct={gp.pct} sz="sm" /></div>
                                             </div>
 

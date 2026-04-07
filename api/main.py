@@ -1212,7 +1212,13 @@ def seed_demo_data(db: Session):
     ]
     demo_iherb_products.extend(chrome_scraped_products)
 
+    # Deduplicate by iherb_id (Chrome-scraped data takes precedence over demo data)
+    seen_ids = {}
     for ip in demo_iherb_products:
+        seen_ids[ip["iherb_id"]] = ip  # later entries overwrite earlier ones
+    unique_iherb_products = list(seen_ids.values())
+
+    for ip in unique_iherb_products:
         iherb_product = IHerbProduct(
             iherb_id=ip["iherb_id"], product_id=ip["product_id"], name=ip["name"],
             name_ko=ip["name_ko"], brand=ip["brand"], price_usd=ip.get("price_usd", 0),
@@ -1229,10 +1235,10 @@ def seed_demo_data(db: Session):
             warnings=ip.get("warnings", ""),
             badges=ip.get("badges", []),
         )
-        db.merge(iherb_product)
+        db.add(iherb_product)
 
     db.commit()
-    print(f"Seeded {len(demo_products)} products, {len(demo_mappings)} mappings, {len(demo_reviews)} reviews, {len(demo_iherb_products)} iHerb products (incl. {len(chrome_scraped_products)} Chrome-scraped)")
+    print(f"Seeded {len(demo_products)} products, {len(demo_mappings)} mappings, {len(demo_reviews)} reviews, {len(unique_iherb_products)} iHerb products (deduplicated from {len(demo_iherb_products)}, incl. {len(chrome_scraped_products)} Chrome-scraped)")
 
 # ── Run ──────────────────────────────────────────────────
 if __name__ == "__main__":

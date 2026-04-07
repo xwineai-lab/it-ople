@@ -44,7 +44,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
             raise HTTPException(status_code=401, detail="Invalid auth scheme")
 
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id: int = payload.get("sub")
+        user_id: int = int(payload.get("sub")) if payload.get("sub") is not None else None
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -935,7 +935,7 @@ async def google_auth(data: dict, db: Session = Depends(get_db)):
 
         # Create JWT token
         token_data = {
-            "sub": user.id,
+            "sub": str(user.id),
             "email": user.email,
             "name": user.name,
             "role": user.role,
@@ -988,7 +988,7 @@ async def email_login(data: dict, db: Session = Depends(get_db)):
     db.refresh(user)
 
     token_data = {
-        "sub": user.id,
+        "sub": str(user.id),
         "email": user.email,
         "name": user.name,
         "role": user.role,

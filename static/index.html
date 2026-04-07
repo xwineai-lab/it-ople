@@ -33,25 +33,24 @@
         /* ── Sidebar ── */
         .sidebar {
             width: 240px; background: #fff; border-right: 1px solid #e8ecf1;
-            display: flex; flex-direction: column; padding: 8px 0; position: fixed;
+            display: flex; flex-direction: column; padding: 24px 0; position: fixed;
             top: 0; left: 0; bottom: 0; z-index: 50;
         }
         .sidebar-logo {
-            padding: 0 24px 8px; border-bottom: 1px solid #e8ecf1; margin-bottom: 2px;
+            padding: 0 24px 16px; border-bottom: 1px solid #e8ecf1;
         }
         .sidebar-logo img { height: 32px; object-fit: contain; }
-        .sidebar-section { padding: 3px 20px 1px; font-size: 0.55rem; font-weight: 700; color: #b0b8c4; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; line-height: 1; }
+        .sidebar-section { padding: 14px 16px 4px; font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; }
         .sidebar-link {
-            display: flex; align-items: center; gap: 8px; padding: 3px 20px;
-            font-size: 0.8rem; color: #64748b; text-decoration: none; font-weight: 500;
+            display: flex; align-items: center; gap: 10px; padding: 10px 24px;
+            font-size: 0.85rem; color: #64748b; text-decoration: none; font-weight: 500;
             transition: all 0.15s; border-left: 3px solid transparent; cursor: pointer;
             border: none; background: none; width: 100%; text-align: left;
-            margin: 0; line-height: 1;
         }
         .sidebar-link:hover { background: #f8fafc; color: #1a202c; }
         .sidebar-link.active { background: #f0f7ff; color: #3b82f6; border-left: 3px solid #3b82f6; font-weight: 600; }
-        .sidebar-link .icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .sidebar-link .icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .sidebar-link .icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sidebar-link .icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
         .sidebar-bottom { margin-top: auto; padding: 16px 20px; border-top: 1px solid #e8ecf1; }
         .sidebar-team { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
         .sidebar-team .avatar { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #E46728, #00A651); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.8rem; }
@@ -936,8 +935,8 @@
             ];
 
             return (
-                <aside className="sidebar" style={{position:'fixed',top:0,left:0,bottom:0,width:'240px',background:'#fff',borderRight:'1px solid #e8ecf1',display:'flex',flexDirection:'column',padding:'8px 0',zIndex:50}}>
-                    <div className="sidebar-logo" style={{padding:'0 24px 8px',borderBottom:'1px solid #e8ecf1',marginBottom:'2px'}}>
+                <aside className="sidebar" style={{position:'fixed',top:0,left:0,bottom:0,width:'240px',background:'#fff',borderRight:'1px solid #e8ecf1',display:'flex',flexDirection:'column',padding:'24px 0',zIndex:50}}>
+                    <div className="sidebar-logo" style={{padding:'0 24px 16px',borderBottom:'1px solid #e8ecf1'}}>
                         <img src="https://img.ople.com/ople/main/ople_logo.png" alt="Ople.com" style={{height:'32px',objectFit:'contain'}} />
                     </div>
 
@@ -2098,7 +2097,7 @@
             return (
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
-                    <main style={{marginLeft:'240px',flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
+                    <main style={{flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
                         {activeTab !== 'dashboard' && activeTab !== 'users' && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>

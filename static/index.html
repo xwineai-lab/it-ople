@@ -743,7 +743,7 @@
                     width: 'calc(100% + 240px)'
                 }}>
                     <div style={{ textAlign: 'center', maxWidth: '400px', padding: '40px 30px' }}>
-                        <img src="https://img.ople.com/ople/main/ople_logo.png" alt="Ople.com" style={{height:'48px',objectFit:'contain',marginBottom:'16px'}} />
+                        <img src="https://img.ople.com/ople/footer_logo_PC.png" alt="Ople.com" style={{height:'48px',objectFit:'contain',marginBottom:'16px'}} />
                         <div style={{ fontSize: '14px', fontWeight: '600', color: '#64748b', marginBottom: '36px' }}>
                             Operations Platform
                         </div>
@@ -949,8 +949,8 @@
             return (
                 <aside className="sidebar" style={{position:'fixed',top:0,left:0,bottom:0,width:'240px',background:'#fff',borderRight:'1px solid #e8ecf1',display:'flex',flexDirection:'column',padding:'24px 0',zIndex:50}}>
                     <div className="sidebar-logo" style={{padding:'0 24px 16px',borderBottom:'1px solid #e8ecf1'}}>
-                        <a href="https://it-ople.onrender.com/#" style={{display:'inline-block'}}>
-                            <img src="https://img.ople.com/ople/main/ople_logo.png" alt="Ople.com" style={{height:'32px',objectFit:'contain'}} />
+                        <a href="#" onClick={(e)=>{e.preventDefault();setActiveTab('dashboard')}} style={{display:'inline-block',cursor:'pointer'}}>
+                            <img src="https://img.ople.com/ople/footer_logo_PC.png" alt="Ople.com" style={{height:'32px',objectFit:'contain'}} />
                         </a>
                     </div>
 

@@ -22,11 +22,45 @@
         }
 
         body {
-            background-color: #f8f9fa;
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px; background: #fff; border-right: 1px solid #e8ecf1;
+            display: flex; flex-direction: column; padding: 24px 0; position: fixed;
+            top: 0; left: 0; bottom: 0; z-index: 50;
+        }
+        .sidebar-logo {
+            padding: 0 24px 24px; border-bottom: 1px solid #e8ecf1;
+        }
+        .sidebar-logo img { height: 32px; object-fit: contain; }
+        .sidebar-section { padding: 20px 16px 8px; font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; }
+        .sidebar-link {
+            display: flex; align-items: center; gap: 12px; padding: 10px 24px;
+            font-size: 0.88rem; color: #64748b; text-decoration: none; font-weight: 500;
+            transition: all 0.15s; border-left: 3px solid transparent; cursor: pointer;
+            border: none; background: none; width: 100%; text-align: left;
+        }
+        .sidebar-link:hover { background: #f8fafc; color: #1a202c; }
+        .sidebar-link.active { background: #f0f7ff; color: #3b82f6; border-left: 3px solid #3b82f6; font-weight: 600; }
+        .sidebar-link .icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sidebar-link .icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .sidebar-bottom { margin-top: auto; padding: 16px 20px; border-top: 1px solid #e8ecf1; }
+        .sidebar-team { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+        .sidebar-team .avatar { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #E46728, #00A651); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.8rem; }
+
+        #root { margin-left: 240px; flex: 1; }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            #root { margin-left: 0; }
         }
 
         .header {
             background: linear-gradient(135deg, #1A2A4A 0%, #2d3f5a 100%);
+            display: none;
         }
 
         .accent-green {
@@ -554,100 +588,63 @@
 
         // ============= COMPONENTS =============
 
-        const Header = () => {
-            return (
-                <header className="header sticky top-0 z-40 shadow-md">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between items-center py-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                                    O
-                                </div>
-                                <div>
-                                    <h1 className="text-white font-bold text-xl">IT.OPLE</h1>
-                                    <p className="text-gray-300 text-xs">제품 분석 대시보드</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <button className="px-4 py-2 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-all text-sm flex items-center gap-2">
-                                    <span>👤</span>
-                                    로그인
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-            );
-        };
+        const SvgIcon = ({path}) => (
+            <span className="icon" dangerouslySetInnerHTML={{__html: `<svg viewBox="0 0 24 24"><path d="${path}"/></svg>`}} />
+        );
 
-        const TabNavigation = ({ activeTab, setActiveTab }) => {
-            const tabs = [
-                { id: 'dashboard', label: '대시보드' },
-                { id: 'products', label: '제품' },
-                { id: 'iherb', label: 'iHerb 상품' },
-                { id: 'mapping', label: 'iHerb 매핑' },
-                { id: 'analytics', label: '분석' },
-                { id: 'scraper', label: '스크래퍼' }
+        const Sidebar = ({ activeTab, setActiveTab }) => {
+            const productItems = [
+                { id: 'products', label: 'OPLE 제품', path: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+                { id: 'iherb', label: 'iHerb 상품', path: 'M9 21a1 1 0 110-2 1 1 0 010 2zm11 0a1 1 0 110-2 1 1 0 010 2zM1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6' },
+                { id: 'mapping', label: 'iHerb 매핑', path: 'M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71' },
+                { id: 'analytics', label: '분석', path: 'M21 21H4a1 1 0 01-1-1V3M7 14l4-4 4 4 6-6' },
+                { id: 'scraper', label: '스크래퍼', path: 'M12 20V10m0 0l3 3m-3-3l-3 3M4 4v14a2 2 0 002 2h12a2 2 0 002-2V8l-6-4H6a2 2 0 00-2 2zM14 4v4h4' },
             ];
 
             return (
-                <div className="bg-white border-b border-gray-200">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <nav className="flex flex-wrap gap-3" style={{rowGap:'8px'}}>
-                            {tabs.map(tab => (
-                                <button
-                                    key={tab.id}
-                                    className={`tab-button whitespace-nowrap ${activeTab === tab.id ? 'active' : ''}`}
-                                    onClick={() => setActiveTab(tab.id)}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                            <a
-                                href="/spec"
-                                className="tab-button whitespace-nowrap"
-                                style={{textDecoration:'none', color:'#4f7942', fontWeight:700, display:'inline-flex', alignItems:'center', gap:'4px'}}
-                            >
-                                📋 명세
-                            </a>
-                            <a
-                                href="/ople-spec"
-                                className="tab-button whitespace-nowrap"
-                                style={{textDecoration:'none', color:'#E46728', fontWeight:700, display:'inline-flex', alignItems:'center', gap:'4px'}}
-                            >
-                                🟠 OPLE 분석
-                            </a>
-                            <a
-                                href="/iherb-comparison"
-                                className="tab-button whitespace-nowrap"
-                                style={{textDecoration:'none', color:'#00A651', fontWeight:700, display:'inline-flex', alignItems:'center', gap:'4px'}}
-                            >
-                                🔥 히트맵 비교
-                            </a>
-                            <a
-                                href="/iherb-shopify-flow"
-                                className="tab-button whitespace-nowrap"
-                                style={{textDecoration:'none', color:'#95BF47', fontWeight:700, display:'inline-flex', alignItems:'center', gap:'4px'}}
-                            >
-                                🛍️ Shopify
-                            </a>
-                            <a
-                                href="/ingredients"
-                                className="tab-button whitespace-nowrap"
-                                style={{textDecoration:'none', color:'#3b82f6', fontWeight:700, display:'inline-flex', alignItems:'center', gap:'4px'}}
-                            >
-                                🧪 성분 DB
-                            </a>
-                            <a
-                                href="/ops-dashboard"
-                                className="tab-button whitespace-nowrap"
-                                style={{textDecoration:'none', color:'#6366f1', fontWeight:700, display:'inline-flex', alignItems:'center', gap:'4px'}}
-                            >
-                                📊 OPS
-                            </a>
-                        </nav>
+                <aside className="sidebar" style={{position:'fixed',top:0,left:0,bottom:0,width:'240px',background:'#fff',borderRight:'1px solid #e8ecf1',display:'flex',flexDirection:'column',padding:'24px 0',zIndex:50}}>
+                    <div className="sidebar-logo" style={{padding:'0 24px 24px',borderBottom:'1px solid #e8ecf1'}}>
+                        <img src="https://img.ople.com/ople/main/ople_logo.png" alt="Ople.com" style={{height:'32px',objectFit:'contain'}} />
                     </div>
-                </div>
+
+                    <button className={`sidebar-link ${activeTab==='dashboard'?'active':''}`} onClick={()=>setActiveTab('dashboard')}>
+                        <SvgIcon path="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" /> Dashboard
+                    </button>
+
+                    <div className="sidebar-section">상품</div>
+                    {productItems.map(item => (
+                        <button key={item.id} className={`sidebar-link ${activeTab===item.id?'active':''}`} onClick={()=>setActiveTab(item.id)}>
+                            <SvgIcon path={item.path} /> {item.label}
+                        </button>
+                    ))}
+                    <a className="sidebar-link" href="/ingredients" style={{textDecoration:'none'}}>
+                        <SvgIcon path="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" /> 성분 DB
+                    </a>
+
+                    <div className="sidebar-section">쇼피파이</div>
+                    <a className="sidebar-link" href="/spec" style={{textDecoration:'none'}}>
+                        <SvgIcon path="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h4" /> 명세
+                    </a>
+                    <a className="sidebar-link" href="/ople-spec" style={{textDecoration:'none'}}>
+                        <SvgIcon path="M11 19a8 8 0 100-16 8 8 0 000 16zm10 2l-4.35-4.35M11 8v6m-3-3h6" /> OPLE 분석
+                    </a>
+                    <a className="sidebar-link" href="/iherb-comparison" style={{textDecoration:'none'}}>
+                        <SvgIcon path="M3 3h8v18H3zM13 3h8v18h-8z" /> 히트맵 비교
+                    </a>
+                    <a className="sidebar-link" href="/iherb-shopify-flow" style={{textDecoration:'none'}}>
+                        <SvgIcon path="M6 2l1.5 4.5L12 8l-4.5 1.5L6 14l-1.5-4.5L0 8l4.5-1.5zM18 8l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" /> 쇼피파이
+                    </a>
+
+                    <div className="sidebar-bottom" style={{marginTop:'auto',padding:'16px 20px',borderTop:'1px solid #e8ecf1'}}>
+                        <div className="sidebar-team" style={{display:'flex',alignItems:'center',gap:'10px',fontSize:'0.85rem'}}>
+                            <div className="avatar" style={{width:'36px',height:'36px',borderRadius:'10px',background:'linear-gradient(135deg,#E46728,#00A651)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:'0.8rem'}}>OP</div>
+                            <div>
+                                <div style={{fontWeight:700,fontSize:'0.85rem'}}>Team OPLE</div>
+                                <div style={{fontSize:'0.72rem',color:'#94a3b8'}}>Operations</div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
             );
         };
 
@@ -1589,11 +1586,19 @@
             const [activeTab, setActiveTab] = useState('dashboard');
 
             return (
-                <div className="min-h-screen bg-gray-50">
-                    <Header />
-                    <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
-                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
+                    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+                    <main style={{marginLeft:'240px',flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
+                            <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
+                                {activeTab === 'dashboard' && 'Dashboard'}
+                                {activeTab === 'products' && 'OPLE 제품'}
+                                {activeTab === 'iherb' && 'iHerb 상품'}
+                                {activeTab === 'mapping' && 'iHerb 매핑'}
+                                {activeTab === 'analytics' && '분석'}
+                                {activeTab === 'scraper' && '스크래퍼'}
+                            </h1>
+                        </div>
                         {activeTab === 'dashboard' && <Dashboard />}
                         {activeTab === 'products' && <ProductsPage />}
                         {activeTab === 'iherb' && <IHerbProductsPage />}

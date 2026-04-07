@@ -961,6 +961,54 @@ async def google_auth(data: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Failed to verify token: {str(e)}")
 
 
+@app.post("/api/auth/email-login")
+async def email_login(data: dict, db: Session = Depends(get_db)):
+    """Admin email login — only for pre-approved admin emails."""
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="No email provided")
+
+    allowed = [e.lower().strip() for e in ADMIN_EMAILS]
+    if email not in allowed:
+        raise HTTPException(status_code=403, detail="이 이메일은 관리자 로그인이 허용되지 않습니다")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(
+            email=email,
+            name=email.split("@")[0],
+            google_uid=f"email_{email}",
+            role="admin",
+            is_active=True,
+        )
+        db.add(user)
+
+    user.last_login = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+
+    token_data = {
+        "sub": user.id,
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+        "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRE_HOURS),
+    }
+    jwt_token = jwt.encode(token_data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+    return {
+        "token": jwt_token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "picture": user.picture,
+            "role": user.role,
+            "is_active": user.is_active,
+        },
+    }
+
+
 @app.get("/api/auth/me")
 def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current authenticated user info."""

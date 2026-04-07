@@ -1059,6 +1059,95 @@
         };
 
         // ============= DASHBOARD (Nexus-style Ops Dashboard) =============
+        // ============= SHOPIFY PROGRESS (interactive) =============
+        const ShopifyProgress = () => {
+            const storageKey = 'ople_shopify_phases';
+            const defaultPhases = [
+                {id:'p1', name:'Phase 1 \u2014 설계 & 개발환경 세팅', detail:'W1-W2 \u00B7 스토어 개설, IA 정의, 메타필드 설계',
+                 tasks:['Shopify 계정 개설 & 플랜 결정','IA(정보구조) 정의','메타필드 스키마 설계','태그 네임스페이스 확정','개발 테마 세팅']},
+                {id:'p2', name:'Phase 2 \u2014 한국/일본몰 구축', detail:'W3-W5 \u00B7 PDP, Collection, Filter, 결제/배송',
+                 tasks:['PDP(상품 상세) 템플릿','컬렉션 페이지 & 메가메뉴','필터 & 정렬 시스템','결제/배송 설정 (KR/JP)','다국어 콘텐츠 세팅']},
+                {id:'p3', name:'Phase 3 \u2014 라이브 오픈 & 인수인계', detail:'W6-W10 \u00B7 오픈, 안정화, 운영팀 인수, 2차 문서화',
+                 tasks:['스테이징 QA & 버그 수정','도메인 연결 & DNS 설정','라이브 오픈','운영팀 인수인계 & 교육','2차 확장 문서화']},
+                {id:'bonus', name:'성과보너스', detail:'오픈 후 6주 \u00B7 실주문 + 운영 이관 + 확장 문서 완료',
+                 tasks:['실주문 처리 안정화','운영 이관 완료 확인','확장 문서 최종 전달']}
+            ];
+
+            const loadState = () => {
+                try {
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) return JSON.parse(saved);
+                } catch(e) {}
+                const init = {};
+                defaultPhases.forEach(p => { init[p.id] = p.tasks.map(() => false); });
+                return init;
+            };
+
+            const [checked, setChecked] = useState(loadState);
+
+            const toggle = (phaseId, taskIdx) => {
+                setChecked(prev => {
+                    const next = {...prev, [phaseId]: [...(prev[phaseId] || [])]};
+                    next[phaseId][taskIdx] = !next[phaseId][taskIdx];
+                    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch(e) {}
+                    return next;
+                });
+            };
+
+            const getPhaseProgress = (phaseId, tasks) => {
+                const states = checked[phaseId] || tasks.map(() => false);
+                const done = states.filter(Boolean).length;
+                return {done, total: tasks.length, pct: Math.round((done / tasks.length) * 100)};
+            };
+
+            const totalDone = defaultPhases.reduce((sum, p) => sum + getPhaseProgress(p.id, p.tasks).done, 0);
+            const totalTasks = defaultPhases.reduce((sum, p) => sum + p.tasks.length, 0);
+            const totalPct = Math.round((totalDone / totalTasks) * 100);
+
+            return React.createElement('div', {className:'ops-card'},
+                React.createElement('div', {className:'ops-card-header'},
+                    React.createElement('div', {className:'ops-card-title'}, '\uD83D\uDE80 Shopify 1차 프로젝트 진행'),
+                    React.createElement('span', {className:'ops-card-badge'}, totalDone + '/' + totalTasks + ' \u00B7 ' + totalPct + '%')
+                ),
+                React.createElement('div', {className:'ops-phase-list'},
+                    ...defaultPhases.map(p => {
+                        const prog = getPhaseProgress(p.id, p.tasks);
+                        const isDone = prog.pct === 100;
+                        const isActive = prog.pct > 0 && prog.pct < 100;
+                        const statusClass = isDone ? 'done' : isActive ? 'active' : 'pending';
+                        const statusText = isDone ? '완료' : isActive ? '진행중' : '대기중';
+                        const fillClass = isDone ? 'green' : isActive ? 'blue' : 'gray';
+                        return React.createElement('div', {key:p.id, className:'ops-phase-item'},
+                            React.createElement('div', {className:'ops-phase-top'},
+                                React.createElement('span', {className:'ops-phase-name', style: isDone ? {textDecoration:'line-through',color:'#94a3b8'} : {}}, p.name),
+                                React.createElement('span', {className:'ops-phase-status ' + statusClass}, statusText)
+                            ),
+                            React.createElement('div', {className:'ops-progress-track'},
+                                React.createElement('div', {className:'ops-progress-fill ' + fillClass, style:{width: prog.pct + '%'}})
+                            ),
+                            React.createElement('div', {className:'ops-phase-detail'}, p.detail),
+                            React.createElement('div', {style:{marginTop:'8px',display:'flex',flexDirection:'column',gap:'4px'}},
+                                ...p.tasks.map((task, idx) => {
+                                    const isChecked = (checked[p.id] || [])[idx] || false;
+                                    return React.createElement('label', {key:idx, style:{display:'flex',alignItems:'center',gap:'8px',cursor:'pointer',padding:'4px 0',fontSize:'0.78rem',color: isChecked ? '#94a3b8' : '#475569',userSelect:'none'}},
+                                        React.createElement('div', {
+                                            onClick: (e) => { e.preventDefault(); toggle(p.id, idx); },
+                                            style:{width:'18px',height:'18px',borderRadius:'4px',border: isChecked ? '2px solid #22c55e' : '2px solid #cbd5e1',background: isChecked ? '#22c55e' : '#fff',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all 0.15s',cursor:'pointer'}
+                                        },
+                                            isChecked && React.createElement('svg', {width:12,height:12,viewBox:'0 0 12 12',fill:'none'},
+                                                React.createElement('path', {d:'M2.5 6l2.5 2.5 4.5-5', stroke:'#fff', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round'})
+                                            )
+                                        ),
+                                        React.createElement('span', {style: isChecked ? {textDecoration:'line-through'} : {}}, task)
+                                    );
+                                })
+                            )
+                        );
+                    })
+                )
+            );
+        };
+
         const Dashboard = () => {
             const today = new Date();
             const dateStr = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
@@ -1129,32 +1218,8 @@
                             React.createElement('div', {className:'ops-legend-item'}, React.createElement('div', {className:'ops-legend-dot',style:{background:'#3b82f6'}}), ' iHerb 매핑')
                         )
                     ),
-                    // Shopify project progress
-                    React.createElement('div', {className:'ops-card'},
-                        React.createElement('div', {className:'ops-card-header'},
-                            React.createElement('div', {className:'ops-card-title'}, '\uD83D\uDE80 Shopify 1차 프로젝트 진행'),
-                            React.createElement('span', {className:'ops-card-badge'}, 'W0 / 10주')
-                        ),
-                        React.createElement('div', {className:'ops-phase-list'},
-                            ...[
-                                {name:'Phase 1 \u2014 설계 & 개발환경 세팅', status:'대기중', statusClass:'pending', fill:'0%', fillClass:'gray', detail:'W1-W2 \u00B7 200만원 \u00B7 스토어 개설, IA 정의, 메타필드 설계'},
-                                {name:'Phase 2 \u2014 한국/일본몰 구축', status:'대기중', statusClass:'pending', fill:'0%', fillClass:'gray', detail:'W3-W5 \u00B7 500만원 \u00B7 PDP, Collection, Filter, 결제/배송'},
-                                {name:'Phase 3 \u2014 라이브 오픈 & 인수인계', status:'대기중', statusClass:'pending', fill:'0%', fillClass:'gray', detail:'W6-W10 \u00B7 800만원 \u00B7 오픈, 안정화, 운영팀 인수, 2차 문서화'},
-                                {name:'성과보너스', status:'조건부', statusClass:'pending', fill:'0%', fillClass:'gray', detail:'오픈 후 6주 \u00B7 300만원 \u00B7 실주문 + 운영 이관 + 확장 문서 완료'}
-                            ].map(p =>
-                                React.createElement('div', {key:p.name,className:'ops-phase-item'},
-                                    React.createElement('div', {className:'ops-phase-top'},
-                                        React.createElement('span', {className:'ops-phase-name'}, p.name),
-                                        React.createElement('span', {className:'ops-phase-status '+p.statusClass}, p.status)
-                                    ),
-                                    React.createElement('div', {className:'ops-progress-track'},
-                                        React.createElement('div', {className:'ops-progress-fill '+p.fillClass, style:{width:p.fill}})
-                                    ),
-                                    React.createElement('div', {className:'ops-phase-detail'}, p.detail)
-                                )
-                            )
-                        )
-                    )
+                    // Shopify project progress (interactive)
+                    React.createElement(ShopifyProgress)
                 ),
                 // Bottom Row (2-col grid)
                 React.createElement('div', {className:'ops-grid-2'},

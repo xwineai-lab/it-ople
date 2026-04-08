@@ -2761,6 +2761,21 @@
                             { id:'p1g4t1', name:'Shopify 계정 개설', desc:'Shopify 파트너/스토어 계정 생성', assignees:['m1'], due:'W1', done:false },
                             { id:'p1g4t2', name:'플랜 결정', desc:'Basic/Shopify/Advanced 플랜 확정', assignees:['m1'], due:'W1', done:false },
                         ]},
+                        { id:'p1g5', name:'인프라 & 배포환경 세팅', priority:'urgent', tasks:[
+                            { id:'p1g5t1', name:'GitHub 세팅 & Render 배포환경', desc:'GitHub repo 생성, Render 자동 배포 연동', assignees:['m2'], due:'W1', done:true },
+                            { id:'p1g5t2', name:'OPLE 인트라넷(IT.OPLE) 설치', desc:'IT.OPLE 대시보드 설치 및 라이브 배포', assignees:['m2'], due:'W1', done:true },
+                            { id:'p1g5t3', name:'Shopify API 연동 세팅', desc:'Admin API / Storefront API 키 발급 및 테스트', assignees:['m2'], due:'W1', done:false },
+                            { id:'p1g5t4', name:'백업 DATA 확보', desc:'상품·주문·고객 데이터 백업 수령', assignees:['m1','m2'], due:'W1', done:false },
+                        ]},
+                        { id:'p1g6', name:'초기 필요 권한·자료 확보', priority:'urgent', tasks:[
+                            { id:'p1g6t1', name:'상품 DB 접근 권한 확보', desc:'전체 상품 데이터 (원가 자료 포함) 접근 확보', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g6t2', name:'고객 DB 접근 권한 확보', desc:'고객 데이터 (이메일, 주문 이력) 마이그레이션 검토용', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g6t3', name:'상품 등록 프로세스 파악', desc:'오플닷컴 상품 등록 절차 (촬영→가공→등록 흐름)', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g6t4', name:'주문 처리 흐름 파악', desc:'주문 접수→확인→출고→배송→CS 전체 흐름 파악', assignees:['m1'], due:'W1', done:false },
+                            { id:'p1g6t5', name:'WMS (창고관리시스템) 파악', desc:'현재 WMS 종류, 재고 동기화 방식, API 연동 가능 여부', assignees:['m1'], due:'W2', done:false },
+                            { id:'p1g6t6', name:'OMS (주문관리시스템) 파악', desc:'현재 OMS 종류, 주문 처리 자동화 현황, Shopify 연동 여부', assignees:['m1'], due:'W2', done:false },
+                            { id:'p1g6t7', name:'기획전 등록 프로세스 파악', desc:'기획전/프로모션 등록 절차 — 향후 자동화를 위한 내부 흐름', assignees:['m1'], due:'W2', done:false },
+                        ]},
                     ]
                 },
                 {

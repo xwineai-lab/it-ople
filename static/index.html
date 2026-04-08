@@ -3198,6 +3198,381 @@
                             ),
                             React.createElement(InfoBox, {type:'warn'}, '판매량순 정렬과 30일 판매량 표시는 Shopify 기본 기능이 아닙니다. OPLE 백엔드에서 주기적으로 metafield를 업데이트하는 별도 스크립트가 필요합니다.')
                         )
+                    ),
+
+                    // ── OPLE Design System ──
+                    React.createElement(Section, {id:'designSystem', icon:'🎨', title:'OPLE Design System', badge:'권장'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            // Color Palette
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px'}}, '🎨 Color Palette'),
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))',gap:'10px',marginBottom:'20px'}},
+                                [
+                                    {name:'OPLE Orange',hex:'#E46728',role:'Primary CTA, 브랜드 강조',text:'#fff'},
+                                    {name:'OPLE Green',hex:'#00A651',role:'건강/신뢰, 정기배송 CTA',text:'#fff'},
+                                    {name:'Near Black',hex:'#1e293b',role:'본문 텍스트, 헤딩',text:'#fff'},
+                                    {name:'Action Blue',hex:'#3b82f6',role:'링크, 활성 필터, 포커스',text:'#fff'},
+                                    {name:'Success Green',hex:'#10b981',role:'재고 있음, 긍정 상태',text:'#fff'},
+                                    {name:'Danger Red',hex:'#ef4444',role:'에러, 품절, 할인율',text:'#fff'},
+                                    {name:'Warning Amber',hex:'#f59e0b',role:'재고 부족, 프로모 배지',text:'#fff'},
+                                    {name:'Slate 200',hex:'#e2e8f0',role:'보더, 구분선',text:'#334155'},
+                                    {name:'Slate 50',hex:'#f8fafc',role:'배경, 카드 표면',text:'#334155'},
+                                    {name:'White',hex:'#ffffff',role:'페이지 캔버스',text:'#334155'},
+                                ].map((c,i) =>
+                                    React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'8px',border:'1px solid #e2e8f0'}},
+                                        React.createElement('div', {style:{width:'36px',height:'36px',borderRadius:'6px',background:c.hex,border:c.hex==='#ffffff'?'1px solid #e2e8f0':'none',flexShrink:0}}),
+                                        React.createElement('div', null,
+                                            React.createElement('div', {style:{fontSize:'0.8rem',fontWeight:700,color:'#1e293b'}}, c.name),
+                                            React.createElement('div', {style:{fontSize:'0.7rem',color:'#64748b',fontFamily:'monospace'}}, c.hex),
+                                            React.createElement('div', {style:{fontSize:'0.7rem',color:'#94a3b8'}}, c.role)
+                                        )
+                                    )
+                                )
+                            ),
+
+                            // Badge Colors
+                            React.createElement('h4', {style:{fontSize:'0.85rem',fontWeight:600,color:'#475569',marginBottom:'8px'}}, 'Badge Colors'),
+                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'8px',marginBottom:'20px'}},
+                                [
+                                    {name:'베스트셀러',bg:'#dc2626'},
+                                    {name:'브랜드',bg:'#0ea5e9'},
+                                    {name:'신상품',bg:'#8b5cf6'},
+                                    {name:'세일',bg:'#f59e0b'},
+                                    {name:'정기배송',bg:'#10b981'},
+                                ].map((b,i) =>
+                                    React.createElement('span', {key:i, style:{padding:'4px 12px',borderRadius:'12px',background:b.bg,color:'#fff',fontSize:'0.75rem',fontWeight:600}}, b.name)
+                                )
+                            ),
+
+                            // Typography
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'8px'}}, '✏️ Typography'),
+                            React.createElement(InfoBox, {type:'info'}, "Pretendard (한국어 본문) + Montserrat (가격/숫자) 조합. Pretendard는 Apple SF Pro 스타일의 깔끔한 한글 서체입니다."),
+                            React.createElement(CodeBlock, {title:'📦 Font Loading (theme.liquid)', code:`<!-- Pretendard CDN -->
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<!-- Montserrat (가격/숫자용) -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">`}),
+                            React.createElement('div', {style:{overflowX:'auto',marginTop:'12px'}},
+                                React.createElement('table', {style:{width:'100%',fontSize:'0.78rem',borderCollapse:'collapse'}},
+                                    React.createElement('thead', null,
+                                        React.createElement('tr', {style:{background:'#f8fafc'}},
+                                            ['역할','폰트','사이즈','두께','설명'].map((h,i) =>
+                                                React.createElement('th', {key:i, style:{padding:'8px 10px',textAlign:'left',borderBottom:'2px solid #e2e8f0',color:'#475569',fontWeight:600}}, h)
+                                            )
+                                        )
+                                    ),
+                                    React.createElement('tbody', null,
+                                        [
+                                            ['Page Title','Pretendard','28px','800','카테고리/페이지 제목'],
+                                            ['Section Heading','Pretendard','22px','700','카드 그룹 타이틀'],
+                                            ['Card Title','Pretendard','15px','600','상품명 (2줄 클램프)'],
+                                            ['Body','Pretendard','14px','400','설명, 본문 텍스트'],
+                                            ['Caption','Pretendard','12px','400','리뷰 수, 메타 정보'],
+                                            ['Price Large','Montserrat','20px','700','메인 상품 가격'],
+                                            ['Price Regular','Montserrat','16px','600','카드 가격'],
+                                            ['Discount','Montserrat','13px','700','"-25%" 할인 배지'],
+                                            ['Button','Pretendard','15px','600','CTA 버튼 텍스트'],
+                                            ['Nav Item','Pretendard','14px','500','메인 네비게이션'],
+                                            ['Sidebar Label','Pretendard','11px','600','사이드바 헤더 (대문자)'],
+                                        ].map((row,i) =>
+                                            React.createElement('tr', {key:i, style:{borderBottom:'1px solid #f1f5f9'}},
+                                                row.map((cell,j) =>
+                                                    React.createElement('td', {key:j, style:{padding:'7px 10px',color:j===0?'#1e293b':'#475569',fontWeight:j===0?600:400,fontFamily:j===1&&cell==='Montserrat'?'Montserrat, sans-serif':'inherit'}}, cell)
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+
+                            // Component Styles
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'24px'}}, '🧩 Component Styles'),
+
+                            // Buttons
+                            React.createElement('h4', {style:{fontSize:'0.85rem',fontWeight:600,color:'#475569',marginBottom:'8px'}}, 'Buttons'),
+                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'10px',marginBottom:'12px'}},
+                                React.createElement('button', {style:{background:'#E46728',color:'#fff',padding:'10px 22px',borderRadius:'8px',border:'none',fontSize:'0.9rem',fontWeight:600,cursor:'pointer'}}, '장바구니 담기'),
+                                React.createElement('button', {style:{background:'#00A651',color:'#fff',padding:'10px 22px',borderRadius:'8px',border:'none',fontSize:'0.9rem',fontWeight:600,cursor:'pointer'}}, '정기배송 신청'),
+                                React.createElement('button', {style:{background:'#fff',color:'#334155',padding:'10px 22px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'0.9rem',fontWeight:600,cursor:'pointer'}}, '위시리스트'),
+                                React.createElement('button', {style:{background:'#fff',color:'#E46728',padding:'8px 16px',borderRadius:'6px',border:'1px solid #E46728',fontSize:'0.8rem',fontWeight:600,cursor:'pointer'}}, '+ 빠른 추가')
+                            ),
+                            React.createElement(CodeBlock, {title:'Primary CTA (CSS)', code:`.btn-primary {
+  background: #E46728;
+  color: #ffffff;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.btn-primary:hover { background: #d35a20; }
+.btn-primary:active { background: #c04f1a; transform: scale(0.98); }`}),
+
+                            // Product Card Preview
+                            React.createElement('h4', {style:{fontSize:'0.85rem',fontWeight:600,color:'#475569',marginBottom:'8px',marginTop:'20px'}}, 'Product Card'),
+                            React.createElement('div', {style:{maxWidth:'240px',border:'1px solid #e2e8f0',borderRadius:'12px',overflow:'hidden',background:'#fff'}},
+                                React.createElement('div', {style:{position:'relative',background:'#f8fafc',height:'180px',display:'flex',alignItems:'center',justifyContent:'center',color:'#94a3b8',fontSize:'0.85rem'}},
+                                    '📷 240×240',
+                                    React.createElement('span', {style:{position:'absolute',top:'8px',left:'8px',background:'#dc2626',color:'#fff',fontSize:'0.65rem',fontWeight:700,padding:'2px 8px',borderRadius:'10px'}}, '베스트셀러'),
+                                    React.createElement('span', {style:{position:'absolute',top:'8px',right:'8px',background:'#f59e0b',color:'#fff',fontSize:'0.65rem',fontWeight:700,padding:'2px 8px',borderRadius:'10px'}}, '-25%')
+                                ),
+                                React.createElement('div', {style:{padding:'12px'}},
+                                    React.createElement('div', {style:{fontSize:'0.7rem',color:'#0ea5e9',fontWeight:600,marginBottom:'4px'}}, 'California Gold Nutrition'),
+                                    React.createElement('div', {style:{fontSize:'0.85rem',fontWeight:600,color:'#1e293b',lineHeight:'1.4',marginBottom:'6px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}, '오메가-3 프리미엄 피쉬 오일, 240 소프트젤'),
+                                    React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'4px',marginBottom:'4px'}},
+                                        React.createElement('span', {style:{color:'#f59e0b',fontSize:'0.75rem'}}, '★★★★★'),
+                                        React.createElement('span', {style:{color:'#64748b',fontSize:'0.7rem'}}, '(3,847)')
+                                    ),
+                                    React.createElement('div', {style:{fontSize:'0.7rem',color:'#64748b',marginBottom:'6px'}}, '🔥 30일 판매 1,234건'),
+                                    React.createElement('div', {style:{display:'flex',alignItems:'baseline',gap:'6px'}},
+                                        React.createElement('span', {style:{fontFamily:'Montserrat, sans-serif',fontSize:'1.05rem',fontWeight:700,color:'#1e293b'}}, '₩18,900'),
+                                        React.createElement('span', {style:{fontFamily:'Montserrat, sans-serif',fontSize:'0.8rem',color:'#94a3b8',textDecoration:'line-through'}}, '₩25,200')
+                                    ),
+                                    React.createElement('button', {style:{width:'100%',marginTop:'8px',padding:'8px',background:'#E46728',color:'#fff',border:'none',borderRadius:'6px',fontSize:'0.8rem',fontWeight:600,cursor:'pointer'}}, '장바구니 담기')
+                                )
+                            ),
+
+                            // Spacing & Sizing
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'24px'}}, '📐 Spacing & Radius'),
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
+                                React.createElement('div', null,
+                                    React.createElement('h4', {style:{fontSize:'0.85rem',fontWeight:600,color:'#475569',marginBottom:'8px'}}, 'Spacing Scale (8px base)'),
+                                    React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'4px'}},
+                                        [{name:'xs',val:'4px'},{name:'sm',val:'8px'},{name:'md',val:'16px'},{name:'lg',val:'24px'},{name:'xl',val:'32px'},{name:'2xl',val:'48px'},{name:'3xl',val:'64px'}].map((s,i) =>
+                                            React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:'8px',fontSize:'0.78rem'}},
+                                                React.createElement('code', {style:{width:'32px',fontWeight:600,color:'#475569'}}, s.name),
+                                                React.createElement('div', {style:{width:s.val,height:'12px',background:'#E46728',borderRadius:'2px',opacity:0.7}}),
+                                                React.createElement('span', {style:{color:'#94a3b8',fontFamily:'monospace',fontSize:'0.72rem'}}, s.val)
+                                            )
+                                        )
+                                    )
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('h4', {style:{fontSize:'0.85rem',fontWeight:600,color:'#475569',marginBottom:'8px'}}, 'Border Radius'),
+                                    React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'4px'}},
+                                        [{name:'pill',val:'9999px'},{name:'xl',val:'16px'},{name:'lg',val:'12px'},{name:'md',val:'8px'},{name:'sm',val:'6px'},{name:'xs',val:'4px'},{name:'none',val:'0'}].map((r,i) =>
+                                            React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:'8px',fontSize:'0.78rem'}},
+                                                React.createElement('code', {style:{width:'36px',fontWeight:600,color:'#475569'}}, r.name),
+                                                React.createElement('div', {style:{width:'40px',height:'24px',background:'#eff6ff',border:'2px solid #3b82f6',borderRadius:r.val}}),
+                                                React.createElement('span', {style:{color:'#94a3b8',fontFamily:'monospace',fontSize:'0.72rem'}}, r.val)
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+
+                            // Stitch Prompt Guide
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'24px'}}, '🤖 Agent Prompt Guide'),
+                            React.createElement(InfoBox, {type:'tip'}, 'Stitch나 Claude 등 AI 에이전트에게 Shopify Liquid 코드를 생성시킬 때 아래 프롬프트를 함께 전달하세요.'),
+                            React.createElement(CodeBlock, {title:'Stitch 프롬프트 예시', code:`"OPLE.com Design System을 따라 Shopify Liquid 코드를 작성해줘.
+- 폰트: Pretendard (한글) + Montserrat (가격/숫자)
+- Primary CTA: #E46728 (OPLE Orange)
+- Secondary CTA: #00A651 (OPLE Green)
+- 상품카드: 배지 + 별점 + 30일 판매량 + 가격(할인가/원가)
+- 한국어 line-height: 1.6, 상품명 2줄 클램프
+- 8px spacing grid, border-radius 8~12px
+- 모바일 우선 반응형 (sm:640px, md:768px, lg:1024px, xl:1280px)"`})
+                        )
+                    ),
+
+                    // ── 건강 주제 태그 구조 ──
+                    React.createElement(Section, {id:'healthTags', icon:'🏷️', title:'건강 주제 태그 구조 (iHerb 컨셉)', badge:'권장'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            React.createElement(InfoBox, {type:'info'}, 'iHerb의 "건강 주제" 시스템은 2단계 태그 분류법을 사용합니다. Level 1 = 건강 고민(concern), Level 2 = 성분/솔루션(ingredient). Shopify 태그 prefix 시스템으로 동일하게 구현 가능합니다.'),
+
+                            // Architecture
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'16px'}}, '🏗️ 태그 아키텍처'),
+                            React.createElement(CodeBlock, {title:'Shopify Tag Prefix 구조', code:`┌─────────────────────────────────────────────────┐
+│           Shopify Product Tags                    │
+├─────────────────────────────────────────────────┤
+│                                                   │
+│  Level 1: concern:<건강고민>                       │
+│  ┌──────────────────────────────────────────┐     │
+│  │ concern:면역강화  concern:소화건강        │     │
+│  │ concern:피부건강  concern:관절건강        │     │
+│  │ concern:수면개선  concern:에너지          │     │
+│  │ concern:심장건강  concern:뇌건강          │     │
+│  │ concern:눈건강    concern:뼈건강          │     │
+│  │ concern:간건강    concern:체중관리        │     │
+│  └──────────────────────────────────────────┘     │
+│                                                   │
+│  Level 2: ingredient:<성분>                       │
+│  ┌──────────────────────────────────────────┐     │
+│  │ ingredient:비타민C  ingredient:아연       │     │
+│  │ ingredient:프로바이오틱스                  │     │
+│  │ ingredient:오메가3  ingredient:콜라겐     │     │
+│  │ ingredient:루테인   ingredient:CoQ10      │     │
+│  │ ingredient:마그네슘 ingredient:글루코사민 │     │
+│  └──────────────────────────────────────────┘     │
+│                                                   │
+│  기타 prefix:                                     │
+│  ┌──────────────────────────────────────────┐     │
+│  │ brand:<브랜드>  form:<제형>               │     │
+│  │ age:<연령대>    gender:<성별>             │     │
+│  └──────────────────────────────────────────┘     │
+└─────────────────────────────────────────────────┘`}),
+
+                            // Tag Mapping Table
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'20px'}}, '📋 건강 주제 → 태그 매핑 (24개 카테고리)'),
+                            React.createElement('div', {style:{overflowX:'auto'}},
+                                React.createElement('table', {style:{width:'100%',fontSize:'0.78rem',borderCollapse:'collapse'}},
+                                    React.createElement('thead', null,
+                                        React.createElement('tr', {style:{background:'#f8fafc'}},
+                                            ['#','건강 주제 (L1)','태그','관련 성분 (L2)','상품 예시'].map((h,i) =>
+                                                React.createElement('th', {key:i, style:{padding:'8px 10px',textAlign:'left',borderBottom:'2px solid #e2e8f0',color:'#475569',fontWeight:600,whiteSpace:'nowrap'}}, h)
+                                            )
+                                        )
+                                    ),
+                                    React.createElement('tbody', null,
+                                        [
+                                            ['1','면역 강화','concern:면역강화','비타민C, 아연, 엘더베리, 에키네시아','비타민C 1000mg, 아연 30mg'],
+                                            ['2','소화 건강','concern:소화건강','프로바이오틱스, 소화효소, 식이섬유','유산균 500억 CFU'],
+                                            ['3','피부 건강','concern:피부건강','콜라겐, 히알루론산, 비타민E, 비오틴','콜라겐 펩타이드'],
+                                            ['4','관절 건강','concern:관절건강','글루코사민, MSM, 콘드로이틴, 커큐민','글루코사민 1500mg'],
+                                            ['5','수면 개선','concern:수면개선','멜라토닌, 마그네슘, L-테아닌, GABA','멜라토닌 5mg'],
+                                            ['6','에너지/활력','concern:에너지','비타민B군, 철분, CoQ10, 인삼','종합비타민B'],
+                                            ['7','심장 건강','concern:심장건강','오메가3, CoQ10, 마그네슘, 비타민K2','피쉬오일 EPA/DHA'],
+                                            ['8','뇌 건강','concern:뇌건강','오메가3 DHA, 포스파티딜세린, 징코빌로바','DHA 1000mg'],
+                                            ['9','눈 건강','concern:눈건강','루테인, 지아잔틴, 빌베리, 비타민A','루테인 20mg'],
+                                            ['10','뼈 건강','concern:뼈건강','칼슘, 비타민D3, 마그네슘, 비타민K2','칼슘+D3 복합제'],
+                                            ['11','간 건강','concern:간건강','밀크씨슬, NAC, 알파리포산','밀크씨슬 250mg'],
+                                            ['12','체중 관리','concern:체중관리','가르시니아, CLA, 녹차추출물, L-카르니틴','CLA 1000mg'],
+                                            ['13','스트레스/기분','concern:스트레스','아쉬와간다, 로디올라, 5-HTP, SAMe','아쉬와간다 600mg'],
+                                            ['14','여성 건강','concern:여성건강','철분, 엽산, 칼슘, 크랜베리, 달맞이꽃','여성 종합비타민'],
+                                            ['15','남성 건강','concern:남성건강','쏘팔메토, 아연, 리코펜, 마카','남성 종합비타민'],
+                                            ['16','어린이 건강','concern:어린이건강','종합비타민, 오메가3, 프로바이오틱스, 비타민D','어린이 종합비타민'],
+                                            ['17','혈당 관리','concern:혈당관리','크롬, 시나몬, 알파리포산, 베르베린','크롬 200mcg'],
+                                            ['18','항산화','concern:항산화','비타민C, 비타민E, 셀레늄, 레스베라트롤','항산화 복합제'],
+                                            ['19','탈모/모발','concern:모발건강','비오틴, 콜라겐, 아연, 쏘팔메토','비오틴 5000mcg'],
+                                            ['20','구강 건강','concern:구강건강','프로바이오틱스, 비타민C, CoQ10, 자일리톨','구강 프로바이오틱스'],
+                                            ['21','호흡기 건강','concern:호흡기건강','NAC, 비타민C, 유칼립투스, 케르세틴','NAC 600mg'],
+                                            ['22','전립선 건강','concern:전립선건강','쏘팔메토, 리코펜, 아연, 베타시토스테롤','쏘팔메토 320mg'],
+                                            ['23','근육/운동','concern:근육운동','BCAA, 크레아틴, 단백질, 글루타민','BCAA 파우더'],
+                                            ['24','갱년기','concern:갱년기','블랙코호시, 승마, 이소플라본, 레드클로버','이소플라본 복합제'],
+                                        ].map((row,i) =>
+                                            React.createElement('tr', {key:i, style:{borderBottom:'1px solid #f1f5f9',background:i%2===0?'#fff':'#f8fafc'}},
+                                                row.map((cell,j) =>
+                                                    React.createElement('td', {key:j, style:{padding:'7px 10px',color:j===2?'#3b82f6':j===0?'#94a3b8':'#475569',fontWeight:j===1?600:400,fontSize:j===2?'0.75rem':'0.78rem',fontFamily:j===2?'monospace':'inherit',whiteSpace:j<=2?'nowrap':'normal'}}, cell)
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+
+                            // Liquid Implementation
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'20px'}}, '💻 Liquid 구현 코드'),
+                            React.createElement(CodeBlock, {title:'health-topics-nav.liquid — 건강 주제 네비게이션', code:`{%- comment -%} 건강 주제 태그 기반 네비게이션 {%- endcomment -%}
+{%- assign health_concerns = "면역강화,소화건강,피부건강,관절건강,수면개선,에너지,심장건강,뇌건강,눈건강,뼈건강,간건강,체중관리,스트레스,여성건강,남성건강,어린이건강,혈당관리,항산화,모발건강,구강건강,호흡기건강,전립선건강,근육운동,갱년기" | split: "," -%}
+
+<div class="health-topics-nav">
+  <h2 class="health-topics-title">건강 주제</h2>
+  <div class="health-topics-grid">
+    {%- for concern in health_concerns -%}
+      <a href="/collections/all/concern:{{ concern }}"
+         class="health-topic-card">
+        <span class="health-topic-icon">
+          {%- case concern -%}
+            {%- when '면역강화' -%}🛡️
+            {%- when '소화건강' -%}🦠
+            {%- when '피부건강' -%}✨
+            {%- when '관절건강' -%}🦴
+            {%- when '수면개선' -%}😴
+            {%- when '에너지' -%}⚡
+            {%- else -%}💊
+          {%- endcase -%}
+        </span>
+        <span class="health-topic-label">{{ concern }}</span>
+      </a>
+    {%- endfor -%}
+  </div>
+</div>`}),
+
+                            React.createElement(CodeBlock, {title:'collection-filter-by-tag.liquid — 태그 필터링', code:`{%- comment -%} 건강 주제별 상품 필터링 {%- endcomment -%}
+{%- assign current_tags = collection.current_tags -%}
+
+<div class="concern-filter-sidebar">
+  <h3 class="filter-title">건강 주제별 보기</h3>
+  {%- for product in collection.products -%}
+    {%- for tag in product.tags -%}
+      {%- if tag contains 'concern:' -%}
+        {%- assign concern_name = tag | remove: 'concern:' -%}
+        {%- unless concern_list contains concern_name -%}
+          {%- assign concern_list = concern_list
+              | append: concern_name | append: ',' -%}
+        {%- endunless -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endfor -%}
+
+  {%- assign unique_concerns = concern_list | split: ',' -%}
+  <ul class="filter-list">
+    {%- for concern in unique_concerns -%}
+      {%- if concern != blank -%}
+        <li>
+          <a href="{{ collection.url }}/concern:{{ concern }}"
+             class="{% if current_tags contains concern %}active{% endif %}">
+            {{ concern }}
+          </a>
+        </li>
+      {%- endif -%}
+    {%- endfor -%}
+  </ul>
+</div>
+
+{%- comment -%} 성분별 서브 필터 {%- endcomment -%}
+<div class="ingredient-sub-filter">
+  <h4 class="filter-subtitle">관련 성분</h4>
+  {%- for product in collection.products -%}
+    {%- for tag in product.tags -%}
+      {%- if tag contains 'ingredient:' -%}
+        {%- assign ing_name = tag | remove: 'ingredient:' -%}
+        <a href="{{ collection.url }}/ingredient:{{ ing_name }}"
+           class="filter-chip {% if current_tags contains ing_name %}active{% endif %}">
+          {{ ing_name }}
+        </a>
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endfor -%}
+</div>`}),
+
+                            // Tag Prefix Reference
+                            React.createElement('h3', {style:{fontSize:'0.95rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:'20px'}}, '📑 전체 태그 Prefix 규칙'),
+                            React.createElement('div', {style:{overflowX:'auto'}},
+                                React.createElement('table', {style:{width:'100%',fontSize:'0.78rem',borderCollapse:'collapse'}},
+                                    React.createElement('thead', null,
+                                        React.createElement('tr', {style:{background:'#f8fafc'}},
+                                            ['Prefix','용도','예시','필수 여부'].map((h,i) =>
+                                                React.createElement('th', {key:i, style:{padding:'8px 10px',textAlign:'left',borderBottom:'2px solid #e2e8f0',color:'#475569',fontWeight:600}}, h)
+                                            )
+                                        )
+                                    ),
+                                    React.createElement('tbody', null,
+                                        [
+                                            ['concern:','건강 고민 (L1)','concern:면역강화','필수'],
+                                            ['ingredient:','성분 (L2)','ingredient:비타민C','필수'],
+                                            ['brand:','브랜드','brand:CGN','필수'],
+                                            ['form:','제형','form:소프트젤','권장'],
+                                            ['age:','연령대','age:성인','권장'],
+                                            ['gender:','성별','gender:여성','권장'],
+                                            ['origin:','원산지','origin:미국','선택'],
+                                            ['cert:','인증','cert:유기농','선택'],
+                                            ['diet:','식이제한','diet:비건','선택'],
+                                            ['season:','시즌','season:겨울','선택'],
+                                            ['promo:','프로모션','promo:BOGO','선택'],
+                                            ['tier:','등급','tier:프리미엄','선택'],
+                                        ].map((row,i) =>
+                                            React.createElement('tr', {key:i, style:{borderBottom:'1px solid #f1f5f9'}},
+                                                row.map((cell,j) =>
+                                                    React.createElement('td', {key:j, style:{padding:'7px 10px',color:j===0?'#3b82f6':j===3?(cell==='필수'?'#dc2626':cell==='권장'?'#d97706':'#64748b'):'#475569',fontWeight:j===0||j===3?600:400,fontFamily:j===0||j===2?'monospace':'inherit'}}, cell)
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement(InfoBox, {type:'tip'}, '태그 prefix 방식은 Shopify의 기본 태그 시스템을 활용하므로 추가 앱 설치 없이 바로 사용 가능합니다. Collection URL에서 /tag-name으로 자동 필터링됩니다.')
+                        )
                     )
                 )
             );

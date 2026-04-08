@@ -995,6 +995,9 @@
                     <button className={`sidebar-link ${activeTab==='tagStrategy'?'active':''}`} onClick={()=>setActiveTab('tagStrategy')}>
                         <SvgIcon path="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" /> 태그 전략
                     </button>
+                    <button className={`sidebar-link ${activeTab==='shopifySkin'?'active':''}`} onClick={()=>setActiveTab('shopifySkin')}>
+                        <SvgIcon path="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /> SKIN
+                    </button>
 
                     <div className="sidebar-section">프로젝트</div>
                     <button className={`sidebar-link ${activeTab==='projectShopify'?'active':''}`} onClick={()=>setActiveTab('projectShopify')}>
@@ -2726,6 +2729,480 @@
         };
 
         // ============= PROJECT MANAGER =============
+        // ============= SHOPIFY SKIN PAGE =============
+        const ShopifySkinPage = () => {
+            const [expandedSections, setExpandedSections] = useState({});
+            const toggle = (key) => setExpandedSections(prev => ({...prev, [key]: !prev[key]}));
+
+            const Section = ({id, icon, title, badge, children}) => (
+                React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',marginBottom:'16px',overflow:'hidden'}},
+                    React.createElement('button', {onClick:()=>toggle(id), style:{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'18px 24px',background:'none',border:'none',cursor:'pointer',fontSize:'1rem',fontWeight:700,color:'#1e293b',textAlign:'left'}},
+                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px'}},
+                            React.createElement('span', {style:{fontSize:'1.2rem'}}, icon),
+                            title,
+                            badge && React.createElement('span', {style:{fontSize:'0.7rem',fontWeight:600,padding:'2px 8px',borderRadius:'10px',background:badge==='필수'?'#fee2e2':badge==='권장'?'#fef3c7':'#e0f2fe',color:badge==='필수'?'#dc2626':badge==='권장'?'#d97706':'#0284c7'}}, badge)
+                        ),
+                        React.createElement('span', {style:{transform:expandedSections[id]?'rotate(180deg)':'rotate(0deg)',transition:'transform 0.2s',fontSize:'0.8rem',color:'#94a3b8'}}, '▼')
+                    ),
+                    expandedSections[id] && React.createElement('div', {style:{padding:'0 24px 24px',borderTop:'1px solid #f1f5f9'}}, children)
+                )
+            );
+
+            const CodeBlock = ({title, code}) => (
+                React.createElement('div', {style:{marginTop:'12px'}},
+                    title && React.createElement('div', {style:{fontSize:'0.75rem',fontWeight:600,color:'#64748b',marginBottom:'4px'}}, title),
+                    React.createElement('pre', {style:{background:'#1e293b',color:'#e2e8f0',padding:'16px',borderRadius:'8px',fontSize:'0.78rem',lineHeight:'1.6',overflowX:'auto',whiteSpace:'pre-wrap',fontFamily:'Menlo, Monaco, monospace'}}, code)
+                )
+            );
+
+            const TreeNode = ({label, children, depth=0, icon='📁', highlight}) => (
+                React.createElement('div', {style:{marginLeft:depth*20+'px',marginTop:'4px'}},
+                    React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'6px',fontSize:'0.85rem',color:highlight?'#3b82f6':'#334155',fontWeight:highlight?600:400,padding:'3px 0'}},
+                        React.createElement('span', {style:{fontSize:'0.8rem'}}, icon),
+                        label
+                    ),
+                    children
+                )
+            );
+
+            const InfoBox = ({type, children}) => {
+                const colors = {tip:{bg:'#f0fdf4',border:'#bbf7d0',icon:'💡'},warn:{bg:'#fefce8',border:'#fde68a',icon:'⚠️'},info:{bg:'#eff6ff',border:'#bfdbfe',icon:'ℹ️'}};
+                const c = colors[type] || colors.info;
+                return React.createElement('div', {style:{display:'flex',gap:'10px',padding:'14px 16px',background:c.bg,border:'1px solid '+c.border,borderRadius:'8px',marginTop:'12px',fontSize:'0.85rem',lineHeight:'1.6',color:'#334155'}},
+                    React.createElement('span', null, c.icon),
+                    React.createElement('div', null, children)
+                );
+            };
+
+            return (
+                React.createElement('div', {style:{maxWidth:'960px'}},
+                    // Header
+                    React.createElement('div', {style:{marginBottom:'28px'}},
+                        React.createElement('h1', {style:{fontSize:'1.6rem',fontWeight:800,color:'#1e293b',marginBottom:'6px'}}, '🎨 Shopify SKIN — iHerb 스타일 구현 가이드'),
+                        React.createElement('p', {style:{color:'#64748b',fontSize:'0.9rem',lineHeight:'1.6'}}, 'Dawn 테마 기반 + Liquid 커스터마이징으로 iHerb 수준의 UX를 구현하는 전체 로드맵'),
+                        React.createElement('div', {style:{display:'flex',gap:'8px',marginTop:'12px',flexWrap:'wrap'}},
+                            ['Dawn 테마 (무료)', 'Liquid 커스텀', 'Metafield 활용', 'Judge.me 리뷰', 'Subscriptions 앱'].map((t,i) =>
+                                React.createElement('span', {key:i, style:{fontSize:'0.75rem',fontWeight:600,padding:'4px 10px',borderRadius:'6px',background:i===0?'#dbeafe':i===1?'#fce7f3':i===2?'#d1fae5':i===3?'#fef3c7':'#ede9fe',color:i===0?'#1d4ed8':i===1?'#be185d':i===2?'#047857':i===3?'#b45309':'#6d28d9'}}, t)
+                            )
+                        )
+                    ),
+
+                    // ── 전체 구조도 ──
+                    React.createElement(Section, {id:'architecture', icon:'🏗️', title:'전체 페이지 구조도', badge:'필수'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            // Visual architecture diagram
+                            React.createElement('div', {style:{background:'#f8fafc',border:'2px solid #e2e8f0',borderRadius:'12px',padding:'20px',fontFamily:'monospace',fontSize:'0.8rem',lineHeight:'2'}},
+                                React.createElement('div', {style:{textAlign:'center',fontWeight:700,fontSize:'0.9rem',marginBottom:'12px',color:'#1e293b'}}, '📐 iHerb → Shopify 페이지 매핑 구조'),
+                                React.createElement('pre', {style:{color:'#334155',whiteSpace:'pre',overflowX:'auto',lineHeight:'1.5',fontSize:'0.78rem'}},
+`┌──────────────────────────────────────────────────────┐
+│  📢 Announcement Bar (프로모 상단 바)                   │
+│  "봄맞이 세일 20% 할인"  →  Shopify 기본 내장            │
+├──────────────────────────────────────────────────────┤
+│  🔍 Header: 로고 + 검색바 + 로그인 + 장바구니             │
+│  →  Dawn header 섹션 커스텀                              │
+├──────────────────────────────────────────────────────┤
+│  📂 Main Navigation (보충제 | 스포츠 | 뷰티 | ...)       │
+│  →  Shopify Navigation + Mega Menu Liquid               │
+├─────────┬────────────────────────────────────────────┤
+│ 2nd Nav │  슈퍼세일 | 베스트셀러 | 특가 | 신상품           │
+│         │  →  Shopify Links List + CSS 스타일링           │
+├─────────┴────────────────────────────────────────────┤
+│  🖼️ Hero Banner Carousel                               │
+│  →  Dawn slideshow 섹션                                  │
+├──────────────────────────────────────────────────────┤
+│  🏷️ Sub-Category Icon Row (K-뷰티|클렌저|세럼|...)       │
+│  →  Collection List 커스텀 섹션 + Metafield 이미지       │
+├────────────┬─────────────────────────────────────────┤
+│  🔎 Filter │  📦 Product Grid (4-Column)                │
+│  Sidebar   │  ┌───┐ ┌───┐ ┌───┐ ┌───┐                  │
+│            │  │ 📷│ │ 📷│ │ 📷│ │ 📷│                  │
+│  ☐ 1+1    │  │⭐4.5│ │⭐4.8│ │⭐4.2│ │⭐4.6│            │
+│  ☐ 재입고  │  │₩18k│ │₩12k│ │₩14k│ │₩19k│              │
+│  ☐ 브랜드  │  └───┘ └───┘ └───┘ └───┘                  │
+│  ☐ 가격대  │  →  collection-template.liquid              │
+│  ☐ 평점   │     product-card.liquid (snippet)           │
+│            │                                             │
+│  Storefront│  정렬: 추천순 | 판매량순 | 평점순              │
+│  Filter API│  →  sort 파라미터 + 커스텀 JS                │
+├────────────┴─────────────────────────────────────────┤
+│  📄 Pagination (1 2 3 ... 160)                          │
+│  →  Shopify 기본 paginate 태그                           │
+└──────────────────────────────────────────────────────┘`
+                                )
+                            ),
+
+                            React.createElement('div', {style:{marginTop:'20px',background:'#f8fafc',border:'2px solid #e2e8f0',borderRadius:'12px',padding:'20px'}},
+                                React.createElement('div', {style:{textAlign:'center',fontWeight:700,fontSize:'0.9rem',marginBottom:'12px',color:'#1e293b'}}, '📐 상품 상세 페이지 (PDP) 구조'),
+                                React.createElement('pre', {style:{color:'#334155',whiteSpace:'pre',overflowX:'auto',lineHeight:'1.5',fontSize:'0.78rem'}},
+`┌──────────────────────────────────────────────────────┐
+│  🍞 Breadcrumb (카테고리 > 뷰티 > 모이스처라이저)         │
+├──────────────┬───────────────────────────────────────┤
+│  🖼️ 상품     │  📝 상품 정보 영역                        │
+│  이미지       │                                          │
+│  갤러리       │  [iHerb 브랜드] 배지                      │
+│              │  Mild By Nature, Camellia Care®           │
+│  ┌──┐┌──┐   │  ⭐ 4.5 (25,235)  |  2 Q&A               │
+│  │  ││  │   │  🏷️ 1+1 행사                              │
+│  └──┘└──┘   │                                          │
+│  썸네일 행    │  소비기한 / UPC / 무게 / 상품코드           │
+│              │  → product metafields                     │
+│  ❤️ 위시리스트│                                          │
+│  🔗 공유     │  #1 in 레스베라트롤  #1 in 녹차             │
+│              │  → custom metafield (rankings)            │
+├──────────────┼──────────┬────────────────────────────┤
+│              │ 🔄 정기배송│ 💰 1회 구매                    │
+│              │ ₩17,662  │ ₩18,591                       │
+│              │ (5% 할인) │                               │
+│              │ → Shopify │ [  -  ]  1  [  +  ]          │
+│              │Subscriptio│ [  장바구니에 추가  ]           │
+│              │ns 앱      │                               │
+├──────────────┴──────────┴────────────────────────────┤
+│  📋 탭: 제품설명 | 성분 | 리뷰(25,235) | Q&A(2)          │
+│  →  Liquid 탭 섹션 + Judge.me 위젯                       │
+├──────────────────────────────────────────────────────┤
+│  🔗 관련 상품 / 함께 본 상품                               │
+│  →  Shopify related products + metafield 기반            │
+└──────────────────────────────────────────────────────┘`
+                                )
+                            )
+                        )
+                    ),
+
+                    // ── 파일 구조 ──
+                    React.createElement(Section, {id:'files', icon:'📂', title:'Dawn 테마 커스텀 파일 구조', badge:'필수'},
+                        React.createElement('div', {style:{marginTop:'16px',background:'#f8fafc',borderRadius:'8px',padding:'16px',border:'1px solid #e2e8f0'}},
+                            React.createElement(TreeNode, {label:'themes/dawn-ople/', icon:'📦'},
+                                React.createElement(TreeNode, {label:'layout/', depth:1},
+                                    React.createElement(TreeNode, {label:'theme.liquid — 전체 레이아웃 (Announcement Bar, Header, Footer)', depth:2, icon:'📄', highlight:true})
+                                ),
+                                React.createElement(TreeNode, {label:'templates/', depth:1},
+                                    React.createElement(TreeNode, {label:'collection.json — 카테고리 리스트 페이지 (iHerb 메인)', depth:2, icon:'📄', highlight:true}),
+                                    React.createElement(TreeNode, {label:'product.json — 상품 상세 페이지 (PDP)', depth:2, icon:'📄', highlight:true}),
+                                    React.createElement(TreeNode, {label:'index.json — 홈페이지', depth:2, icon:'📄'})
+                                ),
+                                React.createElement(TreeNode, {label:'sections/', depth:1},
+                                    React.createElement(TreeNode, {label:'header.liquid — 메가메뉴 + 검색 + 2nd Nav 커스텀', depth:2, icon:'📄', highlight:true}),
+                                    React.createElement(TreeNode, {label:'collection-template.liquid — 필터 사이드바 + 그리드', depth:2, icon:'📄', highlight:true}),
+                                    React.createElement(TreeNode, {label:'product-template.liquid — PDP 레이아웃', depth:2, icon:'📄', highlight:true}),
+                                    React.createElement(TreeNode, {label:'subcategory-icons.liquid — 서브카테고리 아이콘 행', depth:2, icon:'📄'}),
+                                    React.createElement(TreeNode, {label:'product-tabs.liquid — 설명/성분/리뷰/Q&A 탭', depth:2, icon:'📄'})
+                                ),
+                                React.createElement(TreeNode, {label:'snippets/', depth:1},
+                                    React.createElement(TreeNode, {label:'product-card.liquid — ⭐ 핵심! 상품 카드 커스텀', depth:2, icon:'📄', highlight:true}),
+                                    React.createElement(TreeNode, {label:'product-badge.liquid — 배지 렌더링 (베스트셀러 등)', depth:2, icon:'📄'}),
+                                    React.createElement(TreeNode, {label:'star-rating.liquid — 별점 + 리뷰 수 표시', depth:2, icon:'📄'}),
+                                    React.createElement(TreeNode, {label:'price-display.liquid — 정기배송/1회 가격 표시', depth:2, icon:'📄'}),
+                                    React.createElement(TreeNode, {label:'filter-sidebar.liquid — 필터 UI 컴포넌트', depth:2, icon:'📄'})
+                                ),
+                                React.createElement(TreeNode, {label:'assets/', depth:1},
+                                    React.createElement(TreeNode, {label:'ople-custom.css — iHerb 스타일 오버라이드', depth:2, icon:'🎨'}),
+                                    React.createElement(TreeNode, {label:'ople-filters.js — 필터 + 정렬 JS 로직', depth:2, icon:'⚡'}),
+                                    React.createElement(TreeNode, {label:'ople-sales-badge.js — 판매량 배지 업데이트', depth:2, icon:'⚡'})
+                                ),
+                                React.createElement(TreeNode, {label:'config/', depth:1},
+                                    React.createElement(TreeNode, {label:'settings_schema.json — 테마 설정 (색상, 폰트 등)', depth:2, icon:'⚙️'})
+                                )
+                            )
+                        ),
+                        React.createElement(InfoBox, {type:'tip'}, '파란색으로 표시된 파일이 핵심 커스터마이징 대상입니다. 나머지는 Dawn 기본 파일을 그대로 사용합니다.')
+                    ),
+
+                    // ── 상품 카드 구현 ──
+                    React.createElement(Section, {id:'productCard', icon:'🃏', title:'상품 카드 (product-card.liquid)', badge:'필수'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            React.createElement('p', {style:{fontSize:'0.85rem',color:'#475569',lineHeight:'1.7',marginBottom:'12px'}}, 'iHerb 상품 카드의 모든 요소를 Liquid snippet으로 구현합니다. 이 파일 하나가 전체 쇼핑 경험의 핵심입니다.'),
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'16px'}},
+                                ['배지 (iHerb 브랜드 / 베스트셀러)', '상품 이미지 + Quick Add 버튼', '⭐ 별점 + 리뷰 수 (25,235)', '30일 판매량 ("3,000+개 판매")', '프로모 태그 (1+1 행사)', '가격 (할인가 + 원래가 + 할인율)'].map((item, i) =>
+                                    React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:'8px',fontSize:'0.82rem',color:'#334155',padding:'8px 12px',background:'#f8fafc',borderRadius:'6px',border:'1px solid #e2e8f0'}},
+                                        React.createElement('span', {style:{color:'#10b981',fontWeight:700}}, '✓'),
+                                        item
+                                    )
+                                )
+                            ),
+                            React.createElement(CodeBlock, {title:'snippets/product-card.liquid', code:
+`{% comment %} iHerb 스타일 상품 카드 {% endcomment %}
+<div class="ople-product-card" data-product-id="{{ product.id }}">
+
+  {%- comment -%} 1. 배지 영역 {%- endcomment -%}
+  <div class="card-badges">
+    {% if product.metafields.custom.badge %}
+      <span class="badge badge--{{ product.metafields.custom.badge_type }}">
+        {{ product.metafields.custom.badge }}
+      </span>
+    {% endif %}
+    {% if product.metafields.custom.is_bestseller %}
+      <span class="badge badge--bestseller">베스트셀러</span>
+    {% endif %}
+  </div>
+
+  {%- comment -%} 2. 이미지 + Quick Add {%- endcomment -%}
+  <div class="card-media">
+    <a href="{{ product.url }}">
+      <img src="{{ product.featured_image | image_url: width: 400 }}"
+           alt="{{ product.title }}" loading="lazy" />
+    </a>
+    <button class="quick-add-btn"
+            data-variant-id="{{ product.selected_or_first_available_variant.id }}">
+      장바구니에 추가
+    </button>
+  </div>
+
+  {%- comment -%} 3. 상품 정보 {%- endcomment -%}
+  <div class="card-info">
+    <a href="{{ product.url }}" class="card-title">{{ product.title }}</a>
+
+    {%- comment -%} 별점 + 리뷰 수 (Judge.me metafield) {%- endcomment -%}
+    {% if product.metafields.reviews.rating.value %}
+      <div class="card-rating">
+        {% render 'star-rating',
+           rating: product.metafields.reviews.rating.value %}
+        <span class="review-count">
+          {{ product.metafields.reviews.rating_count }}
+        </span>
+      </div>
+    {% endif %}
+
+    {%- comment -%} 판매량 표시 (커스텀 metafield) {%- endcomment -%}
+    {% if product.metafields.custom.sales_30d %}
+      <div class="sales-volume">
+        📈 30일 동안 {{ product.metafields.custom.sales_30d }}개 판매
+      </div>
+    {% endif %}
+
+    {%- comment -%} 프로모 태그 {%- endcomment -%}
+    {% if product.metafields.custom.promo_tag %}
+      <span class="promo-tag">
+        🏷️ {{ product.metafields.custom.promo_tag }}
+      </span>
+    {% endif %}
+
+    {%- comment -%} 가격 영역 {%- endcomment -%}
+    <div class="card-price">
+      {% if product.compare_at_price > product.price %}
+        <span class="price--sale">{{ product.price | money }}</span>
+        <span class="price--original">
+          {{ product.compare_at_price | money }}
+        </span>
+        <span class="price--discount">
+          -{{ product.compare_at_price | minus: product.price
+             | times: 100 | divided_by: product.compare_at_price }}%
+        </span>
+      {% else %}
+        <span class="price--regular">{{ product.price | money }}</span>
+      {% endif %}
+    </div>
+  </div>
+</div>`}),
+                            React.createElement(InfoBox, {type:'info'}, 'Metafield 정의는 Shopify Admin > 설정 > 커스텀 데이터 > 상품 에서 badge, badge_type, is_bestseller, sales_30d, promo_tag 필드를 생성합니다.')
+                        )
+                    ),
+
+                    // ── Metafield 설계 ──
+                    React.createElement(Section, {id:'metafields', icon:'🗄️', title:'Metafield 설계', badge:'필수'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.82rem'}},
+                                React.createElement('thead', null,
+                                    React.createElement('tr', {style:{background:'#f8fafc'}},
+                                        ['네임스페이스', '키', '타입', '용도', '예시값'].map((h,i) =>
+                                            React.createElement('th', {key:i, style:{padding:'10px 12px',textAlign:'left',fontWeight:600,color:'#475569',borderBottom:'2px solid #e2e8f0'}}, h)
+                                        )
+                                    )
+                                ),
+                                React.createElement('tbody', null,
+                                    [
+                                        ['custom', 'badge', 'Single text', '상품 배지', 'iHerb 브랜드'],
+                                        ['custom', 'badge_type', 'Single text', '배지 스타일', 'brand / bestseller / new'],
+                                        ['custom', 'is_bestseller', 'Boolean', '베스트셀러 여부', 'true'],
+                                        ['custom', 'sales_30d', 'Integer', '30일 판매량', '3000'],
+                                        ['custom', 'promo_tag', 'Single text', '프로모션 태그', '1+1 행사'],
+                                        ['custom', 'rankings', 'JSON', '카테고리 랭킹', '[{"rank":1,"category":"녹차"}]'],
+                                        ['custom', 'expiry_date', 'Date', '소비기한', '2027-08-01'],
+                                        ['custom', 'upc_code', 'Single text', 'UPC 바코드', '898220012626'],
+                                        ['custom', 'shipping_weight', 'Weight', '배송 무게', '0.1 kg'],
+                                        ['reviews', 'rating', 'Rating', '평균 별점', '4.5 / 5.0'],
+                                        ['reviews', 'rating_count', 'Integer', '총 리뷰 수', '25235'],
+                                    ].map((row, i) =>
+                                        React.createElement('tr', {key:i, style:{borderBottom:'1px solid #f1f5f9'}},
+                                            row.map((cell, j) =>
+                                                React.createElement('td', {key:j, style:{padding:'8px 12px',color:j===0?'#7c3aed':'#334155',fontWeight:j===0?600:400,fontFamily:j<2?'monospace':'inherit'}}, cell)
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement(InfoBox, {type:'tip'}, 'reviews.rating 과 reviews.rating_count 는 Judge.me 앱 설치 시 자동으로 생성됩니다. 별도 설정 불필요.')
+                        )
+                    ),
+
+                    // ── 필터 + 정렬 ──
+                    React.createElement(Section, {id:'filters', icon:'🔍', title:'필터 사이드바 + 정렬', badge:'권장'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            React.createElement('p', {style:{fontSize:'0.85rem',color:'#475569',lineHeight:'1.7',marginBottom:'12px'}}, 'Shopify Storefront Filtering API를 활용해 iHerb 수준의 필터링을 구현합니다.'),
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
+                                React.createElement('div', {style:{background:'#f8fafc',borderRadius:'8px',padding:'16px',border:'1px solid #e2e8f0'}},
+                                    React.createElement('div', {style:{fontWeight:700,fontSize:'0.85rem',marginBottom:'10px',color:'#1e293b'}}, '📋 필터 항목'),
+                                    ['브랜드 (vendor)', '가격대 (price range)', '평점 (tag 기반)', '카테고리 (product_type)', '프로모션 (1+1, 할인 등)', '재입고 여부 (availability)', '성분별 (tag 기반)'].map((f, i) =>
+                                        React.createElement('div', {key:i, style:{fontSize:'0.82rem',padding:'4px 0',color:'#475569',display:'flex',alignItems:'center',gap:'6px'}}, '☐ ', f)
+                                    )
+                                ),
+                                React.createElement('div', {style:{background:'#f8fafc',borderRadius:'8px',padding:'16px',border:'1px solid #e2e8f0'}},
+                                    React.createElement('div', {style:{fontWeight:700,fontSize:'0.85rem',marginBottom:'10px',color:'#1e293b'}}, '↕️ 정렬 옵션'),
+                                    [
+                                        {name:'추천순', method:'Shopify 기본 (manual)'},
+                                        {name:'판매량순', method:'best-selling (내장)'},
+                                        {name:'평점 높은순', method:'metafield 기반 커스텀 정렬'},
+                                        {name:'후기 많은순', method:'metafield 기반 커스텀 정렬'},
+                                        {name:'가격: 낮은순', method:'price-ascending (내장)'},
+                                        {name:'가격: 높은순', method:'price-descending (내장)'},
+                                        {name:'최신순', method:'created-descending (내장)'},
+                                    ].map((s, i) =>
+                                        React.createElement('div', {key:i, style:{fontSize:'0.82rem',padding:'4px 0',color:'#475569'}},
+                                            React.createElement('span', {style:{fontWeight:600}}, s.name),
+                                            ' — ', React.createElement('span', {style:{color:'#64748b',fontSize:'0.78rem'}}, s.method)
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement(CodeBlock, {title:'sections/collection-template.liquid (필터 영역)', code:
+`{%- comment -%} 인기 필터 칩 {%- endcomment -%}
+<div class="popular-filters">
+  {% for tag in collection.all_tags limit: 8 %}
+    <a href="{{ collection.url }}/{{ tag | handle }}"
+       class="filter-chip {% if current_tags contains tag %}active{% endif %}">
+      {{ tag }}
+    </a>
+  {% endfor %}
+</div>
+
+{%- comment -%} 정렬 드롭다운 {%- endcomment -%}
+<div class="sort-bar">
+  <span>총 {{ collection.products_count }}개</span>
+  <select id="sort-select" onchange="handleSort(this.value)">
+    <option value="manual">추천순</option>
+    <option value="best-selling">판매량순</option>
+    <option value="price-ascending">가격: 낮은순</option>
+    <option value="price-descending">가격: 높은순</option>
+    <option value="created-descending">최신순</option>
+  </select>
+</div>
+
+{%- comment -%} 상품 그리드 (4열) {%- endcomment -%}
+<div class="product-grid product-grid--4col">
+  {% paginate collection.products by 48 %}
+    {% for product in collection.products %}
+      {% render 'product-card', product: product %}
+    {% endfor %}
+    {{ paginate | default_pagination }}
+  {% endpaginate %}
+</div>`})
+                        )
+                    ),
+
+                    // ── 정기배송 위젯 ──
+                    React.createElement(Section, {id:'subscription', icon:'🔄', title:'정기배송 위젯 (PDP)', badge:'권장'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            React.createElement('p', {style:{fontSize:'0.85rem',color:'#475569',lineHeight:'1.7',marginBottom:'12px'}}, 'iHerb의 "정기배송 & 할인 vs 1회 구매" UI를 Shopify Subscriptions 앱으로 구현합니다.'),
+                            React.createElement('div', {style:{background:'#f8fafc',borderRadius:'12px',border:'2px solid #e2e8f0',padding:'20px',maxWidth:'400px'}},
+                                React.createElement('div', {style:{display:'flex',gap:'8px',marginBottom:'16px'}},
+                                    React.createElement('div', {style:{flex:1,padding:'12px',border:'2px solid #3b82f6',borderRadius:'8px',background:'#eff6ff',cursor:'pointer'}},
+                                        React.createElement('div', {style:{fontSize:'0.75rem',fontWeight:600,color:'#3b82f6'}}, '🔄 정기배송 & 할인:'),
+                                        React.createElement('div', {style:{fontSize:'1.1rem',fontWeight:800,color:'#1e293b',marginTop:'2px'}}, '₩17,662 ', React.createElement('span', {style:{fontSize:'0.75rem',color:'#dc2626',fontWeight:600}}, '(5% 할인)'))
+                                    ),
+                                    React.createElement('div', {style:{flex:1,padding:'12px',border:'1px solid #e2e8f0',borderRadius:'8px',background:'#fff',cursor:'pointer'}},
+                                        React.createElement('div', {style:{fontSize:'0.75rem',fontWeight:600,color:'#64748b'}}, '💰 1회 구매가:'),
+                                        React.createElement('div', {style:{fontSize:'1.1rem',fontWeight:800,color:'#1e293b',marginTop:'2px'}}, '₩18,591')
+                                    )
+                                ),
+                                React.createElement('div', {style:{fontSize:'0.78rem',color:'#64748b',lineHeight:'1.6'}},
+                                    '✅ 5% 할인 또는 최저가 보장', React.createElement('br'),
+                                    '✅ ₩30,000 이상 정기 주문 시 배송비 무료', React.createElement('br'),
+                                    '✅ 언제든지 건너뛰기, 변경, 취소 가능'
+                                )
+                            ),
+                            React.createElement(CodeBlock, {title:'sections/product-template.liquid (구독 영역)', code:
+`{%- comment -%} 정기배송 vs 1회구매 선택 UI {%- endcomment -%}
+{% if product.selling_plan_groups.size > 0 %}
+<div class="subscription-toggle">
+  {% for group in product.selling_plan_groups %}
+    {% for plan in group.selling_plans %}
+      <label class="sub-option sub-option--subscription">
+        <input type="radio" name="selling_plan"
+               value="{{ plan.id }}" checked>
+        <div class="sub-label">
+          🔄 정기배송 & 할인:
+          <strong>
+            {{ product.price | minus: plan.price_adjustments[0].value
+               | money }}
+          </strong>
+          <span class="discount-badge">
+            ({{ plan.price_adjustments[0].value }}% 할인)
+          </span>
+        </div>
+      </label>
+    {% endfor %}
+  {% endfor %}
+  <label class="sub-option sub-option--onetime">
+    <input type="radio" name="selling_plan" value="">
+    <div class="sub-label">
+      💰 1회 구매가: <strong>{{ product.price | money }}</strong>
+    </div>
+  </label>
+</div>
+{% endif %}`})
+                        )
+                    ),
+
+                    // ── 필수 앱 목록 ──
+                    React.createElement(Section, {id:'apps', icon:'🧩', title:'필수 앱 & 도구', badge:'필수'},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            [
+                                {name:'Judge.me', role:'리뷰 시스템', desc:'별점 + 리뷰 수를 metafield에 자동 저장 → product-card.liquid에서 바로 활용', cost:'무료 플랜 사용 가능', priority:'필수'},
+                                {name:'Shopify Subscriptions', role:'정기배송', desc:'Selling Plan API로 "정기배송 5% 할인 vs 1회 구매" 위젯 제공', cost:'무료 (Shopify 내장)', priority:'필수'},
+                                {name:'Shopify Search & Discovery', role:'필터링 강화', desc:'Storefront Filtering API 활성화 + 검색 최적화', cost:'무료 (Shopify 내장)', priority:'필수'},
+                                {name:'Wishlist Plus', role:'위시리스트', desc:'하트 버튼 + 위시리스트 페이지', cost:'무료 플랜 사용 가능', priority:'권장'},
+                            ].map((app, i) =>
+                                React.createElement('div', {key:i, style:{display:'flex',gap:'16px',padding:'14px 0',borderBottom:i<3?'1px solid #f1f5f9':'none'}},
+                                    React.createElement('div', {style:{flex:1}},
+                                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'8px'}},
+                                            React.createElement('span', {style:{fontWeight:700,fontSize:'0.9rem',color:'#1e293b'}}, app.name),
+                                            React.createElement('span', {style:{fontSize:'0.7rem',fontWeight:600,padding:'2px 6px',borderRadius:'4px',background:app.priority==='필수'?'#fee2e2':'#fef3c7',color:app.priority==='필수'?'#dc2626':'#d97706'}}, app.priority),
+                                            React.createElement('span', {style:{fontSize:'0.72rem',color:'#64748b'}}, '— ', app.role)
+                                        ),
+                                        React.createElement('div', {style:{fontSize:'0.82rem',color:'#475569',marginTop:'4px',lineHeight:'1.5'}}, app.desc),
+                                        React.createElement('div', {style:{fontSize:'0.75rem',color:'#10b981',marginTop:'2px',fontWeight:600}}, '💰 ', app.cost)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+
+                    // ── 구현 로드맵 ──
+                    React.createElement(Section, {id:'roadmap', icon:'🗺️', title:'구현 로드맵 (3단계)', badge:null},
+                        React.createElement('div', {style:{marginTop:'16px'}},
+                            [
+                                {phase:'Phase 1 — 기반 세팅 (W1)', color:'#3b82f6', tasks:['Dawn 테마 복제 및 개발 테마 설정', 'Metafield 정의 생성 (Shopify Admin)', 'Judge.me 앱 설치 + 리뷰 metafield 연동', 'Shopify Subscriptions 앱 설정', '기본 Collection / Product 템플릿 확인']},
+                                {phase:'Phase 2 — 핵심 UI 구현 (W2-W3)', color:'#8b5cf6', tasks:['product-card.liquid 커스텀 (배지, 별점, 가격)', 'collection-template.liquid (필터 사이드바 + 4열 그리드)', 'product-template.liquid (PDP 레이아웃 + 정기배송 위젯)', 'header.liquid (메가메뉴 + 2nd Nav)', 'subcategory-icons.liquid (카테고리 아이콘 행)', 'ople-custom.css (iHerb 스타일 전체 적용)']},
+                                {phase:'Phase 3 — 데이터 연동 & QA (W4)', color:'#059669', tasks:['OPLE DB → Shopify 상품 동기화 (API)', 'Metafield 데이터 벌크 업로드', '판매량 배지 자동 업데이트 로직', '모바일 반응형 테스트', '크로스 브라우저 QA', '성능 최적화 (이미지 lazy loading, CSS 최소화)']},
+                            ].map((phase, i) =>
+                                React.createElement('div', {key:i, style:{marginBottom:'16px',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0',overflow:'hidden'}},
+                                    React.createElement('div', {style:{padding:'12px 16px',background:phase.color,color:'#fff',fontWeight:700,fontSize:'0.9rem'}}, phase.phase),
+                                    React.createElement('div', {style:{padding:'12px 16px'}},
+                                        phase.tasks.map((task, j) =>
+                                            React.createElement('div', {key:j, style:{fontSize:'0.82rem',padding:'4px 0',color:'#334155',display:'flex',alignItems:'center',gap:'8px'}},
+                                                React.createElement('span', {style:{width:'6px',height:'6px',borderRadius:'50%',background:phase.color,flexShrink:0}}),
+                                                task
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement(InfoBox, {type:'warn'}, '판매량순 정렬과 30일 판매량 표시는 Shopify 기본 기능이 아닙니다. OPLE 백엔드에서 주기적으로 metafield를 업데이트하는 별도 스크립트가 필요합니다.')
+                        )
+                    )
+                )
+            );
+        };
+
         const ProjectManager = () => {
             const storageKey = 'ople_project_manager_v2';
             const membersKey = 'ople_project_members';
@@ -3165,7 +3642,7 @@
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
                     <main style={{flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
-                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && activeTab !== 'projectShopify' && (
+                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && activeTab !== 'projectShopify' && activeTab !== 'shopifySkin' && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
                                 {activeTab === 'products' && 'OPLE 제품'}
@@ -3187,6 +3664,7 @@
                         {activeTab === 'navCompare' && <NavComparePage />}
                         {activeTab === 'tagStrategy' && <TagStrategyPage />}
                         {activeTab === 'projectShopify' && <ProjectManager />}
+                        {activeTab === 'shopifySkin' && <ShopifySkinPage />}
                     </main>
                 </div>
             );

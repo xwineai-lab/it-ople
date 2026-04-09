@@ -2,20 +2,34 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
+# Install Node.js 20 and supervisord
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl supervisor openssl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ── Python (FastAPI Dashboard) ──
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
 COPY api/ ./api/
 COPY scraper/ ./scraper/
 COPY static/ ./static/
 
-# Create data directory
 RUN mkdir -p data
 
-WORKDIR /app/api
+# ── Node.js (Shopify Remix App) ──
+COPY shopify-app/ ./shopify-app/
+WORKDIR /app/shopify-app
+RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
+RUN npx prisma generate
+RUN npm run build
+
+# ── Supervisord Config ──
+WORKDIR /app
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

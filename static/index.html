@@ -2794,16 +2794,34 @@
             ];
 
             const renderOverview = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
-                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
-                    React.createElement(KPI, {label:'WMS 전체 상품',value:wms.total,sub:`활성 ${wms.active.toLocaleString()} / 비활성 ${wms.inactive.toLocaleString()}`,color:'#3b82f6',icon:'📦'}),
-                    React.createElement(KPI, {label:'오플닷컴 상품',value:ople.total,sub:`활성 ${ople.active.toLocaleString()} / 단종 ${ople.discontinued.toLocaleString()}`,color:'#10b981',icon:'🛒'}),
-                    React.createElement(KPI, {label:'매핑 코드',value:mp.totalMappings,sub:`${mp.uniqueParents.toLocaleString()} SKU → ${mp.uniqueChildren.toLocaleString()} 하위코드`,color:'#8b5cf6',icon:'🔗'}),
-                    React.createElement(KPI, {label:'6개월 총 판매량',value:ople.totalSales6m,sub:`판매 이력 있는 상품: ${ople.hasSales.toLocaleString()}개`,color:'#f59e0b',icon:'📈'})
+                React.createElement('div', {style:{background:'linear-gradient(135deg,#eff6ff,#dbeafe)',borderRadius:'14px',padding:'24px',border:'1px solid #bfdbfe'}},
+                    React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}},
+                        React.createElement('span', {style:{fontSize:'1.3rem'}}, '🎯'),
+                        React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#1e3a5f',margin:0}}, '마이그레이션 대상 (단종 제외 활성 상품만)'),
+                    ),
+                    React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                        React.createElement(KPI, {label:'WMS 활성 상품',value:wms.active,sub:`전체 ${wms.total.toLocaleString()} 중 is_running=1`,color:'#2563eb',icon:'📦'}),
+                        React.createElement(KPI, {label:'오플 활성 상품',value:ople.active,sub:`전체 ${ople.total.toLocaleString()} 중 단종 제외`,color:'#059669',icon:'🛒'}),
+                        React.createElement(KPI, {label:'6개월 총 판매량',value:ople.totalSales6m,sub:`판매 이력: ${ople.hasSales.toLocaleString()}개`,color:'#d97706',icon:'📈'}),
+                        React.createElement(KPI, {label:'재고 보유',value:ople.inStock,sub:`활성 대비 ${Math.round(ople.inStock/ople.active*100)}%`,color:'#0d9488',icon:'📋'})
+                    )
+                ),
+                React.createElement('div', {style:{background:'linear-gradient(135deg,#fef2f2,#fecaca)',borderRadius:'14px',padding:'24px',border:'1px solid #fca5a5'}},
+                    React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}},
+                        React.createElement('span', {style:{fontSize:'1.3rem'}}, '🚫'),
+                        React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#991b1b',margin:0}}, '제외 대상 (단종/비활성)'),
+                    ),
+                    React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                        React.createElement(KPI, {label:'WMS 비활성',value:wms.inactive,sub:`is_running=9 (${Math.round(wms.inactive/wms.total*100)}%)`,color:'#dc2626',icon:'⛔'}),
+                        React.createElement(KPI, {label:'오플 단종',value:ople.discontinued,sub:`it_discontinued=1 (${Math.round(ople.discontinued/ople.total*100)}%)`,color:'#b91c1c',icon:'🚫'}),
+                        React.createElement(KPI, {label:'WMS 미지정',value:wms.unknown,sub:'is_running=0 (확인 필요)',color:'#94a3b8',icon:'❓'}),
+                        React.createElement(KPI, {label:'SKU 없는 오플 상품',value:ople.total-ople.hasSku,sub:`WMS 매칭 불가 (${Math.round((ople.total-ople.hasSku)/ople.total*100)}%)`,color:'#9ca3af',icon:'🔍'})
+                    )
                 ),
                 React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement(KPI, {label:'매핑 코드',value:mp.totalMappings,sub:`${mp.uniqueParents.toLocaleString()} SKU → ${mp.uniqueChildren.toLocaleString()} 하위코드`,color:'#8b5cf6',icon:'🔗'}),
                     React.createElement(KPI, {label:'WMS 브랜드',value:wms.brands,sub:'고유 brand_id 기준',color:'#6366f1',icon:'🏷️'}),
                     React.createElement(KPI, {label:'오플 제조사',value:ople.validMakers,sub:'한글 제조사명 기준',color:'#ec4899',icon:'🏭'}),
-                    React.createElement(KPI, {label:'재고 보유 상품',value:ople.inStock,sub:`전체 대비 ${Math.round(ople.inStock/ople.total*100)}%`,color:'#14b8a6',icon:'📋'}),
                     React.createElement(KPI, {label:'이미지 URL 패턴',value:'6종',sub:'채널×타입 조합 12가지',color:'#f97316',icon:'🖼️'})
                 ),
                 React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},

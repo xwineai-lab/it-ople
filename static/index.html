@@ -2747,12 +2747,12 @@
             const mp = {totalMappings:86967,uniqueParents:25950,uniqueChildren:86967,vCodes:43842,barcodes:40476,otherCodes:2649,singleChild:4835,multiChild:21115,avgChildren:3.35,maxChildren:55};
             const img = {baseUrl:'https://img.ople.com',channels:['원본','오플','스마트스토어','쿠팡','이베이','11번가'],
                 types:[
-                    {type:'썸네일',channel:'원본',watermark:false,organic:true,single:'/wms/UPC.jpg',set:'/wms/UPC_S2.jpg'},
-                    {type:'썸네일',channel:'오플',watermark:false,organic:true,single:'/item_img/UPC.jpg',set:'/item_img/UPC_S2.jpg'},
-                    {type:'썸네일',channel:'외부마켓',watermark:false,organic:false,single:'/item_img/UPC_do.jpg',set:'/item_img/UPC_S2_do.jpg'},
-                    {type:'후면',channel:'원본',watermark:false,organic:true,single:'/wms/bk/original/UPC_R.jpg',set:null},
-                    {type:'후면',channel:'오플',watermark:true,organic:true,single:'/item_img/UPC_R.jpg',set:null},
-                    {type:'후면',channel:'외부마켓',watermark:false,organic:false,single:'/item_img/UPC_re.jpg',set:null}
+                    {type:'썸네일',channel:'원본',watermark:false,organic:true,single:'/ople/wms/UPC.jpg',set:'/ople/wms/UPC_S2.jpg'},
+                    {type:'썸네일',channel:'오플',watermark:false,organic:true,single:'/ople/item_img/UPC.jpg',set:'/ople/item_img/UPC_S2.jpg'},
+                    {type:'썸네일',channel:'외부마켓',watermark:false,organic:false,single:'/ople/item_img/UPC_do.jpg',set:'/ople/item_img/UPC_S2_do.jpg'},
+                    {type:'후면',channel:'원본',watermark:false,organic:true,single:'/ople/wms/bk/original/UPC_R.jpg',set:null},
+                    {type:'후면',channel:'오플',watermark:true,organic:true,single:'/ople/item_img/UPC_R.jpg',set:null},
+                    {type:'후면',channel:'외부마켓',watermark:false,organic:false,single:'/ople/item_img/UPC_re.jpg',set:null}
                 ]
             };
 
@@ -2858,7 +2858,7 @@
                 const [err, setErr] = useState(false);
                 if (!upc) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,color:'#cbd5e1',flexShrink:0}}, '📦');
                 if (err) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,color:'#cbd5e1',flexShrink:0}}, '📦');
-                return React.createElement('img', {src:`https://img.ople.com/item_img/${upc}.jpg`,style:{width:size,height:size,objectFit:'contain',borderRadius:'4px',background:'#f8fafc',flexShrink:0},onError:()=>setErr(true)});
+                return React.createElement('img', {src:`https://img.ople.com/ople/item_img/${upc}.jpg`,style:{width:size,height:size,objectFit:'contain',borderRadius:'4px',background:'#f8fafc',flexShrink:0},onError:()=>setErr(true)});
             };
 
             const ProductDetail = ({p, onClose}) => {
@@ -2937,9 +2937,9 @@
                         React.createElement('div', {style:{marginTop:'16px',padding:'12px 16px',background:'#eff6ff',borderRadius:'8px'}},
                             React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#1e40af',marginBottom:'4px'}}, '이미지 URL'),
                             p.upc && React.createElement('div', {style:{fontSize:'0.78rem',color:'#3b82f6',fontFamily:'monospace'}},
-                                `썸네일: https://img.ople.com/item_img/${p.upc}.jpg`,
+                                `썸네일: https://img.ople.com/ople/item_img/${p.upc}.jpg`,
                                 React.createElement('br'),
-                                `후면: https://img.ople.com/item_img/${p.upc}_R.jpg`
+                                `후면: https://img.ople.com/ople/item_img/${p.upc}_R.jpg`
                             )
                         )
                     )
@@ -3225,7 +3225,7 @@
                                 React.createElement('span', {style:{fontSize:'1.5rem'}}, '🖼️'),
                                 React.createElement('div', null,
                                     React.createElement('div', {style:{fontWeight:700,fontSize:'0.85rem',color:'#86198f'}}, '이미지 URL 자동 생성'),
-                                    React.createElement('div', {style:{fontSize:'0.75rem',color:'#a855f7',fontFamily:'monospace'}}, 'img.ople.com/item_img/{UPC}.jpg')
+                                    React.createElement('div', {style:{fontSize:'0.75rem',color:'#a855f7',fontFamily:'monospace'}}, 'img.ople.com/ople/item_img/{UPC}.jpg')
                                 )
                             )
                         )

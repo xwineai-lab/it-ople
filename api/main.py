@@ -1264,6 +1264,201 @@ def seed_demo_data(db: Session):
     db.commit()
     print(f"Seeded {len(demo_products)} products, {len(demo_mappings)} mappings, {len(demo_reviews)} reviews, {len(unique_iherb_products)} iHerb products (deduplicated from {len(demo_iherb_products)}, incl. {len(chrome_scraped_products)} Chrome-scraped)")
 
+# ── Shopify Metafield API ────────────────────────────────
+# Shopify Admin API를 통한 메타필드 Definition 관리
+
+SHOPIFY_STORE = os.getenv("SHOPIFY_STORE", "ople-7502.myshopify.com")
+SHOPIFY_API_VERSION = "2025-01"
+SHOPIFY_GRAPHQL_URL = f"https://{SHOPIFY_STORE}/admin/api/{SHOPIFY_API_VERSION}/graphql.json"
+
+def _get_shopify_access_token() -> Optional[str]:
+    """Prisma SQLite 세션에서 Shopify access_token 읽기"""
+    import sqlite3
+    db_path = "/app/shopify-app/prisma/dev.sqlite"
+    if not os.path.exists(db_path):
+        # 로컬 개발 환경
+        local_path = Path(__file__).parent.parent / "shopify-app" / "prisma" / "dev.sqlite"
+        if local_path.exists():
+            db_path = str(local_path)
+        else:
+            return os.getenv("SHOPIFY_ACCESS_TOKEN")
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.execute(
+            "SELECT accessToken FROM Session WHERE shop = ? LIMIT 1",
+            (SHOPIFY_STORE,)
+        )
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else os.getenv("SHOPIFY_ACCESS_TOKEN")
+    except Exception:
+        return os.getenv("SHOPIFY_ACCESS_TOKEN")
+
+
+async def _shopify_graphql(query: str, variables: dict) -> dict:
+    """Shopify Admin GraphQL 요청"""
+    token = _get_shopify_access_token()
+    if not token:
+        raise HTTPException(status_code=500, detail="Shopify access token not found")
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            SHOPIFY_GRAPHQL_URL,
+            json={"query": query, "variables": variables},
+            headers={
+                "Content-Type": "application/json",
+                "X-Shopify-Access-Token": token,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+@app.get("/api/shopify/metafields")
+async def list_shopify_metafields():
+    """Shopify custom 네임스페이스 메타필드 Definition 목록"""
+    query = """
+    query {
+      metafieldDefinitions(first: 50, ownerType: PRODUCT, namespace: "custom") {
+        edges { node { id name namespace key description type { name } pinnedPosition } }
+      }
+    }
+    """
+    result = await _shopify_graphql(query, {})
+    edges = result.get("data", {}).get("metafieldDefinitions", {}).get("edges", [])
+    definitions = []
+    for edge in edges:
+        n = edge["node"]
+        definitions.append({
+            "id": n["id"],
+            "name": n["name"],
+            "namespace": n["namespace"],
+            "key": n["key"],
+            "description": n.get("description", ""),
+            "type": n["type"]["name"],
+            "pinned": n.get("pinnedPosition") is not None,
+        })
+    return {"count": len(definitions), "definitions": definitions}
+
+
+@app.post("/api/shopify/metafields/create-all")
+async def create_all_shopify_metafields(force: bool = False):
+    """22개 메타필드 Definition 일괄 생성"""
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+    from shopify_metafields import METAFIELD_DEFINITIONS
+
+    token = _get_shopify_access_token()
+    if not token:
+        raise HTTPException(status_code=500, detail="Shopify access token not found")
+
+    # 기존 Definition 조회
+    list_result = await _shopify_graphql("""
+        query {
+          metafieldDefinitions(first: 50, ownerType: PRODUCT, namespace: "custom") {
+            edges { node { id key } }
+          }
+        }
+    """, {})
+    existing_keys = {
+        e["node"]["key"]
+        for e in list_result.get("data", {}).get("metafieldDefinitions", {}).get("edges", [])
+    }
+
+    create_mutation = """
+    mutation CreateMetafieldDefinition($definition: MetafieldDefinitionInput!) {
+      metafieldDefinitionCreate(definition: $definition) {
+        createdDefinition { id name namespace key type { name } }
+        userErrors { field message code }
+      }
+    }
+    """
+
+    results = {"created": [], "skipped": [], "failed": []}
+
+    for defn in METAFIELD_DEFINITIONS:
+        key = defn["key"]
+        if not force and key in existing_keys:
+            results["skipped"].append(key)
+            continue
+
+        variables = {
+            "definition": {
+                "name": defn["name"],
+                "namespace": defn["namespace"],
+                "key": defn["key"],
+                "description": defn["description"],
+                "type": defn["type"],
+                "ownerType": "PRODUCT",
+                "pin": defn.get("pin", False),
+            }
+        }
+        resp = await _shopify_graphql(create_mutation, variables)
+        data = resp.get("data", {}).get("metafieldDefinitionCreate", {})
+        errors = data.get("userErrors", [])
+
+        if errors:
+            results["failed"].append({"key": key, "errors": [e["message"] for e in errors]})
+        else:
+            created = data.get("createdDefinition", {})
+            results["created"].append({
+                "key": key,
+                "id": created.get("id"),
+                "name": created.get("name"),
+                "type": created.get("type", {}).get("name"),
+            })
+
+    return {
+        "summary": {
+            "total": len(METAFIELD_DEFINITIONS),
+            "created": len(results["created"]),
+            "skipped": len(results["skipped"]),
+            "failed": len(results["failed"]),
+        },
+        "results": results,
+    }
+
+
+@app.delete("/api/shopify/metafields/{definition_key}")
+async def delete_shopify_metafield(definition_key: str, delete_values: bool = True):
+    """특정 메타필드 Definition 삭제"""
+    # key로 ID 조회
+    list_result = await _shopify_graphql("""
+        query {
+          metafieldDefinitions(first: 50, ownerType: PRODUCT, namespace: "custom") {
+            edges { node { id key name } }
+          }
+        }
+    """, {})
+    edges = list_result.get("data", {}).get("metafieldDefinitions", {}).get("edges", [])
+    target = None
+    for e in edges:
+        if e["node"]["key"] == definition_key:
+            target = e["node"]
+            break
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Definition not found: custom.{definition_key}")
+
+    delete_mutation = """
+    mutation DeleteMetafieldDefinition($id: ID!, $deleteAllAssociatedMetafields: Boolean!) {
+      metafieldDefinitionDelete(id: $id, deleteAllAssociatedMetafields: $deleteAllAssociatedMetafields) {
+        deletedDefinitionId
+        userErrors { field message code }
+      }
+    }
+    """
+    resp = await _shopify_graphql(delete_mutation, {
+        "id": target["id"],
+        "deleteAllAssociatedMetafields": delete_values,
+    })
+    data = resp.get("data", {}).get("metafieldDefinitionDelete", {})
+    errors = data.get("userErrors", [])
+
+    if errors:
+        raise HTTPException(status_code=400, detail=errors[0]["message"])
+
+    return {"deleted": target["key"], "name": target["name"], "id": target["id"]}
+
+
 # ── Run ──────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn

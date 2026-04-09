@@ -2759,7 +2759,7 @@
             const KPI = ({label, value, sub, color='#3b82f6', icon}) => (
                 React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'20px 24px',flex:'1',minWidth:'200px'}},
                     React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#64748b',marginBottom:'8px',display:'flex',alignItems:'center',gap:'6px'}},
-                        icon && React.createElement('span', {style:{fontSize:'1rem'}}, icon), label),
+                        icon && React.createElement(SvgIcon, {name:icon,size:14,color:'#94a3b8'}), label),
                     React.createElement('div', {style:{fontSize:'1.8rem',fontWeight:800,color}}, typeof value==='number'?value.toLocaleString():value),
                     sub && React.createElement('div', {style:{fontSize:'0.75rem',color:'#94a3b8',marginTop:'4px'}}, sub)
                 )
@@ -2784,14 +2784,37 @@
                 )
             );
 
+            // SVG icon helper - returns monochrome SVG icons matching OPLE design system
+            const SvgIcon = ({name, size=16, color='currentColor'}) => {
+                const icons = {
+                    chart: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+                    list: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+                    box: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+                    cart: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
+                    link: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+                    image: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+                    alert: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+                    check: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+                    x: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+                    tag: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
+                    search: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+                    target: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+                    trending: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+                    clipboard: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`,
+                    dollar: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+                    noimg: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>`,
+                };
+                return React.createElement('span', {style:{display:'inline-flex',alignItems:'center',lineHeight:0},dangerouslySetInnerHTML:{__html:icons[name]||''}});
+            };
+
             const tabs = [
-                {id:'overview',label:'개요',icon:'📊'},
-                {id:'productList',label:'상품 목록',icon:'📋'},
-                {id:'wms',label:'WMS 상품',icon:'📦'},
-                {id:'ople',label:'오플닷컴',icon:'🛒'},
-                {id:'mapping',label:'매핑 코드',icon:'🔗'},
-                {id:'image',label:'이미지 URL',icon:'🖼️'},
-                {id:'gap',label:'데이터 갭 분석',icon:'⚠️'},
+                {id:'overview',label:'개요',icon:'chart'},
+                {id:'productList',label:'상품 목록',icon:'list'},
+                {id:'wms',label:'WMS 상품',icon:'box'},
+                {id:'ople',label:'오플닷컴',icon:'cart'},
+                {id:'mapping',label:'매핑 코드',icon:'link'},
+                {id:'image',label:'이미지 URL',icon:'image'},
+                {id:'gap',label:'데이터 갭 분석',icon:'alert'},
             ];
 
             // ---- Product List with lazy loading ----
@@ -2856,8 +2879,8 @@
 
             const ImgThumb = ({upc, size=50}) => {
                 const [err, setErr] = useState(false);
-                if (!upc) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,color:'#cbd5e1',flexShrink:0}}, '📦');
-                if (err) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,color:'#cbd5e1',flexShrink:0}}, '📦');
+                if (!upc) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}, React.createElement(SvgIcon, {name:'noimg',size:Math.round(size*0.4),color:'#cbd5e1'}));
+                if (err) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}, React.createElement(SvgIcon, {name:'noimg',size:Math.round(size*0.4),color:'#cbd5e1'}));
                 return React.createElement('img', {src:`https://img.ople.com/ople/item_img/${upc}.jpg`,style:{width:size,height:size,objectFit:'contain',borderRadius:'4px',background:'#f8fafc',flexShrink:0},onError:()=>setErr(true)});
             };
 
@@ -3012,7 +3035,29 @@
 
             const renderProductList = () => {
                 if (plLoading && !plLoaded) return React.createElement('div', {style:{textAlign:'center',padding:'60px'}}, React.createElement('div', {style:{fontSize:'1.2rem',color:'#64748b'}}, '상품 데이터 로딩 중...'));
+
+                // Brand category summary (top 12 brands)
+                const topBrands = brandList.slice(0, 12);
+                const brandCategoryBar = React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'16px 20px',marginBottom:'0'}},
+                    React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}},
+                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'8px'}},
+                            React.createElement(SvgIcon, {name:'tag',size:15,color:'#6DAB3C'}),
+                            React.createElement('span', {style:{fontSize:'0.82rem',fontWeight:700,color:'#1e293b'}}, 'Category (Brand)')
+                        ),
+                        React.createElement('span', {style:{fontSize:'0.72rem',color:'#94a3b8'}}, `${brandList.length} brands total`)
+                    ),
+                    React.createElement('div', {style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+                        topBrands.map(b => React.createElement('button', {key:b.code,onClick:()=>{setPlBrand(plBrand===b.code?'':b.code);setPlPage(1);},style:{padding:'5px 12px',borderRadius:'6px',border:plBrand===b.code?'1.5px solid #6DAB3C':'1px solid #e2e8f0',background:plBrand===b.code?'#f0f7ec':'#fafafa',color:plBrand===b.code?'#4a7a2a':'#475569',fontSize:'0.75rem',fontWeight:plBrand===b.code?700:500,cursor:'pointer',transition:'all 0.15s',display:'flex',alignItems:'center',gap:'4px'}},
+                            b.name,
+                            React.createElement('span', {style:{fontSize:'0.65rem',color:plBrand===b.code?'#6DAB3C':'#94a3b8',fontWeight:600}}, b.count)
+                        )),
+                        brandList.length > 12 && React.createElement('span', {style:{padding:'5px 10px',fontSize:'0.72rem',color:'#94a3b8',display:'flex',alignItems:'center'}}, `+${brandList.length - 12} more`)
+                    )
+                );
+
                 return React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'16px'}},
+                    // Brand category bar at top
+                    brandCategoryBar,
                     // Filter bar
                     React.createElement('div', {style:{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}},
                         ['selling','discontinued','all'].map(f => React.createElement('button', {key:f,onClick:()=>{setPlFilter(f);setPlPage(1);if(f!=='selling'&&!plInactiveLoaded)loadInactive();},style:{padding:'8px 18px',borderRadius:'8px',border:plFilter===f?'2px solid #3b82f6':'1px solid #e2e8f0',background:plFilter===f?'#eff6ff':'#fff',color:plFilter===f?'#2563eb':'#64748b',fontWeight:plFilter===f?700:500,fontSize:'0.84rem',cursor:'pointer'}},
@@ -3095,14 +3140,14 @@
             const renderOverview = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
                 React.createElement('div', {style:{background:'linear-gradient(135deg,#eff6ff,#dbeafe)',borderRadius:'14px',padding:'24px',border:'1px solid #bfdbfe'}},
                     React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}},
-                        React.createElement('span', {style:{fontSize:'1.3rem'}}, '🎯'),
+                        React.createElement(SvgIcon, {name:'target',size:20,color:'#6DAB3C'}),
                         React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#1e3a5f',margin:0}}, '마이그레이션 대상 (단종 제외 활성 상품만)'),
                     ),
                     React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
-                        React.createElement(KPI, {label:'WMS 활성 상품',value:wms.active,sub:`전체 ${wms.total.toLocaleString()} 중 is_running=1`,color:'#2563eb',icon:'📦'}),
-                        React.createElement(KPI, {label:'오플 활성 상품',value:ople.active,sub:`전체 ${ople.total.toLocaleString()} 중 단종 제외`,color:'#059669',icon:'🛒'}),
-                        React.createElement(KPI, {label:'6개월 총 판매량',value:ople.totalSales6m,sub:`판매 이력: ${ople.hasSales.toLocaleString()}개`,color:'#d97706',icon:'📈'}),
-                        React.createElement(KPI, {label:'재고 보유',value:ople.inStock,sub:`활성 대비 ${Math.round(ople.inStock/ople.active*100)}%`,color:'#0d9488',icon:'📋'})
+                        React.createElement(KPI, {label:'WMS 활성 상품',value:wms.active,sub:`전체 ${wms.total.toLocaleString()} 중 is_running=1`,color:'#2563eb',icon:'box'}),
+                        React.createElement(KPI, {label:'오플 활성 상품',value:ople.active,sub:`전체 ${ople.total.toLocaleString()} 중 단종 제외`,color:'#059669',icon:'cart'}),
+                        React.createElement(KPI, {label:'6개월 총 판매량',value:ople.totalSales6m,sub:`판매 이력: ${ople.hasSales.toLocaleString()}개`,color:'#d97706',icon:'trending'}),
+                        React.createElement(KPI, {label:'재고 보유',value:ople.inStock,sub:`활성 대비 ${Math.round(ople.inStock/ople.active*100)}%`,color:'#0d9488',icon:'clipboard'})
                     )
                 ),
                 React.createElement('div', {style:{background:'linear-gradient(135deg,#fef2f2,#fecaca)',borderRadius:'14px',padding:'24px',border:'1px solid #fca5a5'}},
@@ -3114,17 +3159,17 @@
                         React.createElement(KPI, {label:'WMS 비활성',value:wms.inactive,sub:`is_running=9 (${Math.round(wms.inactive/wms.total*100)}%)`,color:'#dc2626',icon:'⛔'}),
                         React.createElement(KPI, {label:'오플 단종',value:ople.discontinued,sub:`it_discontinued=1 (${Math.round(ople.discontinued/ople.total*100)}%)`,color:'#b91c1c',icon:'🚫'}),
                         React.createElement(KPI, {label:'WMS 미지정',value:wms.unknown,sub:'is_running=0 (확인 필요)',color:'#94a3b8',icon:'❓'}),
-                        React.createElement(KPI, {label:'SKU 없는 오플 상품',value:ople.total-ople.hasSku,sub:`WMS 매칭 불가 (${Math.round((ople.total-ople.hasSku)/ople.total*100)}%)`,color:'#9ca3af',icon:'🔍'})
+                        React.createElement(KPI, {label:'SKU 없는 오플 상품',value:ople.total-ople.hasSku,sub:`WMS 매칭 불가 (${Math.round((ople.total-ople.hasSku)/ople.total*100)}%)`,color:'#9ca3af',icon:'search'})
                     )
                 ),
                 React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
-                    React.createElement(KPI, {label:'매핑 코드',value:mp.totalMappings,sub:`${mp.uniqueParents.toLocaleString()} SKU → ${mp.uniqueChildren.toLocaleString()} 하위코드`,color:'#8b5cf6',icon:'🔗'}),
-                    React.createElement(KPI, {label:'WMS 브랜드',value:wms.brands,sub:'고유 brand_id 기준',color:'#6366f1',icon:'🏷️'}),
-                    React.createElement(KPI, {label:'오플 제조사',value:ople.validMakers,sub:'한글 제조사명 기준',color:'#ec4899',icon:'🏭'}),
-                    React.createElement(KPI, {label:'이미지 URL 패턴',value:'6종',sub:'채널×타입 조합 12가지',color:'#f97316',icon:'🖼️'})
+                    React.createElement(KPI, {label:'매핑 코드',value:mp.totalMappings,sub:`${mp.uniqueParents.toLocaleString()} SKU → ${mp.uniqueChildren.toLocaleString()} 하위코드`,color:'#8b5cf6',icon:'link'}),
+                    React.createElement(KPI, {label:'WMS 브랜드',value:wms.brands,sub:'고유 brand_id 기준',color:'#6366f1',icon:'tag'}),
+                    React.createElement(KPI, {label:'오플 제조사',value:ople.validMakers,sub:'한글 제조사명 기준',color:'#ec4899',icon:'box'}),
+                    React.createElement(KPI, {label:'이미지 URL 패턴',value:'6종',sub:'채널×타입 조합 12가지',color:'#f97316',icon:'image'})
                 ),
                 React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
-                    React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,color:'#1e293b',marginBottom:'16px'}}, '🏆 베스트셀러 TOP 10 (6개월 판매)'),
+                    React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,color:'#1e293b',marginBottom:'16px'}}, '베스트셀러 TOP 10 (6개월 판매)'),
                     React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
                         React.createElement('thead', null,
                             React.createElement(TableRow, {header:true,cells:['순위','상품명','제조사','판매량','비율']})
@@ -3143,8 +3188,8 @@
 
             const renderWms = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
                 React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
-                    React.createElement(KPI, {label:'전체 상품',value:wms.total,color:'#3b82f6',icon:'📦'}),
-                    React.createElement(KPI, {label:'활성 (is_running=1)',value:wms.active,sub:`${Math.round(wms.active/wms.total*100)}%`,color:'#10b981',icon:'✅'}),
+                    React.createElement(KPI, {label:'전체 상품',value:wms.total,color:'#3b82f6',icon:'box'}),
+                    React.createElement(KPI, {label:'활성 (is_running=1)',value:wms.active,sub:`${Math.round(wms.active/wms.total*100)}%`,color:'#10b981',icon:'check'}),
                     React.createElement(KPI, {label:'비활성 (is_running=9)',value:wms.inactive,sub:`${Math.round(wms.inactive/wms.total*100)}%`,color:'#ef4444',icon:'⛔'}),
                     React.createElement(KPI, {label:'미지정 (is_running=0)',value:wms.unknown,color:'#94a3b8',icon:'❓'})
                 ),
@@ -3177,10 +3222,10 @@
 
             const renderOple = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
                 React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
-                    React.createElement(KPI, {label:'전체 상품',value:ople.total,color:'#10b981',icon:'🛒'}),
-                    React.createElement(KPI, {label:'활성 상품',value:ople.active,sub:`단종 제외`,color:'#3b82f6',icon:'✅'}),
+                    React.createElement(KPI, {label:'전체 상품',value:ople.total,color:'#10b981',icon:'cart'}),
+                    React.createElement(KPI, {label:'활성 상품',value:ople.active,sub:`단종 제외`,color:'#3b82f6',icon:'check'}),
                     React.createElement(KPI, {label:'단종 상품',value:ople.discontinued,sub:`${Math.round(ople.discontinued/ople.total*100)}%`,color:'#ef4444',icon:'🚫'}),
-                    React.createElement(KPI, {label:'재고 보유',value:ople.inStock,sub:`${Math.round(ople.inStock/ople.total*100)}%`,color:'#f59e0b',icon:'📋'})
+                    React.createElement(KPI, {label:'재고 보유',value:ople.inStock,sub:`${Math.round(ople.inStock/ople.total*100)}%`,color:'#f59e0b',icon:'clipboard'})
                 ),
                 React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
                     React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
@@ -3230,9 +3275,9 @@
 
             const renderMapping = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
                 React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
-                    React.createElement(KPI, {label:'전체 매핑',value:mp.totalMappings,color:'#8b5cf6',icon:'🔗'}),
-                    React.createElement(KPI, {label:'Parent SKU',value:mp.uniqueParents,sub:'WMS 상품 기준',color:'#3b82f6',icon:'📦'}),
-                    React.createElement(KPI, {label:'평균 Child 수',value:mp.avgChildren,color:'#10b981',icon:'📊'}),
+                    React.createElement(KPI, {label:'전체 매핑',value:mp.totalMappings,color:'#8b5cf6',icon:'link'}),
+                    React.createElement(KPI, {label:'Parent SKU',value:mp.uniqueParents,sub:'WMS 상품 기준',color:'#3b82f6',icon:'box'}),
+                    React.createElement(KPI, {label:'평균 Child 수',value:mp.avgChildren,color:'#10b981',icon:'chart'}),
                     React.createElement(KPI, {label:'최대 Child 수',value:mp.maxChildren,color:'#ef4444',icon:'🔝'})
                 ),
                 React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
@@ -3256,7 +3301,7 @@
                         React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, 'SKU 매핑 흐름'),
                         React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'12px'}},
                             React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'12px',padding:'12px 16px',background:'#eff6ff',borderRadius:'8px'}},
-                                React.createElement('span', {style:{fontSize:'1.5rem'}}, '📦'),
+                                React.createElement(SvgIcon, {name:'box',size:22,color:'#64748b'}),
                                 React.createElement('div', null,
                                     React.createElement('div', {style:{fontWeight:700,fontSize:'0.85rem',color:'#1e40af'}}, 'WMS Parent SKU'),
                                     React.createElement('div', {style:{fontSize:'0.78rem',color:'#3b82f6'}}, 'BWC-P000001, TRJ-P000007...')
@@ -3265,12 +3310,12 @@
                             React.createElement('div', {style:{textAlign:'center',fontSize:'1.2rem',color:'#94a3b8'}}, '↓ 1:N 매핑'),
                             React.createElement('div', {style:{display:'flex',gap:'8px',flexWrap:'wrap'}},
                                 React.createElement('div', {style:{flex:1,padding:'12px',background:'#f5f3ff',borderRadius:'8px',textAlign:'center'}},
-                                    React.createElement('div', {style:{fontSize:'1.2rem'}}, '🏷️'),
+                                    React.createElement(SvgIcon, {name:'tag',size:18,color:'#64748b'}),
                                     React.createElement('div', {style:{fontWeight:700,fontSize:'0.82rem',color:'#6d28d9'}}, 'V-코드'),
                                     React.createElement('div', {style:{fontSize:'0.75rem',color:'#8b5cf6'}}, 'V00000234')
                                 ),
                                 React.createElement('div', {style:{flex:1,padding:'12px',background:'#ecfdf5',borderRadius:'8px',textAlign:'center'}},
-                                    React.createElement('div', {style:{fontSize:'1.2rem'}}, '📊'),
+                                    React.createElement(SvgIcon, {name:'chart',size:18,color:'#64748b'}),
                                     React.createElement('div', {style:{fontWeight:700,fontSize:'0.82rem',color:'#047857'}}, '바코드/UPC'),
                                     React.createElement('div', {style:{fontSize:'0.75rem',color:'#10b981'}}, '1511265447')
                                 ),
@@ -3304,7 +3349,7 @@
                         React.createElement('tbody', null,
                             img.types.map((t,i) =>
                                 React.createElement(TableRow, {key:i,cells:[
-                                    t.type, t.channel, t.watermark?'✅':'❌', t.organic?'유지':'삭제',
+                                    t.type, t.channel, t.watermark?'O':'X', t.organic?'유지':'삭제',
                                     React.createElement('code', {style:{fontSize:'0.72rem',background:'#f1f5f9',padding:'2px 6px',borderRadius:'4px'}}, t.single),
                                     t.set ? React.createElement('code', {style:{fontSize:'0.72rem',background:'#f1f5f9',padding:'2px 6px',borderRadius:'4px'}}, t.set) : '-'
                                 ]})
@@ -3318,11 +3363,11 @@
                         React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'8px'}},
                             ['오플 (자사몰)'].map(ch => React.createElement('div', {key:ch,style:{display:'flex',justifyContent:'space-between',padding:'10px 14px',background:'#f0fdf4',borderRadius:'8px'}},
                                 React.createElement('span', {style:{fontWeight:600,fontSize:'0.85rem',color:'#166534'}}, ch),
-                                React.createElement('span', {style:{fontSize:'0.82rem',color:'#15803d',fontWeight:600}}, '✅ Organic 유지')
+                                React.createElement('span', {style:{fontSize:'0.82rem',color:'#15803d',fontWeight:600}}, 'Organic 유지')
                             )),
                             ['스마트스토어','쿠팡','이베이','11번가'].map(ch => React.createElement('div', {key:ch,style:{display:'flex',justifyContent:'space-between',padding:'10px 14px',background:'#fef2f2',borderRadius:'8px'}},
                                 React.createElement('span', {style:{fontWeight:600,fontSize:'0.85rem',color:'#991b1b'}}, ch),
-                                React.createElement('span', {style:{fontSize:'0.82rem',color:'#dc2626',fontWeight:600}}, '❌ Organic 삭제 (_do)')
+                                React.createElement('span', {style:{fontSize:'0.82rem',color:'#dc2626',fontWeight:600}}, 'Organic 삭제 (_do)')
                             ))
                         )
                     ),
@@ -3350,7 +3395,7 @@
 
             const renderGap = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
                 React.createElement('div', {style:{background:'linear-gradient(135deg,#fef3c7,#fde68a)',borderRadius:'12px',padding:'24px',border:'1px solid #fcd34d'}},
-                    React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#92400e',marginBottom:'12px'}}, '⚠️ Shopify 마이그레이션 데이터 준비도'),
+                    React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#92400e',marginBottom:'12px'}}, 'Shopify 마이그레이션 데이터 준비도'),
                     React.createElement('p', {style:{fontSize:'0.85rem',color:'#78350f',lineHeight:'1.7'}},
                         'WMS 26,378개 상품 중 활성 6,155개가 1차 마이그레이션 대상입니다. 오플닷컴 43,019개와의 차이 16,641개는 레거시/단종 상품으로 추정됩니다.'
                     )
@@ -3408,7 +3453,7 @@
                 ),
                 React.createElement('div', {style:{display:'flex',gap:'6px',marginBottom:'24px',flexWrap:'wrap',background:'#fff',padding:'6px',borderRadius:'12px',border:'1px solid #e2e8f0'}},
                     tabs.map(t => React.createElement('button', {key:t.id,onClick:()=>setActiveSection(t.id),style:{padding:'10px 18px',borderRadius:'8px',border:'none',cursor:'pointer',fontSize:'0.84rem',fontWeight:activeSection===t.id?700:500,background:activeSection===t.id?'#3b82f6':'transparent',color:activeSection===t.id?'#fff':'#64748b',transition:'all 0.2s',display:'flex',alignItems:'center',gap:'6px'}},
-                        React.createElement('span', null, t.icon), t.label
+                        React.createElement(SvgIcon, {name:t.icon,size:15,color:activeSection===t.id?'#fff':'#94a3b8'}), t.label
                     ))
                 ),
                 renderers[activeSection]()

@@ -32,6 +32,7 @@ RUN npm run build
 WORKDIR /app
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 8000
+# Render sets PORT env var; FastAPI will listen on it
+# No EXPOSE needed — Render auto-detects via PORT
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

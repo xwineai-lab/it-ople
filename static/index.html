@@ -2854,7 +2854,12 @@
 
             const RestrictedBadge = ({ri,rn}) => ri > 0 ? React.createElement('span', {style:{display:'inline-block',padding:'2px 8px',borderRadius:'4px',fontSize:'0.7rem',fontWeight:600,background:ri===1?'#fee2e2':'#fce7f3',color:ri===1?'#dc2626':'#be185d'}}, rn||`제한${ri}`) : null;
 
-            const ImgThumb = ({upc}) => upc ? React.createElement('img', {src:`https://img.ople.com/item_img/${upc}.jpg`,style:{width:'50px',height:'50px',objectFit:'contain',borderRadius:'4px',background:'#f8fafc'},onError:(e)=>{e.target.style.display='none'}}) : null;
+            const ImgThumb = ({upc, size=50}) => {
+                const [err, setErr] = useState(false);
+                if (!upc) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,color:'#cbd5e1',flexShrink:0}}, '📦');
+                if (err) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,color:'#cbd5e1',flexShrink:0}}, '📦');
+                return React.createElement('img', {src:`https://img.ople.com/item_img/${upc}.jpg`,style:{width:size,height:size,objectFit:'contain',borderRadius:'4px',background:'#f8fafc',flexShrink:0},onError:()=>setErr(true)});
+            };
 
             const ProductDetail = ({p, onClose}) => {
                 if (!p) return null;
@@ -2885,12 +2890,29 @@
                             React.createElement(F, {label:'Brand Name',val:p.bn,w:'25%'}),
                             React.createElement(F, {label:'Product Name (eng) - 영문명',val:p.en,w:'100%'}),
                             React.createElement(F, {label:'Product Name (kor) - 한글명',val:p.kn,w:'100%'}),
-                            React.createElement(F, {label:'Status - 상태',val:p.st==='selling'?'판매중':p.st==='discontinued'?'단종':'미지정',w:'25%'}),
+                            React.createElement(F, {label:'Status - 상태',val:p.st==='selling'?'판매중(Selling)':p.st==='discontinued'?'단종(Discontinued)':'미지정',w:'25%'}),
                             React.createElement(F, {label:'FOOD - 식품여부',val:p.fd?'식품 O':'식품 X',w:'25%'}),
                             React.createElement(F, {label:'Glass - 유리',val:p.gl?'유리 O':'유리 X',w:'25%'}),
-                            React.createElement(F, {label:'In Box - 박스수량',val:String(p.bx),w:'25%'}),
                             React.createElement(F, {label:'통관 제한',val:p.rn||'정상판매',w:'25%'}),
-                            React.createElement(F, {label:'하위상품 수',val:String(p.cc),w:'25%'}),
+                        ),
+                        React.createElement('div', {style:{marginTop:'8px',padding:'16px',background:'#f8fafc',borderRadius:'10px',border:'1px solid #e2e8f0'}},
+                            React.createElement('h3', {style:{fontSize:'0.88rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:0}}, '재고/수량 정보'),
+                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
+                                React.createElement(F, {label:'Safe Qty',val:String(p.sq!=null?p.sq:'-9999'),w:'25%'}),
+                                React.createElement(F, {label:'Max Qty',val:String(p.mq!=null?p.mq:'9999'),w:'25%'}),
+                                React.createElement(F, {label:'In Box - 박스수량',val:String(p.bx),w:'25%'}),
+                                React.createElement(F, {label:'Current Qty - 현재수량',val:String(p.qt||0),w:'25%'}),
+                                React.createElement(F, {label:'Out of Stock',val:p.os?'Not Ordered':'In Stock',w:'25%'}),
+                                React.createElement(F, {label:'하위상품 수',val:String(p.cc),w:'25%'}),
+                            )
+                        ),
+                        React.createElement('div', {style:{marginTop:'8px',padding:'16px',background:'#fefce8',borderRadius:'10px',border:'1px solid #fde68a'}},
+                            React.createElement('h3', {style:{fontSize:'0.88rem',fontWeight:700,color:'#92400e',marginBottom:'12px',marginTop:0}}, 'Retail / Purchase Price'),
+                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
+                                React.createElement(F, {label:'Purchase Price (구매가)',val:p.pr>0?`$${p.pr.toFixed(2)}`:'-',w:'33%'}),
+                                React.createElement(F, {label:'USD Purchase',val:p.up>0?`$${p.up.toFixed(2)}`:'-',w:'33%'}),
+                                React.createElement(F, {label:'MSRP / Retail',val:p.ms>0?`$${p.ms.toFixed(2)}`:'-',w:'33%'}),
+                            )
                         ),
                         p.ch && p.ch.length > 0 && React.createElement('div', {style:{marginTop:'8px'}},
                             React.createElement('h3', {style:{fontSize:'0.92rem',fontWeight:700,color:'#1e293b',marginBottom:'12px'}}, `하위상품 (Sub Products) - ${p.ch.length}개`),
@@ -2924,7 +2946,9 @@
                 );
             };
 
-            const brandCodes = [...new Set(allPl.map(p=>p.bc).filter(Boolean))].sort();
+            const brandMap = {};
+            allPl.forEach(p => { if (p.bc) { if (!brandMap[p.bc]) brandMap[p.bc] = {code:p.bc,name:p.bn||p.bc,count:0}; brandMap[p.bc].count++; }});
+            const brandList = Object.values(brandMap).sort((a,b) => b.count - a.count);
 
             const renderProductList = () => {
                 if (plLoading && !plLoaded) return React.createElement('div', {style:{textAlign:'center',padding:'60px'}}, React.createElement('div', {style:{fontSize:'1.2rem',color:'#64748b'}}, '상품 데이터 로딩 중...'));
@@ -2935,9 +2959,9 @@
                             f==='selling'?'판매(Selling)':f==='discontinued'?'단종(Discontinued)':'All'
                         )),
                         React.createElement('div', {style:{flex:1}}),
-                        React.createElement('select', {value:plBrand,onChange:e=>{setPlBrand(e.target.value);setPlPage(1);},style:{padding:'8px 12px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'0.82rem',color:'#475569',minWidth:'120px'}},
-                            React.createElement('option', {value:''}, '전체 브랜드'),
-                            brandCodes.map(b => React.createElement('option', {key:b,value:b}, b))
+                        React.createElement('select', {value:plBrand,onChange:e=>{setPlBrand(e.target.value);setPlPage(1);},style:{padding:'8px 12px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'0.82rem',color:'#475569',minWidth:'180px',maxWidth:'280px'}},
+                            React.createElement('option', {value:''}, `전체 브랜드 (${brandList.length})`),
+                            brandList.map(b => React.createElement('option', {key:b.code,value:b.code}, `${b.code} - ${b.name} (${b.count})`))
                         ),
                         React.createElement('input', {type:'text',placeholder:'SKU, 상품명, UPC 검색...',value:plSearch,onChange:e=>{setPlSearch(e.target.value);setPlPage(1);},style:{padding:'8px 14px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'0.84rem',width:'280px'}})
                     ),
@@ -2946,38 +2970,47 @@
                     React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',overflow:'hidden'}},
                         React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
                             React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc',borderBottom:'2px solid #e2e8f0'}},
-                                React.createElement('th', {style:{padding:'12px 16px',textAlign:'left',fontSize:'0.72rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:'50px'}}, ''),
-                                React.createElement('th', {style:{padding:'12px 16px',textAlign:'left',fontSize:'0.72rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em'}}, 'SKU Info / Child SKU'),
-                                React.createElement('th', {style:{padding:'12px 16px',textAlign:'left',fontSize:'0.72rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em'}}, 'Product Name'),
-                                React.createElement('th', {style:{padding:'12px 16px',textAlign:'center',fontSize:'0.72rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:'100px'}}, 'Box'),
-                                React.createElement('th', {style:{padding:'12px 16px',textAlign:'center',fontSize:'0.72rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:'110px'}}, 'Status'),
-                                React.createElement('th', {style:{padding:'12px 16px',textAlign:'center',fontSize:'0.72rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:'80px'}}, 'Details')
+                                ['','IMG','SKU Info','Product Name','Safe/Max/InBox','Qty','Purchase Price','Status',''].map((h,i) => {
+                                    const w = [30,60,null,null,120,70,110,110,70][i];
+                                    const align = i<=3?'left':'center';
+                                    return React.createElement('th', {key:i,style:{padding:'10px 12px',textAlign:align,fontSize:'0.7rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:w?w+'px':undefined,whiteSpace:'nowrap'}}, h);
+                                })
                             )),
                             React.createElement('tbody', null, pagePl.map((p,i) =>
                                 React.createElement('tr', {key:p.id,style:{borderBottom:'1px solid #f1f5f9',transition:'background 0.1s'},onMouseEnter:e=>e.currentTarget.style.background='#fafbfc',onMouseLeave:e=>e.currentTarget.style.background='transparent'},
-                                    React.createElement('td', {style:{padding:'12px 8px 12px 16px'}}, React.createElement(ImgThumb, {upc:p.upc})),
-                                    React.createElement('td', {style:{padding:'12px 16px'}},
-                                        p.bn && React.createElement('span', {style:{display:'inline-block',padding:'2px 8px',borderRadius:'4px',fontSize:'0.68rem',fontWeight:600,border:'1px solid #e2e8f0',color:'#475569',marginBottom:'4px'}}, p.bn),
-                                        React.createElement('div', {style:{fontWeight:700,fontSize:'0.88rem',color:'#1e293b'}}, p.sku),
-                                        React.createElement('div', {style:{fontSize:'0.75rem',color:'#94a3b8'}}, `UPC: ${p.upc}`),
-                                        React.createElement('div', {style:{fontSize:'0.72rem',color:'#94a3b8'}}, `Brand: ${p.bc}`)
+                                    React.createElement('td', {style:{padding:'8px 4px 8px 10px',fontSize:'0.72rem',color:'#94a3b8',textAlign:'center'}}, (plPage-1)*PER_PAGE+i+1),
+                                    React.createElement('td', {style:{padding:'8px 6px'}}, React.createElement(ImgThumb, {upc:p.upc,size:44})),
+                                    React.createElement('td', {style:{padding:'8px 10px'}},
+                                        p.bn && React.createElement('span', {style:{display:'inline-block',padding:'1px 6px',borderRadius:'3px',fontSize:'0.66rem',fontWeight:600,border:'1px solid #e2e8f0',color:'#475569',marginBottom:'2px'}}, p.bn),
+                                        React.createElement('div', {style:{fontWeight:700,fontSize:'0.84rem',color:'#1e293b'}}, p.sku),
+                                        React.createElement('div', {style:{fontSize:'0.72rem',color:'#94a3b8'}}, `UPC: ${p.upc}`),
+                                        p.cc > 0 && React.createElement('div', {style:{fontSize:'0.7rem',color:'#8b5cf6',marginTop:'1px'}}, `Child SKU: ${p.cc}개`)
                                     ),
-                                    React.createElement('td', {style:{padding:'12px 16px'}},
-                                        React.createElement('div', {style:{display:'flex',gap:'6px',marginBottom:'4px',flexWrap:'wrap'}},
+                                    React.createElement('td', {style:{padding:'8px 10px'}},
+                                        React.createElement('div', {style:{display:'flex',gap:'4px',marginBottom:'2px',flexWrap:'wrap'}},
                                             React.createElement(FoodBadge, {isFood:p.fd}),
                                             React.createElement(RestrictedBadge, {ri:p.ri,rn:p.rn})
                                         ),
-                                        React.createElement('div', {style:{fontSize:'0.85rem',fontWeight:500,color:'#1e293b',lineHeight:'1.4'}}, p.en),
-                                        React.createElement('div', {style:{fontSize:'0.82rem',color:'#64748b',lineHeight:'1.4'}}, p.kn),
-                                        p.cc > 0 && React.createElement('div', {style:{fontSize:'0.72rem',color:'#8b5cf6',marginTop:'2px'}}, `하위상품 ${p.cc}개`)
+                                        React.createElement('div', {style:{fontSize:'0.82rem',fontWeight:500,color:'#1e293b',lineHeight:'1.3'}}, p.en),
+                                        React.createElement('div', {style:{fontSize:'0.78rem',color:'#64748b',lineHeight:'1.3'}}, p.kn)
                                     ),
-                                    React.createElement('td', {style:{padding:'12px 16px',textAlign:'center'}},
-                                        React.createElement('div', {style:{fontSize:'0.85rem',fontWeight:600,color:'#334155'}}, p.bx),
-                                        React.createElement('div', {style:{fontSize:'0.68rem',color:'#94a3b8'}}, 'In Box')
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}},
+                                        React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b'}}, `Safe: ${p.sq!=null?p.sq:'-'}`),
+                                        React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b'}}, `Max: ${p.mq!=null?p.mq:'-'}`),
+                                        React.createElement('div', {style:{fontSize:'0.82rem',fontWeight:700,color:'#334155'}}, `In Box: ${p.bx}`)
                                     ),
-                                    React.createElement('td', {style:{padding:'12px 16px',textAlign:'center'}}, React.createElement(StatusBadge, {status:p.st})),
-                                    React.createElement('td', {style:{padding:'12px 16px',textAlign:'center'}},
-                                        React.createElement('button', {onClick:()=>setPlSelected(p),style:{padding:'6px 14px',borderRadius:'6px',border:'none',background:'#3b82f6',color:'#fff',fontSize:'0.78rem',fontWeight:600,cursor:'pointer'}}, 'Details')
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}},
+                                        React.createElement('div', {style:{fontSize:'0.92rem',fontWeight:700,color:p.qt>0?'#059669':'#94a3b8'}}, p.qt||0),
+                                        React.createElement('div', {style:{fontSize:'0.66rem',color:p.os?'#ef4444':'#94a3b8'}}, p.os?'Not Ordered':'In Stock')
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}},
+                                        React.createElement('div', {style:{fontSize:'0.82rem',fontWeight:600,color:p.pr>0?'#1e293b':'#cbd5e1'}}, p.pr>0?`$${p.pr.toFixed(2)}`:'-'),
+                                        React.createElement('div', {style:{fontSize:'0.66rem',color:'#94a3b8'}}, 'Purchase'),
+                                        p.ms > 0 && React.createElement('div', {style:{fontSize:'0.72rem',color:'#3b82f6',marginTop:'1px'}}, `Retail $${p.ms.toFixed(2)}`)
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}}, React.createElement(StatusBadge, {status:p.st})),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}},
+                                        React.createElement('button', {onClick:()=>setPlSelected(p),style:{padding:'5px 12px',borderRadius:'6px',border:'none',background:'#3b82f6',color:'#fff',fontSize:'0.75rem',fontWeight:600,cursor:'pointer'}}, 'Details')
                                     )
                                 )
                             ))

@@ -23,9 +23,8 @@ RUN mkdir -p data
 COPY shopify-app/ ./shopify-app/
 WORKDIR /app/shopify-app
 RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
-ENV DATABASE_URL="file:/app/shopify-app/prisma/dev.sqlite"
-RUN npx prisma generate
-RUN npx prisma db push --accept-data-loss
+RUN DATABASE_URL="file:/app/shopify-app/prisma/dev.sqlite" npx prisma generate
+RUN DATABASE_URL="file:/app/shopify-app/prisma/dev.sqlite" npx prisma db push --accept-data-loss
 RUN npm run build
 
 # ── Supervisord Config ──

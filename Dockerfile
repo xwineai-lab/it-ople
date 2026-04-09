@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY api/ ./api/
 COPY scraper/ ./scraper/
+COPY scripts/ ./scripts/
 COPY static/ ./static/
 
 RUN mkdir -p data

@@ -999,6 +999,11 @@
                         <SvgIcon path="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /> SKIN
                     </button>
 
+                    <div className="sidebar-section">상품 데이터</div>
+                    <button className={`sidebar-link ${activeTab==='opleData'?'active':''}`} onClick={()=>setActiveTab('opleData')}>
+                        <SvgIcon path="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /> OPLE 상품 데이터
+                    </button>
+
                     <div className="sidebar-section">프로젝트</div>
                     <button className={`sidebar-link ${activeTab==='projectShopify'?'active':''}`} onClick={()=>setActiveTab('projectShopify')}>
                         <SvgIcon path="M13 10V3L4 14h7v7l9-11h-7z" /> Shopify 1차 프로젝트
@@ -2728,6 +2733,371 @@
             );
         };
 
+        // ============= OPLE PRODUCT DATA PAGE =============
+        const OpleProductDataPage = () => {
+            const [activeSection, setActiveSection] = useState('overview');
+
+            const wms = {total:26378,active:6155,inactive:20154,unknown:69,brands:1658,food:4108,nonFood:22270,hasKorean:26044,missingKorean:334,hasBarcode:26378,restricted0:21238,restricted1:719,restricted2:4421,
+                topBrands:[{code:'SNS',name:'선샤인 내추럴',count:1286},{code:'NFS',name:'Now Foods',count:1089},{code:'TRJ',name:'Trader Joe\'s',count:554},{code:'GDV',name:'Godiva',count:469},{code:'NAW',name:'Nature\'s Way',count:404},{code:'JAR',name:'Jarrow Formulas',count:367},{code:'GNC',name:'GNC',count:326},{code:'NAP',name:'Nature\'s Plus',count:299},{code:'SOL',name:'Solgar',count:293},{code:'OPT',name:'Optimum Nutrition',count:280},{code:'NNS',name:'Nordic Naturals',count:260},{code:'WWK',name:'WoodWick',count:257},{code:'LEN',name:'Lenox',count:221},{code:'DMA',name:'Dr. Mercola',count:218},{code:'BBN',name:'Burt\'s Bees',count:215}]
+            };
+            const ople = {total:43019,hasKorean:42881,hasEnglish:42844,hasSku:23600,hasPrice:384,hasUsdPrice:40933,hasSales:21252,totalSales6m:472965,discontinued:9589,active:33430,inStock:9350,validMakers:1889,
+                topMakers:[{name:'나우 푸드',count:1061},{name:'트레이더 조',count:551},{name:'네이쳐스 웨이',count:465},{name:'자로우 포뮬러스',count:465},{name:'고디바',count:462},{name:'솔가',count:460},{name:'소스 내추럴스',count:432},{name:'노르딕 내추럴스',count:423},{name:'닥터스 베스트',count:229},{name:'우드윅',count:206},{name:'네이쳐스 플러스',count:202},{name:'컨트리 라이프',count:201},{name:'닥터 머콜라',count:200},{name:'라이프 익스텐션',count:199}],
+                topSellers:[{name:'구미 비타민 C 슬라이스 250mg, 90 구미 2개 세트',maker:'레인보우 라이트',sales:11557},{name:'퓨어 블랙 솝 32oz',maker:'닥터 우즈',sales:7508},{name:'Gummy Bears 10 Snack Packs',maker:'야미 얼스',sales:7010},{name:'마카 750mg, 90 야채캡슐',maker:'나우 푸드',sales:4716},{name:'18개월 이상 토츠 아기 칫솔',maker:'레디어스',sales:3536},{name:'씨벅손 씨드 오일 10ml',maker:'시부 뷰티',sales:3275},{name:'오메가-3, 200 소프트젤',maker:'나우 푸드',sales:3080},{name:'위치하젤 장미꽃잎 토너 (알코올 프리)',maker:'세이어스',sales:2523},{name:'위치하젤 장미꽃잎 토너 355ml',maker:'세이어스',sales:2427},{name:'프리즈 비 곤 헤어세럼 78ml',maker:'지오바니',sales:2172}]
+            };
+            const mp = {totalMappings:86967,uniqueParents:25950,uniqueChildren:86967,vCodes:43842,barcodes:40476,otherCodes:2649,singleChild:4835,multiChild:21115,avgChildren:3.35,maxChildren:55};
+            const img = {baseUrl:'https://img.ople.com',channels:['원본','오플','스마트스토어','쿠팡','이베이','11번가'],
+                types:[
+                    {type:'썸네일',channel:'원본',watermark:false,organic:true,single:'/wms/UPC.jpg',set:'/wms/UPC_S2.jpg'},
+                    {type:'썸네일',channel:'오플',watermark:false,organic:true,single:'/item_img/UPC.jpg',set:'/item_img/UPC_S2.jpg'},
+                    {type:'썸네일',channel:'외부마켓',watermark:false,organic:false,single:'/item_img/UPC_do.jpg',set:'/item_img/UPC_S2_do.jpg'},
+                    {type:'후면',channel:'원본',watermark:false,organic:true,single:'/wms/bk/original/UPC_R.jpg',set:null},
+                    {type:'후면',channel:'오플',watermark:true,organic:true,single:'/item_img/UPC_R.jpg',set:null},
+                    {type:'후면',channel:'외부마켓',watermark:false,organic:false,single:'/item_img/UPC_re.jpg',set:null}
+                ]
+            };
+
+            const KPI = ({label, value, sub, color='#3b82f6', icon}) => (
+                React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'20px 24px',flex:'1',minWidth:'200px'}},
+                    React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#64748b',marginBottom:'8px',display:'flex',alignItems:'center',gap:'6px'}},
+                        icon && React.createElement('span', {style:{fontSize:'1rem'}}, icon), label),
+                    React.createElement('div', {style:{fontSize:'1.8rem',fontWeight:800,color}}, typeof value==='number'?value.toLocaleString():value),
+                    sub && React.createElement('div', {style:{fontSize:'0.75rem',color:'#94a3b8',marginTop:'4px'}}, sub)
+                )
+            );
+
+            const ProgressBar = ({label, value, max, color='#3b82f6'}) => {
+                const pct = Math.round(value/max*100);
+                return React.createElement('div', {style:{marginBottom:'12px'}},
+                    React.createElement('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'0.8rem',marginBottom:'4px'}},
+                        React.createElement('span', {style:{color:'#475569',fontWeight:500}}, label),
+                        React.createElement('span', {style:{color:'#64748b'}}, `${value.toLocaleString()} (${pct}%)`)
+                    ),
+                    React.createElement('div', {style:{height:'8px',background:'#f1f5f9',borderRadius:'4px',overflow:'hidden'}},
+                        React.createElement('div', {style:{width:`${pct}%`,height:'100%',background:color,borderRadius:'4px',transition:'width 0.5s'}})
+                    )
+                );
+            };
+
+            const TableRow = ({cells, header=false}) => (
+                React.createElement('tr', {style:{borderBottom:'1px solid #f1f5f9'}},
+                    cells.map((c,i) => React.createElement(header?'th':'td', {key:i,style:{padding:'10px 16px',textAlign:i===0?'left':'right',fontSize:header?'0.72rem':'0.82rem',fontWeight:header?700:500,color:header?'#64748b':'#334155',background:header?'#f8fafc':'transparent',textTransform:header?'uppercase':'none',letterSpacing:header?'0.04em':'normal'}}, c))
+                )
+            );
+
+            const tabs = [
+                {id:'overview',label:'개요',icon:'📊'},
+                {id:'wms',label:'WMS 상품',icon:'📦'},
+                {id:'ople',label:'오플닷컴',icon:'🛒'},
+                {id:'mapping',label:'매핑 코드',icon:'🔗'},
+                {id:'image',label:'이미지 URL',icon:'🖼️'},
+                {id:'gap',label:'데이터 갭 분석',icon:'⚠️'},
+            ];
+
+            const renderOverview = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement(KPI, {label:'WMS 전체 상품',value:wms.total,sub:`활성 ${wms.active.toLocaleString()} / 비활성 ${wms.inactive.toLocaleString()}`,color:'#3b82f6',icon:'📦'}),
+                    React.createElement(KPI, {label:'오플닷컴 상품',value:ople.total,sub:`활성 ${ople.active.toLocaleString()} / 단종 ${ople.discontinued.toLocaleString()}`,color:'#10b981',icon:'🛒'}),
+                    React.createElement(KPI, {label:'매핑 코드',value:mp.totalMappings,sub:`${mp.uniqueParents.toLocaleString()} SKU → ${mp.uniqueChildren.toLocaleString()} 하위코드`,color:'#8b5cf6',icon:'🔗'}),
+                    React.createElement(KPI, {label:'6개월 총 판매량',value:ople.totalSales6m,sub:`판매 이력 있는 상품: ${ople.hasSales.toLocaleString()}개`,color:'#f59e0b',icon:'📈'})
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement(KPI, {label:'WMS 브랜드',value:wms.brands,sub:'고유 brand_id 기준',color:'#6366f1',icon:'🏷️'}),
+                    React.createElement(KPI, {label:'오플 제조사',value:ople.validMakers,sub:'한글 제조사명 기준',color:'#ec4899',icon:'🏭'}),
+                    React.createElement(KPI, {label:'재고 보유 상품',value:ople.inStock,sub:`전체 대비 ${Math.round(ople.inStock/ople.total*100)}%`,color:'#14b8a6',icon:'📋'}),
+                    React.createElement(KPI, {label:'이미지 URL 패턴',value:'6종',sub:'채널×타입 조합 12가지',color:'#f97316',icon:'🖼️'})
+                ),
+                React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                    React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,color:'#1e293b',marginBottom:'16px'}}, '🏆 베스트셀러 TOP 10 (6개월 판매)'),
+                    React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
+                        React.createElement('thead', null,
+                            React.createElement(TableRow, {header:true,cells:['순위','상품명','제조사','판매량','비율']})
+                        ),
+                        React.createElement('tbody', null,
+                            ople.topSellers.map((s,i) =>
+                                React.createElement(TableRow, {key:i,cells:[
+                                    `#${i+1}`,s.name,s.maker,s.sales.toLocaleString(),
+                                    `${(s.sales/ople.totalSales6m*100).toFixed(1)}%`
+                                ]})
+                            )
+                        )
+                    )
+                )
+            );
+
+            const renderWms = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement(KPI, {label:'전체 상품',value:wms.total,color:'#3b82f6',icon:'📦'}),
+                    React.createElement(KPI, {label:'활성 (is_running=1)',value:wms.active,sub:`${Math.round(wms.active/wms.total*100)}%`,color:'#10b981',icon:'✅'}),
+                    React.createElement(KPI, {label:'비활성 (is_running=9)',value:wms.inactive,sub:`${Math.round(wms.inactive/wms.total*100)}%`,color:'#ef4444',icon:'⛔'}),
+                    React.createElement(KPI, {label:'미지정 (is_running=0)',value:wms.unknown,color:'#94a3b8',icon:'❓'})
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, '데이터 완성도'),
+                        React.createElement(ProgressBar, {label:'한글명',value:wms.hasKorean,max:wms.total,color:'#10b981'}),
+                        React.createElement(ProgressBar, {label:'바코드',value:wms.hasBarcode,max:wms.total,color:'#3b82f6'}),
+                        React.createElement(ProgressBar, {label:'식품 상품',value:wms.food,max:wms.total,color:'#f59e0b'}),
+                        React.createElement(ProgressBar, {label:'통관 제한 없음',value:wms.restricted0,max:wms.total,color:'#8b5cf6'}),
+                        React.createElement(ProgressBar, {label:'통관 제한 1등급',value:wms.restricted1,max:wms.total,color:'#ef4444'}),
+                        React.createElement(ProgressBar, {label:'통관 제한 2등급',value:wms.restricted2,max:wms.total,color:'#f97316'})
+                    ),
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, 'TOP 15 브랜드 (SKU prefix)'),
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
+                            React.createElement('thead', null, React.createElement(TableRow, {header:true,cells:['코드','브랜드','상품 수','비율']})),
+                            React.createElement('tbody', null,
+                                wms.topBrands.map((b,i) =>
+                                    React.createElement(TableRow, {key:i,cells:[
+                                        React.createElement('code', {style:{background:'#f1f5f9',padding:'2px 8px',borderRadius:'4px',fontSize:'0.78rem',fontWeight:600}}, b.code),
+                                        b.name, b.count.toLocaleString(), `${(b.count/wms.total*100).toFixed(1)}%`
+                                    ]})
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+
+            const renderOple = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement(KPI, {label:'전체 상품',value:ople.total,color:'#10b981',icon:'🛒'}),
+                    React.createElement(KPI, {label:'활성 상품',value:ople.active,sub:`단종 제외`,color:'#3b82f6',icon:'✅'}),
+                    React.createElement(KPI, {label:'단종 상품',value:ople.discontinued,sub:`${Math.round(ople.discontinued/ople.total*100)}%`,color:'#ef4444',icon:'🚫'}),
+                    React.createElement(KPI, {label:'재고 보유',value:ople.inStock,sub:`${Math.round(ople.inStock/ople.total*100)}%`,color:'#f59e0b',icon:'📋'})
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, '데이터 완성도'),
+                        React.createElement(ProgressBar, {label:'한글 상품명',value:ople.hasKorean,max:ople.total,color:'#10b981'}),
+                        React.createElement(ProgressBar, {label:'영문 상품명',value:ople.hasEnglish,max:ople.total,color:'#3b82f6'}),
+                        React.createElement(ProgressBar, {label:'SKU 보유',value:ople.hasSku,max:ople.total,color:'#8b5cf6'}),
+                        React.createElement(ProgressBar, {label:'USD 가격',value:ople.hasUsdPrice,max:ople.total,color:'#f59e0b'}),
+                        React.createElement(ProgressBar, {label:'원화 가격 (활성)',value:ople.hasPrice,max:ople.total,color:'#ef4444'}),
+                        React.createElement(ProgressBar, {label:'6개월 판매 이력',value:ople.hasSales,max:ople.total,color:'#14b8a6'})
+                    ),
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, 'TOP 14 제조사'),
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
+                            React.createElement('thead', null, React.createElement(TableRow, {header:true,cells:['제조사','상품 수','비율']})),
+                            React.createElement('tbody', null,
+                                ople.topMakers.map((m,i) =>
+                                    React.createElement(TableRow, {key:i,cells:[
+                                        m.name, m.count.toLocaleString(), `${(m.count/ople.total*100).toFixed(1)}%`
+                                    ]})
+                                )
+                            )
+                        )
+                    )
+                ),
+                React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                    React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, '🔑 핵심 수치'),
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(250px,1fr))',gap:'16px'}},
+                        React.createElement('div', {style:{background:'#f0fdf4',borderRadius:'8px',padding:'16px'}},
+                            React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#166534'}}, '6개월 총 판매량'),
+                            React.createElement('div', {style:{fontSize:'1.5rem',fontWeight:800,color:'#15803d'}}, ople.totalSales6m.toLocaleString()),
+                            React.createElement('div', {style:{fontSize:'0.75rem',color:'#4ade80'}}, `상품당 평균 ${Math.round(ople.totalSales6m/ople.hasSales).toLocaleString()}개`)
+                        ),
+                        React.createElement('div', {style:{background:'#eff6ff',borderRadius:'8px',padding:'16px'}},
+                            React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#1e40af'}}, 'WMS 대비 차이'),
+                            React.createElement('div', {style:{fontSize:'1.5rem',fontWeight:800,color:'#2563eb'}}, `+${(ople.total - wms.total).toLocaleString()}`),
+                            React.createElement('div', {style:{fontSize:'0.75rem',color:'#60a5fa'}}, '오플에만 있는 상품 (레거시 포함)')
+                        ),
+                        React.createElement('div', {style:{background:'#fef3c7',borderRadius:'8px',padding:'16px'}},
+                            React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#92400e'}}, '원화 가격 설정율'),
+                            React.createElement('div', {style:{fontSize:'1.5rem',fontWeight:800,color:'#d97706'}}, `${(ople.hasPrice/ople.total*100).toFixed(1)}%`),
+                            React.createElement('div', {style:{fontSize:'0.75rem',color:'#fbbf24'}}, `${ople.hasPrice}개만 원화 가격 활성`)
+                        )
+                    )
+                )
+            );
+
+            const renderMapping = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement(KPI, {label:'전체 매핑',value:mp.totalMappings,color:'#8b5cf6',icon:'🔗'}),
+                    React.createElement(KPI, {label:'Parent SKU',value:mp.uniqueParents,sub:'WMS 상품 기준',color:'#3b82f6',icon:'📦'}),
+                    React.createElement(KPI, {label:'평균 Child 수',value:mp.avgChildren,color:'#10b981',icon:'📊'}),
+                    React.createElement(KPI, {label:'최대 Child 수',value:mp.maxChildren,color:'#ef4444',icon:'🔝'})
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, 'Child 코드 유형'),
+                        React.createElement(ProgressBar, {label:'V-코드 (내부관리)',value:mp.vCodes,max:mp.totalMappings,color:'#8b5cf6'}),
+                        React.createElement(ProgressBar, {label:'바코드 (UPC/EAN)',value:mp.barcodes,max:mp.totalMappings,color:'#3b82f6'}),
+                        React.createElement(ProgressBar, {label:'기타 (파생코드)',value:mp.otherCodes,max:mp.totalMappings,color:'#f59e0b'}),
+                        React.createElement('div', {style:{marginTop:'20px',padding:'16px',background:'#f8fafc',borderRadius:'8px'}},
+                            React.createElement('div', {style:{fontSize:'0.82rem',fontWeight:600,color:'#334155',marginBottom:'8px'}}, '매핑 구조'),
+                            React.createElement('div', {style:{fontSize:'0.8rem',color:'#64748b',lineHeight:'1.8'}},
+                                `• 단일 child: ${mp.singleChild.toLocaleString()}개 (${Math.round(mp.singleChild/mp.uniqueParents*100)}%)`,
+                                React.createElement('br'),
+                                `• 다중 child: ${mp.multiChild.toLocaleString()}개 (${Math.round(mp.multiChild/mp.uniqueParents*100)}%)`,
+                                React.createElement('br'),
+                                `• 매핑 없는 상품: ${(wms.total - mp.uniqueParents).toLocaleString()}개 (child_count=0)`
+                            )
+                        )
+                    ),
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, 'SKU 매핑 흐름'),
+                        React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'12px'}},
+                            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'12px',padding:'12px 16px',background:'#eff6ff',borderRadius:'8px'}},
+                                React.createElement('span', {style:{fontSize:'1.5rem'}}, '📦'),
+                                React.createElement('div', null,
+                                    React.createElement('div', {style:{fontWeight:700,fontSize:'0.85rem',color:'#1e40af'}}, 'WMS Parent SKU'),
+                                    React.createElement('div', {style:{fontSize:'0.78rem',color:'#3b82f6'}}, 'BWC-P000001, TRJ-P000007...')
+                                )
+                            ),
+                            React.createElement('div', {style:{textAlign:'center',fontSize:'1.2rem',color:'#94a3b8'}}, '↓ 1:N 매핑'),
+                            React.createElement('div', {style:{display:'flex',gap:'8px',flexWrap:'wrap'}},
+                                React.createElement('div', {style:{flex:1,padding:'12px',background:'#f5f3ff',borderRadius:'8px',textAlign:'center'}},
+                                    React.createElement('div', {style:{fontSize:'1.2rem'}}, '🏷️'),
+                                    React.createElement('div', {style:{fontWeight:700,fontSize:'0.82rem',color:'#6d28d9'}}, 'V-코드'),
+                                    React.createElement('div', {style:{fontSize:'0.75rem',color:'#8b5cf6'}}, 'V00000234')
+                                ),
+                                React.createElement('div', {style:{flex:1,padding:'12px',background:'#ecfdf5',borderRadius:'8px',textAlign:'center'}},
+                                    React.createElement('div', {style:{fontSize:'1.2rem'}}, '📊'),
+                                    React.createElement('div', {style:{fontWeight:700,fontSize:'0.82rem',color:'#047857'}}, '바코드/UPC'),
+                                    React.createElement('div', {style:{fontSize:'0.75rem',color:'#10b981'}}, '1511265447')
+                                ),
+                                React.createElement('div', {style:{flex:1,padding:'12px',background:'#fff7ed',borderRadius:'8px',textAlign:'center'}},
+                                    React.createElement('div', {style:{fontSize:'1.2rem'}}, '🔧'),
+                                    React.createElement('div', {style:{fontWeight:700,fontSize:'0.82rem',color:'#c2410c'}}, '파생코드'),
+                                    React.createElement('div', {style:{fontSize:'0.75rem',color:'#f97316'}}, '00036146-p1')
+                                )
+                            ),
+                            React.createElement('div', {style:{textAlign:'center',fontSize:'1.2rem',color:'#94a3b8'}}, '↓ UPC → 이미지 자동 생성'),
+                            React.createElement('div', {style:{padding:'12px 16px',background:'#fdf4ff',borderRadius:'8px',display:'flex',alignItems:'center',gap:'12px'}},
+                                React.createElement('span', {style:{fontSize:'1.5rem'}}, '🖼️'),
+                                React.createElement('div', null,
+                                    React.createElement('div', {style:{fontWeight:700,fontSize:'0.85rem',color:'#86198f'}}, '이미지 URL 자동 생성'),
+                                    React.createElement('div', {style:{fontSize:'0.75rem',color:'#a855f7',fontFamily:'monospace'}}, 'img.ople.com/item_img/{UPC}.jpg')
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+
+            const renderImage = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
+                React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                    React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'8px',color:'#1e293b'}}, '이미지 URL 생성 규칙'),
+                    React.createElement('p', {style:{fontSize:'0.85rem',color:'#64748b',marginBottom:'16px'}}, `기본 도메인: ${img.baseUrl} — UPC(바코드) 기반으로 모든 이미지 URL이 자동 생성됩니다.`),
+                    React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
+                        React.createElement('thead', null,
+                            React.createElement(TableRow, {header:true,cells:['이미지 타입','채널','워터마크','오가닉','단품 URL','세트 URL']})
+                        ),
+                        React.createElement('tbody', null,
+                            img.types.map((t,i) =>
+                                React.createElement(TableRow, {key:i,cells:[
+                                    t.type, t.channel, t.watermark?'✅':'❌', t.organic?'유지':'삭제',
+                                    React.createElement('code', {style:{fontSize:'0.72rem',background:'#f1f5f9',padding:'2px 6px',borderRadius:'4px'}}, t.single),
+                                    t.set ? React.createElement('code', {style:{fontSize:'0.72rem',background:'#f1f5f9',padding:'2px 6px',borderRadius:'4px'}}, t.set) : '-'
+                                ]})
+                            )
+                        )
+                    )
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, '채널별 오가닉 정책'),
+                        React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'8px'}},
+                            ['오플 (자사몰)'].map(ch => React.createElement('div', {key:ch,style:{display:'flex',justifyContent:'space-between',padding:'10px 14px',background:'#f0fdf4',borderRadius:'8px'}},
+                                React.createElement('span', {style:{fontWeight:600,fontSize:'0.85rem',color:'#166534'}}, ch),
+                                React.createElement('span', {style:{fontSize:'0.82rem',color:'#15803d',fontWeight:600}}, '✅ Organic 유지')
+                            )),
+                            ['스마트스토어','쿠팡','이베이','11번가'].map(ch => React.createElement('div', {key:ch,style:{display:'flex',justifyContent:'space-between',padding:'10px 14px',background:'#fef2f2',borderRadius:'8px'}},
+                                React.createElement('span', {style:{fontWeight:600,fontSize:'0.85rem',color:'#991b1b'}}, ch),
+                                React.createElement('span', {style:{fontSize:'0.82rem',color:'#dc2626',fontWeight:600}}, '❌ Organic 삭제 (_do)')
+                            ))
+                        )
+                    ),
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#1e293b'}}, '접미사 규칙'),
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
+                            React.createElement('thead', null, React.createElement(TableRow, {header:true,cells:['접미사','의미','예시']})),
+                            React.createElement('tbody', null,
+                                [{s:'(없음)',m:'기본 썸네일',e:'UPC.jpg'},
+                                 {s:'_S2',m:'세트 상품',e:'UPC_S2.jpg'},
+                                 {s:'_do',m:'오가닉 삭제',e:'UPC_do.jpg'},
+                                 {s:'_S2_do',m:'세트+오가닉삭제',e:'UPC_S2_do.jpg'},
+                                 {s:'_R',m:'후면 이미지',e:'UPC_R.jpg'},
+                                 {s:'_re',m:'후면+오가닉삭제',e:'UPC_re.jpg'}
+                                ].map((r,i) => React.createElement(TableRow, {key:i,cells:[
+                                    React.createElement('code', {style:{background:'#f1f5f9',padding:'2px 8px',borderRadius:'4px',fontSize:'0.78rem',fontWeight:600}}, r.s),
+                                    r.m,
+                                    React.createElement('code', {style:{fontSize:'0.75rem',color:'#64748b'}}, r.e)
+                                ]}))
+                            )
+                        )
+                    )
+                )
+            );
+
+            const renderGap = () => React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'24px'}},
+                React.createElement('div', {style:{background:'linear-gradient(135deg,#fef3c7,#fde68a)',borderRadius:'12px',padding:'24px',border:'1px solid #fcd34d'}},
+                    React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#92400e',marginBottom:'12px'}}, '⚠️ Shopify 마이그레이션 데이터 준비도'),
+                    React.createElement('p', {style:{fontSize:'0.85rem',color:'#78350f',lineHeight:'1.7'}},
+                        'WMS 26,378개 상품 중 활성 6,155개가 1차 마이그레이션 대상입니다. 오플닷컴 43,019개와의 차이 16,641개는 레거시/단종 상품으로 추정됩니다.'
+                    )
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap'}},
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#ef4444'}}, '🔴 심각한 갭'),
+                        React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'12px'}},
+                            [{title:'원화 가격 미설정',desc:`오플닷컴 상품 중 원화 가격이 있는 건 ${ople.hasPrice}개 (${(ople.hasPrice/ople.total*100).toFixed(1)}%)`,impact:'Shopify 가격 데이터 전면 재설정 필요'},
+                             {title:'WMS-오플 상품 수 차이',desc:`오플(${ople.total.toLocaleString()}) - WMS(${wms.total.toLocaleString()}) = ${(ople.total-wms.total).toLocaleString()}개`,impact:'매칭/정리 작업 필수'},
+                            ].map((g,i) => React.createElement('div', {key:i,style:{padding:'14px',background:'#fef2f2',borderRadius:'8px',borderLeft:'4px solid #ef4444'}},
+                                React.createElement('div', {style:{fontWeight:700,fontSize:'0.88rem',color:'#991b1b'}}, g.title),
+                                React.createElement('div', {style:{fontSize:'0.8rem',color:'#b91c1c',marginTop:'4px'}}, g.desc),
+                                React.createElement('div', {style:{fontSize:'0.75rem',color:'#dc2626',marginTop:'4px',fontWeight:600}}, `→ ${g.impact}`)
+                            ))
+                        )
+                    ),
+                    React.createElement('div', {style:{flex:1,minWidth:'300px',background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                        React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#f59e0b'}}, '🟡 주의 필요'),
+                        React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'12px'}},
+                            [{title:'SKU 미보유 상품',desc:`오플닷컴 상품 중 SKU 없는 건 ${(ople.total-ople.hasSku).toLocaleString()}개 (${((ople.total-ople.hasSku)/ople.total*100).toFixed(1)}%)`,impact:'WMS 매칭 불가 → 수동 매핑 or 제외'},
+                             {title:'한글명 누락 (WMS)',desc:`WMS 상품 중 ${wms.missingKorean.toLocaleString()}개 한글명 없음`,impact:'한글 번역 추가 작업 필요'},
+                             {title:'단종 상품 처리',desc:`오플닷컴 ${ople.discontinued.toLocaleString()}개 단종 표시`,impact:'마이그레이션 제외 or 아카이브 결정'},
+                            ].map((g,i) => React.createElement('div', {key:i,style:{padding:'14px',background:'#fffbeb',borderRadius:'8px',borderLeft:'4px solid #f59e0b'}},
+                                React.createElement('div', {style:{fontWeight:700,fontSize:'0.88rem',color:'#92400e'}}, g.title),
+                                React.createElement('div', {style:{fontSize:'0.8rem',color:'#b45309',marginTop:'4px'}}, g.desc),
+                                React.createElement('div', {style:{fontSize:'0.75rem',color:'#d97706',marginTop:'4px',fontWeight:600}}, `→ ${g.impact}`)
+                            ))
+                        )
+                    )
+                ),
+                React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',padding:'24px'}},
+                    React.createElement('h3', {style:{fontSize:'1rem',fontWeight:700,marginBottom:'16px',color:'#10b981'}}, '🟢 양호한 영역'),
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:'12px'}},
+                        [{label:'이미지 커버리지',value:'100%',desc:'WMS 전 상품 이미지 보유'},
+                         {label:'바코드 커버리지',value:'100%',desc:'WMS 전 상품 바코드 보유'},
+                         {label:'한글 상품명 (오플)',value:'99.7%',desc:'오플닷컴 거의 완벽'},
+                         {label:'매핑 정합성',value:'100%',desc:'child_count 완벽 일치'},
+                         {label:'이미지 URL 체계',value:'자동화',desc:'UPC 기반 6종 자동 생성'},
+                        ].map((g,i) => React.createElement('div', {key:i,style:{padding:'14px',background:'#f0fdf4',borderRadius:'8px',textAlign:'center'}},
+                            React.createElement('div', {style:{fontSize:'1.3rem',fontWeight:800,color:'#15803d'}}, g.value),
+                            React.createElement('div', {style:{fontWeight:600,fontSize:'0.82rem',color:'#166534',marginTop:'4px'}}, g.label),
+                            React.createElement('div', {style:{fontSize:'0.72rem',color:'#4ade80',marginTop:'2px'}}, g.desc)
+                        ))
+                    )
+                )
+            );
+
+            const renderers = {overview:renderOverview,wms:renderWms,ople:renderOple,mapping:renderMapping,image:renderImage,gap:renderGap};
+
+            return React.createElement('div', {style:{maxWidth:'1200px'}},
+                React.createElement('div', {style:{marginBottom:'24px'}},
+                    React.createElement('h1', {style:{fontSize:'1.6rem',fontWeight:800,color:'#1e293b',marginBottom:'4px'}}, 'OPLE 상품 데이터'),
+                    React.createElement('p', {style:{fontSize:'0.88rem',color:'#64748b'}}, 'WMS · 오플닷컴 · 매핑코드 · 이미지 URL — 4개 소스 통합 분석')
+                ),
+                React.createElement('div', {style:{display:'flex',gap:'6px',marginBottom:'24px',flexWrap:'wrap',background:'#fff',padding:'6px',borderRadius:'12px',border:'1px solid #e2e8f0'}},
+                    tabs.map(t => React.createElement('button', {key:t.id,onClick:()=>setActiveSection(t.id),style:{padding:'10px 18px',borderRadius:'8px',border:'none',cursor:'pointer',fontSize:'0.84rem',fontWeight:activeSection===t.id?700:500,background:activeSection===t.id?'#3b82f6':'transparent',color:activeSection===t.id?'#fff':'#64748b',transition:'all 0.2s',display:'flex',alignItems:'center',gap:'6px'}},
+                        React.createElement('span', null, t.icon), t.label
+                    ))
+                ),
+                renderers[activeSection]()
+            );
+        };
+
         // ============= PROJECT MANAGER =============
         // ============= SHOPIFY SKIN PAGE =============
         const ShopifySkinPage = () => {
@@ -4017,7 +4387,7 @@
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
                     <main style={{flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
-                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && activeTab !== 'projectShopify' && activeTab !== 'shopifySkin' && (
+                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && activeTab !== 'projectShopify' && activeTab !== 'shopifySkin' && activeTab !== 'opleData' && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
                                 {activeTab === 'products' && 'OPLE 제품'}
@@ -4040,6 +4410,7 @@
                         {activeTab === 'tagStrategy' && <TagStrategyPage />}
                         {activeTab === 'projectShopify' && <ProjectManager />}
                         {activeTab === 'shopifySkin' && <ShopifySkinPage />}
+                        {activeTab === 'opleData' && <OpleProductDataPage />}
                     </main>
                 </div>
             );

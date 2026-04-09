@@ -2863,85 +2863,145 @@
 
             const ProductDetail = ({p, onClose}) => {
                 if (!p) return null;
+                const [detailTab, setDetailTab] = useState('info');
+                const [descHtml, setDescHtml] = useState(null);
+                const [descLoading, setDescLoading] = useState(false);
+
+                // Load description when tab is clicked
+                useEffect(() => {
+                    if (detailTab === 'desc' && descHtml === null && !descLoading) {
+                        setDescLoading(true);
+                        fetch(`/api/wms/desc/${p.sku}`).then(r=>r.json()).then(d=>{
+                            setDescHtml(d.found ? d.desc : '');
+                            setDescLoading(false);
+                        }).catch(()=>{setDescHtml('');setDescLoading(false);});
+                    }
+                }, [detailTab]);
+
                 const F = ({label, val, w='50%'}) => React.createElement('div', {style:{width:w,minWidth:'150px',marginBottom:'14px'}},
                     React.createElement('div', {style:{fontSize:'0.72rem',fontWeight:600,color:'#64748b',marginBottom:'3px'}}, label),
                     React.createElement('div', {style:{fontSize:'0.88rem',fontWeight:500,color:'#1e293b',padding:'8px 12px',background:'#f8fafc',borderRadius:'6px',border:'1px solid #e2e8f0',minHeight:'36px',wordBreak:'break-all'}}, val || '-')
                 );
+
+                const tabs = [
+                    {id:'info',label:'기본정보(General Information)'},
+                    {id:'desc',label:'상세설명(Description)'},
+                    {id:'sub',label:`하위상품(Sub Products)${p.ch?` · ${p.ch.length}`:''}` },
+                    {id:'img',label:'이미지(Images)'}
+                ];
+
+                const tabBar = React.createElement('div', {style:{display:'flex',gap:'0',borderBottom:'2px solid #e2e8f0',marginBottom:'20px',overflowX:'auto'}},
+                    tabs.map(t => React.createElement('button', {key:t.id,onClick:()=>setDetailTab(t.id),style:{padding:'10px 20px',fontSize:'0.82rem',fontWeight:detailTab===t.id?700:500,color:detailTab===t.id?'#2563eb':'#64748b',background:'none',border:'none',borderBottom:detailTab===t.id?'2px solid #2563eb':'2px solid transparent',marginBottom:'-2px',cursor:'pointer',whiteSpace:'nowrap',transition:'all 0.15s'}}, t.label))
+                );
+
+                // Tab: 기본정보
+                const infoTab = React.createElement('div', null,
+                    React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
+                        React.createElement(F, {label:'Master SKU',val:p.sku,w:'25%'}),
+                        React.createElement(F, {label:'UPC / Barcode',val:p.upc,w:'25%'}),
+                        React.createElement(F, {label:'Brand Code',val:p.bc,w:'25%'}),
+                        React.createElement(F, {label:'Brand Name',val:p.bn,w:'25%'}),
+                        React.createElement(F, {label:'Product Name (eng) - 영문명',val:p.en,w:'100%'}),
+                        React.createElement(F, {label:'Product Name (kor) - 한글명',val:p.kn,w:'100%'}),
+                        React.createElement(F, {label:'Status - 상태',val:p.st==='selling'?'판매중(Selling)':p.st==='discontinued'?'단종(Discontinued)':'미지정',w:'25%'}),
+                        React.createElement(F, {label:'FOOD - 식품여부',val:p.fd?'식품 O':'식품 X',w:'25%'}),
+                        React.createElement(F, {label:'Glass - 유리',val:p.gl?'유리 O':'유리 X',w:'25%'}),
+                        React.createElement(F, {label:'통관 제한',val:p.rn||'정상판매',w:'25%'}),
+                    ),
+                    React.createElement('div', {style:{marginTop:'8px',padding:'16px',background:'#f8fafc',borderRadius:'10px',border:'1px solid #e2e8f0'}},
+                        React.createElement('h3', {style:{fontSize:'0.88rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:0}}, '재고/수량 정보'),
+                        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
+                            React.createElement(F, {label:'Safe Qty',val:String(p.sq!=null?p.sq:'-9999'),w:'25%'}),
+                            React.createElement(F, {label:'Max Qty',val:String(p.mq!=null?p.mq:'9999'),w:'25%'}),
+                            React.createElement(F, {label:'In Box - 박스수량',val:String(p.bx),w:'25%'}),
+                            React.createElement(F, {label:'Current Qty - 현재수량',val:String(p.qt||0),w:'25%'}),
+                            React.createElement(F, {label:'Out of Stock',val:p.os?'Not Ordered':'In Stock',w:'25%'}),
+                            React.createElement(F, {label:'하위상품 수',val:String(p.cc),w:'25%'}),
+                        )
+                    ),
+                    React.createElement('div', {style:{marginTop:'8px',padding:'16px',background:'#fefce8',borderRadius:'10px',border:'1px solid #fde68a'}},
+                        React.createElement('h3', {style:{fontSize:'0.88rem',fontWeight:700,color:'#92400e',marginBottom:'12px',marginTop:0}}, 'Retail / Purchase Price'),
+                        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
+                            React.createElement(F, {label:'Purchase Price (구매가)',val:p.pr>0?`$${p.pr.toFixed(2)}`:'-',w:'33%'}),
+                            React.createElement(F, {label:'USD Purchase',val:p.up>0?`$${p.up.toFixed(2)}`:'-',w:'33%'}),
+                            React.createElement(F, {label:'MSRP / Retail',val:p.ms>0?`$${p.ms.toFixed(2)}`:'-',w:'33%'}),
+                        )
+                    )
+                );
+
+                // Tab: 상세설명
+                const descTab = React.createElement('div', null,
+                    descLoading ? React.createElement('div', {style:{textAlign:'center',padding:'40px',color:'#64748b'}}, '상세설명 로딩 중...') :
+                    descHtml === '' ? React.createElement('div', {style:{textAlign:'center',padding:'40px',color:'#94a3b8',fontSize:'0.92rem'}}, '등록된 상세설명이 없습니다.') :
+                    descHtml ? React.createElement('div', {style:{padding:'20px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:'10px',fontSize:'0.88rem',lineHeight:'1.7',color:'#334155',maxHeight:'55vh',overflowY:'auto'},dangerouslySetInnerHTML:{__html:descHtml}}) :
+                    null
+                );
+
+                // Tab: 하위상품
+                const subTab = React.createElement('div', null,
+                    p.ch && p.ch.length > 0 ? React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',border:'1px solid #e2e8f0',borderRadius:'8px',overflow:'hidden'}},
+                        React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc'}},
+                            React.createElement('th', {style:{padding:'8px 14px',textAlign:'left',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, '#'),
+                            React.createElement('th', {style:{padding:'8px 14px',textAlign:'left',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, 'Child SKU'),
+                            React.createElement('th', {style:{padding:'8px 14px',textAlign:'left',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, '유형'),
+                            React.createElement('th', {style:{padding:'8px 14px',textAlign:'right',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, '수량')
+                        )),
+                        React.createElement('tbody', null, p.ch.map((c,i) => {
+                            const type = /^V\d+$/.test(c.sku)?'V-코드':/^\d{10,}$/.test(c.sku)?'바코드':'파생';
+                            return React.createElement('tr', {key:i,style:{borderTop:'1px solid #f1f5f9'}},
+                                React.createElement('td', {style:{padding:'8px 14px',fontSize:'0.82rem',color:'#94a3b8'}}, i+1),
+                                React.createElement('td', {style:{padding:'8px 14px',fontSize:'0.82rem',fontFamily:'monospace',color:'#334155',fontWeight:500}}, c.sku),
+                                React.createElement('td', {style:{padding:'8px 14px'}}, React.createElement('span', {style:{padding:'2px 8px',borderRadius:'4px',fontSize:'0.72rem',fontWeight:600,background:type==='V-코드'?'#f5f3ff':type==='바코드'?'#ecfdf5':'#fff7ed',color:type==='V-코드'?'#6d28d9':type==='바코드'?'#047857':'#c2410c'}}, type)),
+                                React.createElement('td', {style:{padding:'8px 14px',textAlign:'right',fontSize:'0.82rem',fontWeight:600,color:'#1e293b'}}, c.qty)
+                            );
+                        }))
+                    ) : React.createElement('div', {style:{textAlign:'center',padding:'40px',color:'#94a3b8',fontSize:'0.92rem'}}, '하위상품이 없습니다.')
+                );
+
+                // Tab: 이미지
+                const imgUrls = p.upc ? [
+                    {label:'Product Image (정면)', url:`https://img.ople.com/ople/item_img/${p.upc}.jpg`},
+                    {label:'Rear Image (후면)', url:`https://img.ople.com/ople/item_img/${p.upc}_R.jpg`},
+                    {label:'WMS Image', url:`https://img.ople.com/ople/wms/${p.sku}.jpg`},
+                ] : [];
+                const ImgCard = ({label, url}) => {
+                    const [imgErr, setImgErr] = useState(false);
+                    return React.createElement('div', {style:{textAlign:'center',flex:'1',minWidth:'200px',maxWidth:'320px'}},
+                        React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#64748b',marginBottom:'8px'}}, label),
+                        React.createElement('div', {style:{border:'1px solid #e2e8f0',borderRadius:'10px',overflow:'hidden',background:'#fafafa',minHeight:'200px',display:'flex',alignItems:'center',justifyContent:'center'}},
+                            imgErr ? React.createElement('div', {style:{color:'#cbd5e1',fontSize:'0.88rem',padding:'40px'}}, '이미지 없음') :
+                            React.createElement('img', {src:url,style:{maxWidth:'100%',maxHeight:'300px',objectFit:'contain'},onError:()=>setImgErr(true)})
+                        ),
+                        React.createElement('div', {style:{fontSize:'0.7rem',color:'#94a3b8',marginTop:'6px',wordBreak:'break-all'}}, url)
+                    );
+                };
+                const imgTab = React.createElement('div', null,
+                    p.upc ? React.createElement('div', {style:{display:'flex',gap:'16px',flexWrap:'wrap',justifyContent:'center'}},
+                        imgUrls.map((img,i) => React.createElement(ImgCard, {key:i,...img}))
+                    ) : React.createElement('div', {style:{textAlign:'center',padding:'40px',color:'#94a3b8'}}, 'UPC 정보가 없어 이미지를 표시할 수 없습니다.')
+                );
+
+                const tabContent = {info:infoTab, desc:descTab, sub:subTab, img:imgTab}[detailTab];
+
                 return React.createElement('div', {style:{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}},
                     React.createElement('div', {onClick:onClose,style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.4)'}}),
-                    React.createElement('div', {style:{position:'relative',background:'#fff',borderRadius:'16px',width:'90%',maxWidth:'900px',maxHeight:'85vh',overflow:'auto',padding:'32px',boxShadow:'0 20px 60px rgba(0,0,0,0.2)'}},
+                    React.createElement('div', {style:{position:'relative',background:'#fff',borderRadius:'16px',width:'92%',maxWidth:'960px',maxHeight:'88vh',overflow:'auto',padding:'28px 32px',boxShadow:'0 20px 60px rgba(0,0,0,0.2)'}},
                         React.createElement('button', {onClick:onClose,style:{position:'absolute',top:'16px',right:'16px',background:'none',border:'none',fontSize:'1.5rem',cursor:'pointer',color:'#94a3b8'}},'✕'),
-                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'16px',marginBottom:'24px',paddingBottom:'16px',borderBottom:'1px solid #e2e8f0'}},
+                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'16px',marginBottom:'16px',paddingBottom:'14px',borderBottom:'1px solid #e2e8f0'}},
                             React.createElement(ImgThumb, {upc:p.upc}),
                             React.createElement('div', null,
-                                React.createElement('h2', {style:{fontSize:'1.2rem',fontWeight:800,color:'#1e293b',margin:0}}, `Product Details - ${p.sku}`),
-                                React.createElement('div', {style:{fontSize:'0.85rem',color:'#64748b',marginTop:'4px'}}, `UPC: ${p.upc}`)
+                                React.createElement('h2', {style:{fontSize:'1.15rem',fontWeight:800,color:'#1e293b',margin:0}}, `Product Details - ${p.sku} ( ${p.upc||'N/A'} )`),
+                                React.createElement('div', {style:{fontSize:'0.82rem',color:'#64748b',marginTop:'3px'}}, p.en || p.kn || '')
                             ),
-                            React.createElement('div', {style:{marginLeft:'auto',display:'flex',gap:'8px'}},
+                            React.createElement('div', {style:{marginLeft:'auto',display:'flex',gap:'8px',alignItems:'center'}},
+                                p.qt > 0 && React.createElement('span', {style:{padding:'4px 12px',borderRadius:'6px',background:'#dcfce7',color:'#16a34a',fontSize:'0.78rem',fontWeight:700}}, `Available: ${p.qt}`),
                                 React.createElement(StatusBadge, {status:p.st}),
                                 React.createElement(FoodBadge, {isFood:p.fd}),
                                 React.createElement(RestrictedBadge, {ri:p.ri,rn:p.rn})
                             )
                         ),
-                        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
-                            React.createElement(F, {label:'Master SKU',val:p.sku,w:'25%'}),
-                            React.createElement(F, {label:'UPC / Barcode',val:p.upc,w:'25%'}),
-                            React.createElement(F, {label:'Brand Code',val:p.bc,w:'25%'}),
-                            React.createElement(F, {label:'Brand Name',val:p.bn,w:'25%'}),
-                            React.createElement(F, {label:'Product Name (eng) - 영문명',val:p.en,w:'100%'}),
-                            React.createElement(F, {label:'Product Name (kor) - 한글명',val:p.kn,w:'100%'}),
-                            React.createElement(F, {label:'Status - 상태',val:p.st==='selling'?'판매중(Selling)':p.st==='discontinued'?'단종(Discontinued)':'미지정',w:'25%'}),
-                            React.createElement(F, {label:'FOOD - 식품여부',val:p.fd?'식품 O':'식품 X',w:'25%'}),
-                            React.createElement(F, {label:'Glass - 유리',val:p.gl?'유리 O':'유리 X',w:'25%'}),
-                            React.createElement(F, {label:'통관 제한',val:p.rn||'정상판매',w:'25%'}),
-                        ),
-                        React.createElement('div', {style:{marginTop:'8px',padding:'16px',background:'#f8fafc',borderRadius:'10px',border:'1px solid #e2e8f0'}},
-                            React.createElement('h3', {style:{fontSize:'0.88rem',fontWeight:700,color:'#1e293b',marginBottom:'12px',marginTop:0}}, '재고/수량 정보'),
-                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
-                                React.createElement(F, {label:'Safe Qty',val:String(p.sq!=null?p.sq:'-9999'),w:'25%'}),
-                                React.createElement(F, {label:'Max Qty',val:String(p.mq!=null?p.mq:'9999'),w:'25%'}),
-                                React.createElement(F, {label:'In Box - 박스수량',val:String(p.bx),w:'25%'}),
-                                React.createElement(F, {label:'Current Qty - 현재수량',val:String(p.qt||0),w:'25%'}),
-                                React.createElement(F, {label:'Out of Stock',val:p.os?'Not Ordered':'In Stock',w:'25%'}),
-                                React.createElement(F, {label:'하위상품 수',val:String(p.cc),w:'25%'}),
-                            )
-                        ),
-                        React.createElement('div', {style:{marginTop:'8px',padding:'16px',background:'#fefce8',borderRadius:'10px',border:'1px solid #fde68a'}},
-                            React.createElement('h3', {style:{fontSize:'0.88rem',fontWeight:700,color:'#92400e',marginBottom:'12px',marginTop:0}}, 'Retail / Purchase Price'),
-                            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
-                                React.createElement(F, {label:'Purchase Price (구매가)',val:p.pr>0?`$${p.pr.toFixed(2)}`:'-',w:'33%'}),
-                                React.createElement(F, {label:'USD Purchase',val:p.up>0?`$${p.up.toFixed(2)}`:'-',w:'33%'}),
-                                React.createElement(F, {label:'MSRP / Retail',val:p.ms>0?`$${p.ms.toFixed(2)}`:'-',w:'33%'}),
-                            )
-                        ),
-                        p.ch && p.ch.length > 0 && React.createElement('div', {style:{marginTop:'8px'}},
-                            React.createElement('h3', {style:{fontSize:'0.92rem',fontWeight:700,color:'#1e293b',marginBottom:'12px'}}, `하위상품 (Sub Products) - ${p.ch.length}개`),
-                            React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',border:'1px solid #e2e8f0',borderRadius:'8px',overflow:'hidden'}},
-                                React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc'}},
-                                    React.createElement('th', {style:{padding:'8px 14px',textAlign:'left',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, '#'),
-                                    React.createElement('th', {style:{padding:'8px 14px',textAlign:'left',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, 'Child SKU'),
-                                    React.createElement('th', {style:{padding:'8px 14px',textAlign:'left',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, '유형'),
-                                    React.createElement('th', {style:{padding:'8px 14px',textAlign:'right',fontSize:'0.75rem',fontWeight:700,color:'#64748b'}}, '수량')
-                                )),
-                                React.createElement('tbody', null, p.ch.map((c,i) => {
-                                    const type = /^V\d+$/.test(c.sku)?'V-코드':/^\d{10,}$/.test(c.sku)?'바코드':'파생';
-                                    return React.createElement('tr', {key:i,style:{borderTop:'1px solid #f1f5f9'}},
-                                        React.createElement('td', {style:{padding:'8px 14px',fontSize:'0.82rem',color:'#94a3b8'}}, i+1),
-                                        React.createElement('td', {style:{padding:'8px 14px',fontSize:'0.82rem',fontFamily:'monospace',color:'#334155',fontWeight:500}}, c.sku),
-                                        React.createElement('td', {style:{padding:'8px 14px'}}, React.createElement('span', {style:{padding:'2px 8px',borderRadius:'4px',fontSize:'0.72rem',fontWeight:600,background:type==='V-코드'?'#f5f3ff':type==='바코드'?'#ecfdf5':'#fff7ed',color:type==='V-코드'?'#6d28d9':type==='바코드'?'#047857':'#c2410c'}}, type)),
-                                        React.createElement('td', {style:{padding:'8px 14px',textAlign:'right',fontSize:'0.82rem',fontWeight:600,color:'#1e293b'}}, c.qty)
-                                    );
-                                }))
-                            )
-                        ),
-                        React.createElement('div', {style:{marginTop:'16px',padding:'12px 16px',background:'#eff6ff',borderRadius:'8px'}},
-                            React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#1e40af',marginBottom:'4px'}}, '이미지 URL'),
-                            p.upc && React.createElement('div', {style:{fontSize:'0.78rem',color:'#3b82f6',fontFamily:'monospace'}},
-                                `썸네일: https://img.ople.com/ople/item_img/${p.upc}.jpg`,
-                                React.createElement('br'),
-                                `후면: https://img.ople.com/ople/item_img/${p.upc}_R.jpg`
-                            )
-                        )
+                        tabBar,
+                        tabContent
                     )
                 );
             };

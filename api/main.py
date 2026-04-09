@@ -81,6 +81,20 @@ def startup():
         seed_demo_data(db)
     db.close()
 
+# ── WMS Description Data (lazy-loaded) ──────────────────
+_wms_desc_cache = None
+
+def get_wms_desc():
+    global _wms_desc_cache
+    if _wms_desc_cache is None:
+        desc_path = Path(__file__).parent.parent / "static" / "data" / "wms_desc.json"
+        if desc_path.exists():
+            with open(desc_path, "r", encoding="utf-8") as f:
+                _wms_desc_cache = json.load(f)
+        else:
+            _wms_desc_cache = {}
+    return _wms_desc_cache
+
 # ── Static Files ─────────────────────────────────────────
 static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():
@@ -265,6 +279,16 @@ def get_product_detail(it_id: str, db: Session = Depends(get_db)):
         "reviews": [{"reviewer": r.reviewer, "rating": r.rating, "text": r.text, "date": r.date} for r in reviews],
         "iherb_mapping": mapping,
     }
+
+# ── WMS Product Description API ─────────────────────────
+@app.get("/api/wms/desc/{sku}")
+def get_wms_description(sku: str):
+    """Get WMS product description HTML by SKU"""
+    desc_data = get_wms_desc()
+    desc = desc_data.get(sku, "")
+    if not desc or desc == "\\N":
+        return {"sku": sku, "desc": "", "found": False}
+    return {"sku": sku, "desc": desc, "found": True}
 
 # ── iHerb Mapping API ────────────────────────────────────
 @app.get("/api/mapping")

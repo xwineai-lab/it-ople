@@ -2944,12 +2944,12 @@
                 // Tab: 기본정보
                 const infoTab = React.createElement('div', null,
                     React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'0 16px'}},
-                        React.createElement(F, {label:'UPC',val:p.upc,w:'25%'}),
                         React.createElement(F, {label:'Master SKU',val:p.sku,w:'25%'}),
-                        React.createElement(F, {label:'Brand - 브랜드',val:p.bc,w:'25%'}),
-                        React.createElement(F, {label:'Company - 거래처',val:p.co||'-',w:'25%'}),
-                        React.createElement(F, {label:'Product Name (kor) - 한글명',val:p.kn,w:'50%'}),
-                        React.createElement(F, {label:'Product Name (eng) - 영문명',val:p.en,w:'50%'}),
+                        React.createElement(F, {label:'UPC / Barcode',val:p.upc,w:'25%'}),
+                        React.createElement(F, {label:'Brand Code',val:p.bc,w:'25%'}),
+                        React.createElement(F, {label:'Brand Name',val:p.bn,w:'25%'}),
+                        React.createElement(F, {label:'Product Name (eng) - 영문명',val:p.en,w:'100%'}),
+                        React.createElement(F, {label:'Product Name (kor) - 한글명',val:p.kn,w:'100%'}),
                         // ── Category info ──
                         catData && React.createElement('div', {style:{width:'100%',marginBottom:'14px'}},
                             React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b',marginBottom:'6px',fontWeight:600}}, `카테고리 (${catData.categories.length})`),

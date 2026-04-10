@@ -132,15 +132,20 @@ def _format_category_name(cats: list) -> Optional[str]:
 # ── Image URL resolver ─────────────────────────────────────
 
 def resolve_image_url(product: dict) -> Optional[str]:
-    """Resolve the canonical OPLE image URL for a product.
+    """Resolve the canonical OPLE product image URL.
 
-    OPLE uses UPC-based image paths. If no UPC is available, fall back to a
-    category placeholder (handled client-side)."""
+    Verified pattern from live OPLE product pages:
+        https://img.ople.com/ople/item_img/{UPC}_R.jpg
+    (The `_R` suffix is the large / representative hero image.)
+
+    Previous patterns tried (all 404):
+        https://www.ople.com/data/item/{UPC}/{UPC}.jpg
+        https://img.ople.com/data/item/{prefix}/{it_id}.jpg
+    """
     upc = (product.get("upc") or "").strip()
     if not upc:
         return None
-    # Standard OPLE image pattern from the public CDN
-    return f"https://www.ople.com/data/item/{upc}/{upc}.jpg"
+    return f"https://img.ople.com/ople/item_img/{upc}_R.jpg"
 
 
 # ── Public URL builder ─────────────────────────────────────

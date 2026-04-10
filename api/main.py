@@ -2411,8 +2411,8 @@ async def push_selection_to_shopify(
     db.commit()
 
     mutation = """
-    mutation ProductCreate($input: ProductInput!) {
-      productCreate(input: $input) {
+    mutation ProductCreate($input: ProductInput!, $media: [CreateMediaInput!]) {
+      productCreate(input: $input, media: $media) {
         product {
           id
           handle
@@ -2423,11 +2423,23 @@ async def push_selection_to_shopify(
           metafields(first: 30) {
             edges { node { namespace key type value } }
           }
+          media(first: 10) {
+            edges { node { ... on MediaImage { id status preview { image { url } } } } }
+          }
         }
         userErrors { field message }
       }
     }
     """
+    media_inputs: list[dict] = []
+    image_url = mf.get("image_url")
+    if image_url:
+        media_inputs.append({
+            "originalSource": image_url,
+            "mediaContentType": "IMAGE",
+            "alt": title[:255] if title else None,
+        })
+
     variables = {
         "input": {
             "title": title,
@@ -2436,7 +2448,8 @@ async def push_selection_to_shopify(
             "tags": tags,
             "status": "DRAFT",
             "metafields": mf_inputs,
-        }
+        },
+        "media": media_inputs or None,
     }
 
     try:
@@ -2470,6 +2483,7 @@ async def push_selection_to_shopify(
     db.commit()
 
     returned_mf_count = len((product.get("metafields") or {}).get("edges", []))
+    returned_media = (product.get("media") or {}).get("edges", [])
     return {
         "status": "ok",
         "it_id": it_id,
@@ -2482,6 +2496,9 @@ async def push_selection_to_shopify(
         "tags": product.get("tags"),
         "metafields_sent": len(mf_inputs),
         "metafields_stored_on_product": returned_mf_count,
+        "media_sent": len(media_inputs),
+        "media_attached": len(returned_media),
+        "image_source_url": image_url,
         "readiness": readiness,
     }
 

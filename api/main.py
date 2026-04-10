@@ -1432,40 +1432,6 @@ async def category_stats(db: Session = Depends(get_db)):
     }
 
 
-@app.get("/api/products/{it_id}/categories")
-async def product_categories(it_id: str, db: Session = Depends(get_db)):
-    """Get all categories for a specific product (single it_id)."""
-    pcs = db.query(ProductCategory).filter(ProductCategory.it_id == it_id).all()
-    if not pcs:
-        return {"it_id": it_id, "categories": [], "shopify_tags": []}
-
-    cat_ids = [pc.category_id for pc in pcs]
-    cats = db.query(Category).filter(Category.category_id.in_(cat_ids)).all()
-
-    shopify_tags = set()
-    categories = []
-    for c in cats:
-        categories.append({
-            "category_id": c.category_id,
-            "depth_path": c.depth_path,
-            "level1": c.level1,
-            "level2": c.level2,
-            "level3": c.level3,
-        })
-        if c.shopify_tag_cat:
-            shopify_tags.add(c.shopify_tag_cat)
-        if c.shopify_tag_sub:
-            shopify_tags.add(c.shopify_tag_sub)
-        if c.shopify_tag_sub2:
-            shopify_tags.add(c.shopify_tag_sub2)
-
-    return {
-        "it_id": it_id,
-        "categories": categories,
-        "shopify_tags": sorted(shopify_tags)
-    }
-
-
 @app.get("/api/products/categories/bulk")
 async def product_categories_bulk(ids: str = Query(..., description="Comma-separated it_ids"), db: Session = Depends(get_db)):
     """Get merged categories for multiple it_ids (e.g. WMS child SKUs).
@@ -1502,6 +1468,40 @@ async def product_categories_bulk(ids: str = Query(..., description="Comma-separ
             shopify_tags.add(c.shopify_tag_sub2)
 
     return {
+        "categories": categories,
+        "shopify_tags": sorted(shopify_tags)
+    }
+
+
+@app.get("/api/products/{it_id}/categories")
+async def product_categories(it_id: str, db: Session = Depends(get_db)):
+    """Get all categories for a specific product (single it_id)."""
+    pcs = db.query(ProductCategory).filter(ProductCategory.it_id == it_id).all()
+    if not pcs:
+        return {"it_id": it_id, "categories": [], "shopify_tags": []}
+
+    cat_ids = [pc.category_id for pc in pcs]
+    cats = db.query(Category).filter(Category.category_id.in_(cat_ids)).all()
+
+    shopify_tags = set()
+    categories = []
+    for c in cats:
+        categories.append({
+            "category_id": c.category_id,
+            "depth_path": c.depth_path,
+            "level1": c.level1,
+            "level2": c.level2,
+            "level3": c.level3,
+        })
+        if c.shopify_tag_cat:
+            shopify_tags.add(c.shopify_tag_cat)
+        if c.shopify_tag_sub:
+            shopify_tags.add(c.shopify_tag_sub)
+        if c.shopify_tag_sub2:
+            shopify_tags.add(c.shopify_tag_sub2)
+
+    return {
+        "it_id": it_id,
         "categories": categories,
         "shopify_tags": sorted(shopify_tags)
     }

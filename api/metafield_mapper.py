@@ -184,12 +184,21 @@ OPTIONAL_KEYS = {
 SKIPPED_KEYS = {"reserve_flag"}
 
 
+def _default_fx_rate() -> float:
+    """Resolve the live USD→KRW rate via fx_service, with safe fallback."""
+    try:
+        from fx_service import get_usd_krw_rate
+        return get_usd_krw_rate()
+    except Exception:
+        return 1350.0
+
+
 def build_metafields(
     parent_sku: str,
     sp_row=None,
     db=None,
     *,
-    fx_rate_usd_to_krw: float = 1350.0,
+    fx_rate_usd_to_krw: Optional[float] = None,
 ) -> dict:
     """Build a dict of Shopify metafield values for a given OPLE product.
 
@@ -202,14 +211,17 @@ def build_metafields(
         custom_price_usd / custom_tags) take precedence over OPLE values.
     db : Session, optional
         SQLAlchemy session — required for category lookup.
-    fx_rate_usd_to_krw : float
-        USD → KRW conversion rate for price_krw (default 1350).
+    fx_rate_usd_to_krw : float, optional
+        USD → KRW conversion rate for price_krw. If not provided, the live
+        rate from fx_service is used (falls back to 1350 if all providers fail).
 
     Returns
     -------
     dict with keys matching 22 Shopify metafield definitions + a `_meta`
     section listing mapping details.
     """
+    if fx_rate_usd_to_krw is None:
+        fx_rate_usd_to_krw = _default_fx_rate()
     catalog = load_ople_catalog()
     desc_map = load_ople_desc()
 
@@ -246,7 +258,7 @@ def build_metafields(
 
     price_krw = None
     if price_usd:
-        price_krw = int(round(price_usd * fx_rate_usd_to_krw))
+        price_krw = int(round(float(price_usd) * float(fx_rate_usd_to_krw)))
 
     stock_qty = product.get("qt")
     if stock_qty is None:

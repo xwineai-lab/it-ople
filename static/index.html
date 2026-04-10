@@ -3466,6 +3466,23 @@
             const [spReadiness, setSpReadiness] = useState({});
             const [spReadinessLoading, setSpReadinessLoading] = useState(false);
             const [spEditingMetafields, setSpEditingMetafields] = useState(null); // full preview for edit modal
+            // USD→KRW live FX
+            const [spFxInfo, setSpFxInfo] = useState(null);
+            const [spFxLoading, setSpFxLoading] = useState(false);
+
+            const loadFxInfo = async (forceRefresh = false) => {
+                setSpFxLoading(true);
+                try {
+                    const url = forceRefresh ? '/api/fx/usd-krw?refresh=true' : '/api/fx/usd-krw';
+                    const r = await fetch(url);
+                    if (r.ok) setSpFxInfo(await r.json());
+                } catch(e) { console.error(e); }
+                setSpFxLoading(false);
+            };
+
+            useEffect(() => {
+                if (activeSection === 'shopifySel' && !spFxInfo) loadFxInfo(false);
+            }, [activeSection]);
 
             const loadSpList = async () => {
                 setSpListLoading(true);
@@ -3542,10 +3559,27 @@
                 return React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'20px'}},
                     // Header + stats
                     React.createElement('div', {style:{background:'linear-gradient(135deg,#ecfdf5,#d1fae5)',borderRadius:'14px',padding:'22px',border:'1px solid #a7f3d0'}},
-                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'14px'}},
+                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'14px',flexWrap:'wrap'}},
                             React.createElement('span', {style:{fontSize:'1.4rem'}}, '🛒'),
                             React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#065f46',margin:0}}, 'Shopify 선정 상품'),
-                            React.createElement('span', {style:{fontSize:'0.78rem',color:'#047857',marginLeft:'6px'}}, `WMS에서 선별한 Shopify 런칭 후보 관리`)
+                            React.createElement('span', {style:{fontSize:'0.78rem',color:'#047857',marginLeft:'6px'}}, `WMS에서 선별한 Shopify 런칭 후보 관리`),
+                            // Live FX rate chip (USD→KRW) — feeds price_krw metafield
+                            React.createElement('div', {style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:'6px',padding:'6px 12px',background:'#fff',borderRadius:'20px',border:'1px solid #a7f3d0',fontSize:'0.76rem'}},
+                                React.createElement('span', {style:{fontSize:'0.9rem'}}, '💱'),
+                                spFxInfo ? React.createElement(React.Fragment, null,
+                                    React.createElement('span', {style:{fontWeight:800,color:'#065f46'}}, `1 USD = ${spFxInfo.rate.toFixed(2)} KRW`),
+                                    React.createElement('span', {
+                                        style:{fontSize:'0.66rem',color:'#64748b'},
+                                        title:`${spFxInfo.source} · ${spFxInfo.cached?'cached '+Math.round(spFxInfo.age_seconds)+'s ago':'fresh'} · TTL ${Math.round(spFxInfo.ttl_seconds/60)}min`
+                                    }, `(${spFxInfo.source})`),
+                                    React.createElement('button', {
+                                        onClick:()=>loadFxInfo(true),
+                                        disabled:spFxLoading,
+                                        title:'환율 강제 새로고침',
+                                        style:{marginLeft:'4px',padding:'2px 8px',borderRadius:'10px',border:'1px solid #a7f3d0',background:'#f0fdf4',color:'#065f46',fontSize:'0.66rem',fontWeight:700,cursor:spFxLoading?'default':'pointer'}
+                                    }, spFxLoading ? '…' : '↻')
+                                ) : React.createElement('span', {style:{color:'#94a3b8',fontSize:'0.72rem'}}, spFxLoading ? '환율 조회 중…' : '환율 미조회')
+                            )
                         ),
                         React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:'10px'}},
                             React.createElement('div', {style:{padding:'12px',background:'#fff',borderRadius:'8px',borderLeft:'4px solid #065f46'}},

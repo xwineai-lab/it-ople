@@ -1788,6 +1788,56 @@ from metafield_mapper import (
     OPTIONAL_KEYS as _MF_OPTIONAL_KEYS,
     SKIPPED_KEYS as _MF_SKIPPED_KEYS,
 )
+from fx_service import (
+    get_usd_krw_info as _get_fx_info,
+    set_external_rate as _set_external_fx,
+    clear_cache as _clear_fx_cache,
+)
+
+
+# ── FX Rate API ──────────────────────────────────────────
+# 지속적으로 업데이트되는 USD→KRW 환율 제공.
+# price_krw 메타필드 계산에 사용됨.
+
+@app.get("/api/fx/usd-krw")
+async def get_fx_usd_krw(refresh: bool = False):
+    """Return the current USD→KRW rate with metadata.
+
+    Query params:
+      refresh=true  — bypass cache and fetch fresh from providers
+    """
+    info = _get_fx_info(force_refresh=refresh)
+    return info.to_dict()
+
+
+@app.post("/api/fx/refresh")
+async def refresh_fx_rate():
+    """Force-refresh the FX cache from upstream providers."""
+    info = _get_fx_info(force_refresh=True)
+    return {"status": "ok", "fx": info.to_dict()}
+
+
+@app.post("/api/fx/override")
+async def override_fx_rate(payload: dict):
+    """Manually set the FX rate (e.g. from an external scraper).
+
+    Body: { rate: 1450.25, source: "google-finance-manual" }
+    Useful when you want to pin the rate to Google Finance's value obtained
+    via a headless browser or a manual lookup.
+    """
+    rate = payload.get("rate")
+    if rate is None:
+        raise HTTPException(status_code=400, detail="rate is required")
+    try:
+        rate_f = float(rate)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail=f"Invalid rate: {rate}")
+    if rate_f <= 0:
+        raise HTTPException(status_code=400, detail="rate must be > 0")
+
+    source = payload.get("source") or "manual-override"
+    info = _set_external_fx(rate_f, source=source)
+    return {"status": "ok", "fx": info.to_dict()}
 
 
 def _build_and_assess(sku: str, sp_row, db: Session) -> dict:

@@ -2878,10 +2878,16 @@
             const RestrictedBadge = ({ri,rn}) => ri > 0 ? React.createElement('span', {style:{display:'inline-block',padding:'2px 8px',borderRadius:'4px',fontSize:'0.7rem',fontWeight:600,background:ri===1?'#fee2e2':'#fce7f3',color:ri===1?'#dc2626':'#be185d'}}, rn||`제한${ri}`) : null;
 
             const ImgThumb = ({upc, size=50}) => {
-                const [err, setErr] = useState(false);
-                if (!upc) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}, React.createElement(SvgIcon, {name:'noimg',size:Math.round(size*0.4),color:'#cbd5e1'}));
-                if (err) return React.createElement('div', {style:{width:size,height:size,borderRadius:'4px',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}, React.createElement(SvgIcon, {name:'noimg',size:Math.round(size*0.4),color:'#cbd5e1'}));
-                return React.createElement('img', {src:`https://img.ople.com/ople/item_img/${upc}.jpg`,style:{width:size,height:size,objectFit:'contain',borderRadius:'4px',background:'#f8fafc',flexShrink:0},onError:()=>setErr(true)});
+                const [srcIdx, setSrcIdx] = useState(0);
+                const placeholder = React.createElement('div', {style:{width:size,height:size,borderRadius:'6px',background:'linear-gradient(135deg,#f1f5f9,#e2e8f0)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:'1px solid #e2e8f0'}}, React.createElement(SvgIcon, {name:'image',size:Math.round(size*0.35),color:'#94a3b8'}));
+                if (!upc) return placeholder;
+                const srcs = [
+                    `https://img.ople.com/ople/item_img/${upc}.jpg`,
+                    `https://img.ople.com/ople/wms/${upc}.jpg`,
+                    `https://img.ople.com/ople/item_img/${upc}_S2.jpg`
+                ];
+                if (srcIdx >= srcs.length) return placeholder;
+                return React.createElement('img', {src:srcs[srcIdx],style:{width:size,height:size,objectFit:'contain',borderRadius:'6px',background:'#f8fafc',flexShrink:0,border:'1px solid #f1f5f9'},onError:()=>setSrcIdx(prev=>prev+1)});
             };
 
             const ProductDetail = ({p, onClose}) => {

@@ -2431,13 +2431,28 @@ async def push_selection_to_shopify(
       }
     }
     """
+    # Build ordered media list: front image first, rear image second.
+    # Uses resolve_image_urls which returns [front, rear].
     media_inputs: list[dict] = []
-    image_url = mf.get("image_url")
-    if image_url:
+    try:
+        from metafield_mapper import load_ople_catalog, resolve_image_urls
+        catalog = load_ople_catalog()
+        product_entry = catalog.get(it_id) or {}
+        image_urls = resolve_image_urls(product_entry)
+    except Exception:
+        image_urls = []
+    # Fallback: if catalog lookup failed, use the single image_url metafield
+    if not image_urls:
+        single = mf.get("image_url")
+        if single:
+            image_urls = [single]
+
+    for idx, url in enumerate(image_urls):
+        alt_suffix = "" if idx == 0 else " (후면)"
         media_inputs.append({
-            "originalSource": image_url,
+            "originalSource": url,
             "mediaContentType": "IMAGE",
-            "alt": title[:255] if title else None,
+            "alt": ((title or it_id) + alt_suffix)[:255],
         })
 
     variables = {
@@ -2498,7 +2513,7 @@ async def push_selection_to_shopify(
         "metafields_stored_on_product": returned_mf_count,
         "media_sent": len(media_inputs),
         "media_attached": len(returned_media),
-        "image_source_url": image_url,
+        "image_source_urls": image_urls,
         "readiness": readiness,
     }
 

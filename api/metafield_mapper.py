@@ -132,20 +132,45 @@ def _format_category_name(cats: list) -> Optional[str]:
 # ── Image URL resolver ─────────────────────────────────────
 
 def resolve_image_url(product: dict) -> Optional[str]:
-    """Resolve the canonical OPLE product image URL.
+    """Resolve the primary (front) OPLE product image URL.
 
-    Verified pattern from live OPLE product pages:
-        https://img.ople.com/ople/item_img/{UPC}_R.jpg
-    (The `_R` suffix is the large / representative hero image.)
+    OPLE hosts up to two variants per UPC:
+        https://img.ople.com/ople/item_img/{UPC}.jpg     → 정면 (Front / main)
+        https://img.ople.com/ople/item_img/{UPC}_R.jpg   → 후면 (Rear)
 
-    Previous patterns tried (all 404):
-        https://www.ople.com/data/item/{UPC}/{UPC}.jpg
-        https://img.ople.com/data/item/{prefix}/{it_id}.jpg
+    The `_R` suffix is the back of the package — it's a *secondary* image,
+    not the representative hero. The hero / 메인 image is the suffix-less URL.
+
+    Returned value populates the `image_url` metafield (single string).
+    Use `resolve_image_urls()` for the full [front, rear] list when pushing
+    media to Shopify.
     """
     upc = (product.get("upc") or "").strip()
     if not upc:
         return None
-    return f"https://img.ople.com/ople/item_img/{upc}_R.jpg"
+    return f"https://img.ople.com/ople/item_img/{upc}.jpg"
+
+
+def resolve_image_urls(product: dict) -> list[str]:
+    """Return the ordered list of OPLE product image URLs.
+
+    Order matters: the first URL becomes the Shopify main product image,
+    subsequent URLs become secondary gallery images.
+
+      [0] {UPC}.jpg   — 정면 (Front)
+      [1] {UPC}_R.jpg — 후면 (Rear)
+
+    NOTE: This function does not HEAD-check the URLs — Shopify will silently
+    skip any that 404 at fetch time. If a product has only one variant the
+    other will just fail gracefully on Shopify's side.
+    """
+    upc = (product.get("upc") or "").strip()
+    if not upc:
+        return []
+    return [
+        f"https://img.ople.com/ople/item_img/{upc}.jpg",
+        f"https://img.ople.com/ople/item_img/{upc}_R.jpg",
+    ]
 
 
 # ── Public URL builder ─────────────────────────────────────

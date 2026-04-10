@@ -2188,6 +2188,232 @@ async def delete_shopify_metafield(definition_key: str, delete_values: bool = Tr
     return {"deleted": target["key"], "name": target["name"], "id": target["id"]}
 
 
+# ── Shopify Product Push (create on ople-7502) ───────────
+# OPLE selection 한 건을 실제 Shopify 스토어에 상품으로 생성/업데이트합니다.
+
+def _metafield_types_map() -> dict[str, str]:
+    """key → Shopify metafield type 매핑 (shopify_metafields.py 재사용)."""
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+    from shopify_metafields import METAFIELD_DEFINITIONS
+    return {d["key"]: d["type"] for d in METAFIELD_DEFINITIONS}
+
+
+def _coerce_metafield_value(value, mf_type: str) -> Optional[str]:
+    """Shopify 메타필드는 모두 문자열로 전송됨. 타입에 따라 직렬화."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if mf_type == "json":
+        if isinstance(value, str):
+            return value  # 이미 직렬화된 JSON 문자열
+        return json.dumps(value, ensure_ascii=False)
+    if mf_type in ("number_integer",):
+        try:
+            return str(int(float(value)))
+        except (TypeError, ValueError):
+            return None
+    if mf_type in ("number_decimal",):
+        try:
+            return str(float(value))
+        except (TypeError, ValueError):
+            return None
+    # text / url / boolean handled above
+    s = str(value)
+    return s if s != "" else None
+
+
+def _category_tags_for(db: Session, it_id: str) -> list[str]:
+    """WMS 계층 카테고리 태그 (cat:/sub:/sub2:)."""
+    try:
+        rows = (
+            db.query(Category)
+            .join(ProductCategory, Category.id == ProductCategory.category_id)
+            .filter(ProductCategory.it_id == it_id)
+            .all()
+        )
+    except Exception:
+        return []
+    tags = []
+    for cat in rows:
+        level = getattr(cat, "level", None) or getattr(cat, "depth", None)
+        name = getattr(cat, "name", None) or getattr(cat, "category_name", None)
+        if not name:
+            continue
+        if level == 1:
+            tags.append(f"cat:{name}")
+        elif level == 2:
+            tags.append(f"sub:{name}")
+        elif level == 3:
+            tags.append(f"sub2:{name}")
+        else:
+            tags.append(str(name))
+    return tags
+
+
+@app.post("/api/shopify/selections/{it_id}/push")
+async def push_selection_to_shopify(
+    it_id: str,
+    force: bool = False,
+    db: Session = Depends(get_db),
+):
+    """선정된 상품(ShopifyProduct)을 실제 Shopify 스토어에 productCreate.
+
+    Query params:
+      force=true — readiness 가 false여도 강제로 푸시 (누락 필드는 건너뜀)
+
+    Workflow:
+      1. ShopifyProduct row 조회
+      2. _build_metafields + _assess_readiness 로 준비도 확인
+      3. ready=false 이고 force=false 면 400
+      4. status="syncing" 으로 전환
+      5. productCreate mutation (title, descriptionHtml, vendor, tags,
+         status=DRAFT, metafields=[...])
+      6. 성공 시 shopify_product_id/handle 기록, status="synced"
+      7. 실패 시 sync_error 기록, status="failed"
+    """
+    sp = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
+    if not sp:
+        raise HTTPException(status_code=404, detail=f"Selection not found: {it_id}")
+
+    # 이미 푸시된 경우 재푸시 방지 (force 로 우회 가능)
+    if sp.shopify_product_id and not force:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "Already pushed to Shopify",
+                "shopify_product_id": sp.shopify_product_id,
+                "hint": "Use force=true to re-push (creates a new product)",
+            },
+        )
+
+    mf = _build_metafields(it_id, sp_row=sp, db=db)
+    readiness = _assess_readiness(mf)
+
+    if not readiness.get("ready") and not force:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Selection not ready",
+                "missing_required": readiness.get("missing_required", []),
+                "hint": "Use force=true to push anyway (missing fields skipped)",
+            },
+        )
+
+    # ── Build Shopify ProductInput ────────────────────────
+    title = sp.custom_title or mf.get("name_ko") or mf.get("name_en") or it_id
+    description = sp.custom_description or mf.get("description_html") or ""
+    vendor = mf.get("brand_name_ko") or mf.get("brand_code") or ""
+
+    tags = _category_tags_for(db, it_id)
+    if sp.custom_tags:
+        try:
+            extra = json.loads(sp.custom_tags) if isinstance(sp.custom_tags, str) else sp.custom_tags
+            if isinstance(extra, list):
+                tags.extend(str(t) for t in extra if t)
+        except Exception:
+            pass
+    # Always add OPLE identifier tags
+    tags.append(f"ople_sku:{it_id}")
+    # Dedup preserving order
+    seen = set()
+    tags = [t for t in tags if not (t in seen or seen.add(t))]
+
+    mf_types = _metafield_types_map()
+    mf_inputs: list[dict] = []
+    for key, mtype in mf_types.items():
+        if key not in mf:
+            continue
+        coerced = _coerce_metafield_value(mf.get(key), mtype)
+        if coerced is None:
+            continue
+        mf_inputs.append({
+            "namespace": "custom",
+            "key": key,
+            "type": mtype,
+            "value": coerced,
+        })
+
+    # ── Mark syncing ──────────────────────────────────────
+    sp.status = "syncing"
+    sp.sync_error = None
+    db.commit()
+
+    mutation = """
+    mutation ProductCreate($input: ProductInput!) {
+      productCreate(input: $input) {
+        product {
+          id
+          handle
+          status
+          title
+          vendor
+          tags
+          metafields(first: 30) {
+            edges { node { namespace key type value } }
+          }
+        }
+        userErrors { field message }
+      }
+    }
+    """
+    variables = {
+        "input": {
+            "title": title,
+            "descriptionHtml": description,
+            "vendor": vendor,
+            "tags": tags,
+            "status": "DRAFT",
+            "metafields": mf_inputs,
+        }
+    }
+
+    try:
+        resp = await _shopify_graphql(mutation, variables)
+    except Exception as e:
+        sp.status = "failed"
+        sp.sync_error = f"GraphQL request failed: {e}"
+        db.commit()
+        raise HTTPException(status_code=502, detail=sp.sync_error)
+
+    data = (resp.get("data") or {}).get("productCreate") or {}
+    errors = data.get("userErrors") or []
+    product = data.get("product") or {}
+
+    if errors or not product:
+        err_msg = "; ".join(e.get("message", "") for e in errors) or "Unknown productCreate error"
+        sp.status = "failed"
+        sp.sync_error = err_msg
+        db.commit()
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "productCreate failed", "userErrors": errors, "response": resp},
+        )
+
+    sp.shopify_product_id = product.get("id")
+    sp.shopify_handle = product.get("handle")
+    sp.shopify_status = (product.get("status") or "").lower() or None
+    sp.last_synced_at = datetime.utcnow()
+    sp.status = "synced"
+    sp.sync_error = None
+    db.commit()
+
+    returned_mf_count = len((product.get("metafields") or {}).get("edges", []))
+    return {
+        "status": "ok",
+        "it_id": it_id,
+        "shopify_product_id": sp.shopify_product_id,
+        "shopify_handle": sp.shopify_handle,
+        "admin_url": f"https://admin.shopify.com/store/ople-7502/products/{(sp.shopify_product_id or '').rsplit('/', 1)[-1]}",
+        "title": product.get("title"),
+        "vendor": product.get("vendor"),
+        "tags": product.get("tags"),
+        "metafields_sent": len(mf_inputs),
+        "metafields_stored_on_product": returned_mf_count,
+        "readiness": readiness,
+    }
+
+
 # ── Shopify OAuth install flow (opleaep app) ─────────────
 
 def _verify_shopify_hmac(query_params: dict, secret: str) -> bool:

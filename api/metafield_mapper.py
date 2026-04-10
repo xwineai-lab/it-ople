@@ -19,8 +19,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # ── Runtime caches ─────────────────────────────────────────
 _catalog_cache: Optional[dict] = None   # {parent_sku: product_dict}
@@ -37,8 +38,71 @@ def _data_path(name: str) -> Path:
     return _DATA_DIR / name
 
 
+# ── Source-data sanitization ───────────────────────────────
+#
+# wms_active.json was produced by an upstream Excel → JSON ETL that
+# preserved the Office Open XML `_x000D_` escape sequence (= U+000D carriage
+# return) as a *literal* 7-char string inside the product names. Roughly 68%
+# of rows carry this artifact on the `kn` (Korean name) field. The _xHHHH_
+# form is standardized in ECMA-376 / ISO 29500 for any character that can't
+# appear directly inside XML text, so we defensively strip the whole family
+# of escapes, not just `_x000D_`.
+#
+# Reference: Excel writes `_x{hex}_` for any control character it needs to
+# round-trip; well-behaved readers should decode them back. Some exporters
+# (notably older openpyxl paths and hand-rolled XML-to-CSV scripts) skip the
+# decode step and the literal escape leaks into downstream data.
+
+# Matches the whole _xHHHH_ escape family (case-insensitive hex).
+_XML_ESCAPE_RE = re.compile(r"_x([0-9A-Fa-f]{4})_")
+
+
+def _sanitize_str(value: str) -> str:
+    """Strip Excel-XML `_xHHHH_` artifacts + stray control characters.
+
+    What this cleans:
+      - `_x000D_` / `_x000A_` / `_x0009_` etc.  → removed (these are the
+        Excel-XML escapes for CR / LF / TAB that leaked through as literal
+        text because the upstream exporter did not decode them)
+      - Real `\r` characters                    → removed
+      - Leading / trailing whitespace            → stripped
+
+    What this *preserves*:
+      - Real `\n` line breaks inside the string  (intentional formatting)
+      - Real `\t` tabs                            (intentional formatting)
+      - Everything else
+
+    Safe to call on non-string inputs — they are returned unchanged.
+    """
+    if not isinstance(value, str):
+        return value
+    # Drop every _xHHHH_ Excel escape — not just _x000D_ — so we catch any
+    # future control-char leak without another round of patches.
+    cleaned = _XML_ESCAPE_RE.sub("", value)
+    # Real CRs that sneaked in for other reasons.
+    cleaned = cleaned.replace("\r", "")
+    return cleaned.strip()
+
+
+def _sanitize_deep(obj: Any) -> Any:
+    """Recursively apply `_sanitize_str` to every string inside a dict/list."""
+    if isinstance(obj, str):
+        return _sanitize_str(obj)
+    if isinstance(obj, dict):
+        return {k: _sanitize_deep(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_deep(v) for v in obj]
+    return obj
+
+
 def load_ople_catalog() -> dict:
-    """Lazy-load wms_active.json → {parent_sku: product}."""
+    """Lazy-load wms_active.json → {parent_sku: product}.
+
+    Applies `_sanitize_deep` to every product on load so that downstream code
+    (metafield builder, Shopify push, dashboard UI, …) only ever sees clean
+    strings. One source-of-truth sanitization beats plastering `.replace()`
+    calls across every consumer.
+    """
     global _catalog_cache
     if _catalog_cache is not None:
         return _catalog_cache
@@ -55,13 +119,21 @@ def load_ople_catalog() -> dict:
     for p in products:
         sku = p.get("sku")
         if sku:
-            catalog[sku] = p
+            # Sanitize after lookup so the SKU key itself isn't touched —
+            # SKUs are already known clean and we don't want to risk any
+            # whitespace-strip edge case breaking keyed lookups.
+            catalog[sku] = _sanitize_deep(p)
     _catalog_cache = catalog
     return catalog
 
 
 def load_ople_desc() -> dict:
-    """Lazy-load wms_desc.json → {parent_sku: html_string}."""
+    """Lazy-load wms_desc.json → {parent_sku: html_string}.
+
+    Also sanitized, though wms_desc.json has not been observed to contain
+    `_x000D_` — applying the same cleaner defensively in case the exporter
+    changes or a future reload introduces it.
+    """
     global _desc_cache
     if _desc_cache is not None:
         return _desc_cache
@@ -72,7 +144,9 @@ def load_ople_desc() -> dict:
         return _desc_cache
 
     with open(path, "r", encoding="utf-8") as f:
-        _desc_cache = json.load(f)
+        raw = json.load(f)
+
+    _desc_cache = {k: _sanitize_str(v) if isinstance(v, str) else v for k, v in raw.items()}
     return _desc_cache
 
 

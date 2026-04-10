@@ -1342,6 +1342,21 @@ async def import_categories_csv(db: Session = Depends(get_db)):
         db.commit()
     stats['mappings_created'] = len(new_pcs)
 
+    # Verify data was actually persisted
+    verify_cats = db.query(Category).count()
+    verify_pcs = db.query(ProductCategory).count()
+    stats['verify_categories_in_db'] = verify_cats
+    stats['verify_mappings_in_db'] = verify_pcs
+
+    # If verification shows 0, try with a fresh session
+    if verify_cats == 0:
+        from database import SessionLocal as _SL
+        _db2 = _SL()
+        stats['verify_fresh_session_cats'] = _db2.query(Category).count()
+        stats['verify_fresh_session_pcs'] = _db2.query(ProductCategory).count()
+        stats['db_url'] = str(db.bind.url) if hasattr(db, 'bind') and db.bind else 'unknown'
+        _db2.close()
+
     return {"status": "ok", "stats": stats}
 
 

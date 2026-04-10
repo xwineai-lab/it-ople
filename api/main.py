@@ -20,7 +20,7 @@ from sqlalchemy import func, desc, case
 import httpx
 from jose import jwt, JWTError
 
-from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob, User, SessionLocal
+from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob, User, SessionLocal, ShopifyProduct
 
 # Add scraper module to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scraper"))
@@ -1520,6 +1520,260 @@ async def product_categories(it_id: str, db: Session = Depends(get_db)):
         "categories": categories,
         "shopify_tags": sorted(shopify_tags)
     }
+
+
+# ── Category-based product lookup (for rule-based selection) ─────────────
+
+@app.get("/api/categories/products")
+async def products_in_category(
+    level1: Optional[str] = None,
+    level2: Optional[str] = None,
+    level3: Optional[str] = None,
+    category_id: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Return list of OPLE it_ids that belong to matching categories.
+    Used for rule-based Shopify selection."""
+    q = db.query(Category.category_id)
+    if category_id:
+        q = q.filter(Category.category_id == category_id)
+    if level1:
+        q = q.filter(Category.level1 == level1)
+    if level2:
+        q = q.filter(Category.level2 == level2)
+    if level3:
+        q = q.filter(Category.level3 == level3)
+
+    cat_ids = [row[0] for row in q.all()]
+    if not cat_ids:
+        return {"it_ids": [], "count": 0, "category_count": 0}
+
+    pcs = db.query(ProductCategory.it_id).filter(
+        ProductCategory.category_id.in_(cat_ids)
+    ).distinct().all()
+    it_ids = [row[0] for row in pcs]
+
+    return {
+        "it_ids": it_ids,
+        "count": len(it_ids),
+        "category_count": len(cat_ids),
+    }
+
+
+# ── Shopify Product Selection API ────────────────────────
+# 전체 WMS 상품 중 Shopify에 등록할 상품만 선정/관리
+
+VALID_STATUSES = {"candidate", "approved", "syncing", "synced", "failed", "archived"}
+
+
+def _sp_to_dict(sp: "ShopifyProduct") -> dict:
+    import json as _json
+    return {
+        "id": sp.id,
+        "it_id": sp.it_id,
+        "status": sp.status,
+        "wave": sp.wave,
+        "priority": sp.priority,
+        "shopify_product_id": sp.shopify_product_id,
+        "shopify_handle": sp.shopify_handle,
+        "shopify_status": sp.shopify_status,
+        "last_synced_at": sp.last_synced_at.isoformat() if sp.last_synced_at else None,
+        "sync_error": sp.sync_error,
+        "selected_by": sp.selected_by,
+        "selected_at": sp.selected_at.isoformat() if sp.selected_at else None,
+        "notes": sp.notes,
+        "custom_title": sp.custom_title,
+        "custom_description": sp.custom_description,
+        "custom_tags": _json.loads(sp.custom_tags) if sp.custom_tags else [],
+        "custom_price_usd": sp.custom_price_usd,
+        "custom_compare_at_price": sp.custom_compare_at_price,
+        "created_at": sp.created_at.isoformat() if sp.created_at else None,
+        "updated_at": sp.updated_at.isoformat() if sp.updated_at else None,
+    }
+
+
+@app.post("/api/shopify/selections")
+async def add_shopify_selections(payload: dict, db: Session = Depends(get_db)):
+    """Bulk add products to Shopify selection.
+    Body: {
+        it_ids: ["3M-P022334", ...],
+        status: "candidate" (optional, default candidate),
+        wave: "1차-런칭" (optional),
+        notes: "..." (optional),
+        priority: 0 (optional)
+    }
+    Idempotent: existing it_ids are updated with new wave/notes but keep shopify sync state.
+    """
+    it_ids = payload.get("it_ids") or []
+    if not isinstance(it_ids, list) or not it_ids:
+        raise HTTPException(status_code=400, detail="it_ids list is required")
+
+    status = payload.get("status", "candidate")
+    if status not in VALID_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of {VALID_STATUSES}")
+
+    wave = payload.get("wave")
+    notes = payload.get("notes")
+    priority = payload.get("priority", 0)
+
+    # Fetch existing
+    existing_rows = db.query(ShopifyProduct).filter(ShopifyProduct.it_id.in_(it_ids)).all()
+    existing_map = {sp.it_id: sp for sp in existing_rows}
+
+    added = 0
+    updated = 0
+    for it_id in it_ids:
+        if not it_id:
+            continue
+        if it_id in existing_map:
+            sp = existing_map[it_id]
+            # Only update metadata, not sync state
+            if wave is not None:
+                sp.wave = wave
+            if notes is not None:
+                sp.notes = notes
+            if priority:
+                sp.priority = priority
+            # Status: only upgrade candidate→approved, never regress
+            if status == "approved" and sp.status == "candidate":
+                sp.status = "approved"
+            updated += 1
+        else:
+            sp = ShopifyProduct(
+                it_id=it_id,
+                status=status,
+                wave=wave,
+                priority=priority,
+                notes=notes,
+                selected_at=datetime.utcnow(),
+            )
+            db.add(sp)
+            added += 1
+
+    db.commit()
+    return {"status": "ok", "added": added, "updated": updated, "total_requested": len(it_ids)}
+
+
+@app.get("/api/shopify/selections")
+async def list_shopify_selections(
+    status: Optional[str] = None,
+    wave: Optional[str] = None,
+    limit: int = 500,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    """List Shopify-selected products with optional filters."""
+    q = db.query(ShopifyProduct)
+    if status:
+        q = q.filter(ShopifyProduct.status == status)
+    if wave:
+        q = q.filter(ShopifyProduct.wave == wave)
+
+    total = q.count()
+    rows = q.order_by(desc(ShopifyProduct.priority), desc(ShopifyProduct.selected_at)) \
+            .offset(offset).limit(limit).all()
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "selections": [_sp_to_dict(sp) for sp in rows]
+    }
+
+
+@app.get("/api/shopify/selections/stats")
+async def shopify_selections_stats(db: Session = Depends(get_db)):
+    """Stats dashboard: counts by status and wave."""
+    status_counts = dict(
+        db.query(ShopifyProduct.status, func.count(ShopifyProduct.id))
+          .group_by(ShopifyProduct.status).all()
+    )
+    wave_counts = dict(
+        db.query(ShopifyProduct.wave, func.count(ShopifyProduct.id))
+          .filter(ShopifyProduct.wave.isnot(None))
+          .group_by(ShopifyProduct.wave).all()
+    )
+    total = db.query(ShopifyProduct).count()
+    synced = db.query(ShopifyProduct).filter(ShopifyProduct.status == "synced").count()
+    failed = db.query(ShopifyProduct).filter(ShopifyProduct.status == "failed").count()
+
+    return {
+        "total": total,
+        "synced": synced,
+        "failed": failed,
+        "sync_success_rate": round(synced / max(synced + failed, 1) * 100, 1),
+        "by_status": {s: status_counts.get(s, 0) for s in VALID_STATUSES},
+        "by_wave": wave_counts,
+    }
+
+
+@app.patch("/api/shopify/selections/{it_id}")
+async def update_shopify_selection(it_id: str, payload: dict, db: Session = Depends(get_db)):
+    """Update status / wave / notes / overrides for a single selection."""
+    import json as _json
+
+    sp = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
+    if not sp:
+        raise HTTPException(status_code=404, detail=f"Selection not found: {it_id}")
+
+    allowed_fields = {
+        "status", "wave", "priority", "notes",
+        "custom_title", "custom_description", "custom_tags",
+        "custom_price_usd", "custom_compare_at_price",
+    }
+    for key, val in payload.items():
+        if key not in allowed_fields:
+            continue
+        if key == "status" and val not in VALID_STATUSES:
+            raise HTTPException(status_code=400, detail=f"Invalid status: {val}")
+        if key == "custom_tags" and isinstance(val, list):
+            val = _json.dumps(val, ensure_ascii=False)
+        setattr(sp, key, val)
+
+    db.commit()
+    db.refresh(sp)
+    return {"status": "ok", "selection": _sp_to_dict(sp)}
+
+
+@app.delete("/api/shopify/selections/{it_id}")
+async def delete_shopify_selection(it_id: str, db: Session = Depends(get_db)):
+    """Remove a product from Shopify selection (hard delete)."""
+    sp = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
+    if not sp:
+        raise HTTPException(status_code=404, detail=f"Selection not found: {it_id}")
+
+    db.delete(sp)
+    db.commit()
+    return {"status": "ok", "deleted": it_id}
+
+
+@app.post("/api/shopify/selections/bulk-update")
+async def bulk_update_shopify_selections(payload: dict, db: Session = Depends(get_db)):
+    """Bulk update status/wave for multiple it_ids.
+    Body: { it_ids: [...], status: "...", wave: "..." }
+    """
+    it_ids = payload.get("it_ids") or []
+    if not isinstance(it_ids, list) or not it_ids:
+        raise HTTPException(status_code=400, detail="it_ids list is required")
+
+    update_dict = {}
+    if "status" in payload:
+        if payload["status"] not in VALID_STATUSES:
+            raise HTTPException(status_code=400, detail=f"Invalid status: {payload['status']}")
+        update_dict["status"] = payload["status"]
+    if "wave" in payload:
+        update_dict["wave"] = payload["wave"]
+    if "priority" in payload:
+        update_dict["priority"] = payload["priority"]
+
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="At least one field (status/wave/priority) is required")
+
+    count = db.query(ShopifyProduct).filter(ShopifyProduct.it_id.in_(it_ids)).update(
+        update_dict, synchronize_session=False
+    )
+    db.commit()
+    return {"status": "ok", "updated": count}
 
 
 # ── Shopify Metafield API ────────────────────────────────

@@ -2810,6 +2810,7 @@
             const tabs = [
                 {id:'overview',label:'개요',icon:'chart'},
                 {id:'productList',label:'상품 목록',icon:'list'},
+                {id:'shopifySel',label:'Shopify 선정',icon:'cart'},
                 {id:'wms',label:'WMS 상품',icon:'box'},
                 {id:'ople',label:'오플닷컴',icon:'cart'},
                 {id:'mapping',label:'매핑 코드',icon:'link'},
@@ -2828,7 +2829,47 @@
             const [plSelected, setPlSelected] = useState(null);
             const [plInactive, setPlInactive] = useState([]);
             const [plInactiveLoaded, setPlInactiveLoaded] = useState(false);
+            // Shopify selection state
+            const [plChecked, setPlChecked] = useState(new Set());  // set of SKUs
+            const [showSelectModal, setShowSelectModal] = useState(false);
+            const [showRuleModal, setShowRuleModal] = useState(false);
+            const [spSelectedSet, setSpSelectedSet] = useState(new Set()); // existing Shopify selections (SKUs)
+            const [spStatsData, setSpStatsData] = useState(null);
+            // Select modal form
+            const [selWave, setSelWave] = useState('1차-런칭');
+            const [selStatus, setSelStatus] = useState('candidate');
+            const [selNotes, setSelNotes] = useState('');
+            const [selSubmitting, setSelSubmitting] = useState(false);
+            // Rule modal state
+            const [ruleTree, setRuleTree] = useState([]);       // category tree
+            const [ruleL1, setRuleL1] = useState('');
+            const [ruleL2, setRuleL2] = useState('');
+            const [ruleL3, setRuleL3] = useState('');
+            const [ruleMinQty, setRuleMinQty] = useState(1);
+            const [ruleBrand, setRuleBrand] = useState('');
+            const [ruleOnlySelling, setRuleOnlySelling] = useState(true);
+            const [rulePreviewCount, setRulePreviewCount] = useState(null);
+            const [rulePreviewList, setRulePreviewList] = useState([]);
+            const [rulePreviewLoading, setRulePreviewLoading] = useState(false);
+            const [ruleWave, setRuleWave] = useState('1차-런칭');
+            const [ruleStatus, setRuleStatus] = useState('candidate');
             const PER_PAGE = 30;
+
+            // Load existing Shopify selections into a Set for quick lookup
+            const refreshSpSelections = async () => {
+                try {
+                    const r = await fetch('/api/shopify/selections?limit=5000');
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    const s = new Set();
+                    (d.selections || []).forEach(sp => s.add(sp.it_id));
+                    setSpSelectedSet(s);
+                } catch(e) {}
+                try {
+                    const r2 = await fetch('/api/shopify/selections/stats');
+                    if (r2.ok) setSpStatsData(await r2.json());
+                } catch(e) {}
+            };
 
             const loadProducts = async () => {
                 if (plLoaded) return;
@@ -2853,7 +2894,8 @@
                 setPlLoading(false);
             };
 
-            useEffect(() => { if (activeSection === 'productList' && !plLoaded) loadProducts(); }, [activeSection]);
+            useEffect(() => { if ((activeSection === 'productList' || activeSection === 'shopifySel') && !plLoaded) loadProducts(); }, [activeSection]);
+            useEffect(() => { if (activeSection === 'productList' || activeSection === 'shopifySel') refreshSpSelections(); }, [activeSection]);
 
             const allPl = plFilter === 'selling' ? plProducts : plFilter === 'discontinued' ? plInactive : [...plProducts, ...plInactive];
             const filteredPl = allPl.filter(p => {
@@ -3117,19 +3159,47 @@
                         ),
                         React.createElement('input', {type:'text',placeholder:'SKU, 상품명, UPC 검색...',value:plSearch,onChange:e=>{setPlSearch(e.target.value);setPlPage(1);},style:{padding:'8px 14px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'0.84rem',width:'280px'}})
                     ),
-                    React.createElement('div', {style:{fontSize:'0.82rem',color:'#64748b',fontWeight:500}}, `총 ${filteredPl.length.toLocaleString()}개 상품 (${plPage}/${totalPages||1} 페이지)`),
+                    React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'12px',flexWrap:'wrap'}},
+                        React.createElement('div', {style:{fontSize:'0.82rem',color:'#64748b',fontWeight:500}}, `총 ${filteredPl.length.toLocaleString()}개 상품 (${plPage}/${totalPages||1} 페이지)`),
+                        React.createElement('div', {style:{flex:1}}),
+                        // Shopify selection toolbar
+                        plChecked.size > 0 && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'8px',padding:'6px 12px',background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:'8px'}},
+                            React.createElement('span', {style:{fontSize:'0.8rem',fontWeight:600,color:'#0369a1'}}, `${plChecked.size}개 체크됨`),
+                            React.createElement('button', {onClick:()=>setPlChecked(new Set()),style:{padding:'4px 10px',borderRadius:'5px',border:'1px solid #bae6fd',background:'#fff',color:'#0369a1',fontSize:'0.72rem',cursor:'pointer'}}, '해제'),
+                            React.createElement('button', {onClick:()=>setShowSelectModal(true),style:{padding:'5px 14px',borderRadius:'5px',border:'none',background:'#0369a1',color:'#fff',fontSize:'0.75rem',fontWeight:700,cursor:'pointer'}}, `🛒 Shopify 후보 추가 (${plChecked.size})`)
+                        ),
+                        React.createElement('button', {onClick:()=>{setShowRuleModal(true);refreshSpSelections();},style:{padding:'6px 14px',borderRadius:'6px',border:'1px solid #6DAB3C',background:'#f0f7ec',color:'#4a7a2a',fontSize:'0.78rem',fontWeight:600,cursor:'pointer'}}, '⚡ 룰 기반 선정')
+                    ),
                     // Product list table
                     React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',overflow:'hidden'}},
                         React.createElement('table', {style:{width:'100%',borderCollapse:'collapse'}},
                             React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc',borderBottom:'2px solid #e2e8f0'}},
-                                ['','IMG','SKU Info','Product Name','Safe/Max/InBox','Qty','Purchase Price','Status',''].map((h,i) => {
-                                    const w = [30,60,null,null,120,70,110,110,70][i];
-                                    const align = i<=3?'left':'center';
-                                    return React.createElement('th', {key:i,style:{padding:'10px 12px',textAlign:align,fontSize:'0.7rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:w?w+'px':undefined,whiteSpace:'nowrap'}}, h);
-                                })
+                                [
+                                    React.createElement('th', {key:'chk',style:{padding:'10px 6px',textAlign:'center',width:'36px'}},
+                                        React.createElement('input', {type:'checkbox',checked:pagePl.length>0&&pagePl.every(p=>plChecked.has(p.sku)),onChange:e=>{
+                                            const ns = new Set(plChecked);
+                                            if(e.target.checked) pagePl.forEach(p=>ns.add(p.sku));
+                                            else pagePl.forEach(p=>ns.delete(p.sku));
+                                            setPlChecked(ns);
+                                        },style:{cursor:'pointer'}})
+                                    ),
+                                    ...['','IMG','SKU Info','Product Name','Safe/Max/InBox','Qty','Purchase Price','Status',''].map((h,i) => {
+                                        const w = [30,60,null,null,120,70,110,110,70][i];
+                                        const align = i<=3?'left':'center';
+                                        return React.createElement('th', {key:i,style:{padding:'10px 12px',textAlign:align,fontSize:'0.7rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:w?w+'px':undefined,whiteSpace:'nowrap'}}, h);
+                                    })
+                                ]
                             )),
                             React.createElement('tbody', null, pagePl.map((p,i) =>
-                                React.createElement('tr', {key:p.id,style:{borderBottom:'1px solid #f1f5f9',transition:'background 0.1s'},onMouseEnter:e=>e.currentTarget.style.background='#fafbfc',onMouseLeave:e=>e.currentTarget.style.background='transparent'},
+                                React.createElement('tr', {key:p.id,style:{borderBottom:'1px solid #f1f5f9',background:plChecked.has(p.sku)?'#eff6ff':'transparent',transition:'background 0.1s'},onMouseEnter:e=>{if(!plChecked.has(p.sku))e.currentTarget.style.background='#fafbfc'},onMouseLeave:e=>{if(!plChecked.has(p.sku))e.currentTarget.style.background='transparent'}},
+                                    React.createElement('td', {style:{padding:'8px 6px',textAlign:'center'}},
+                                        React.createElement('input', {type:'checkbox',checked:plChecked.has(p.sku),onChange:e=>{
+                                            const ns = new Set(plChecked);
+                                            if(e.target.checked) ns.add(p.sku); else ns.delete(p.sku);
+                                            setPlChecked(ns);
+                                        },style:{cursor:'pointer'}}),
+                                        spSelectedSet.has(p.sku) && React.createElement('div', {style:{fontSize:'0.55rem',color:'#0369a1',fontWeight:700,marginTop:'2px'}}, '선정됨')
+                                    ),
                                     React.createElement('td', {style:{padding:'8px 4px 8px 10px',fontSize:'0.72rem',color:'#94a3b8',textAlign:'center'}}, (plPage-1)*PER_PAGE+i+1),
                                     React.createElement('td', {style:{padding:'8px 6px'}}, React.createElement(ImgThumb, {upc:p.upc,size:44,isFood:p.fd})),
                                     React.createElement('td', {style:{padding:'8px 10px'}},
@@ -3180,7 +3250,504 @@
                         }),
                         React.createElement('button', {onClick:()=>setPlPage(Math.min(totalPages,plPage+1)),disabled:plPage>=totalPages,style:{padding:'8px 14px',borderRadius:'6px',border:'1px solid #e2e8f0',background:'#fff',color:plPage>=totalPages?'#cbd5e1':'#475569',cursor:plPage>=totalPages?'default':'pointer',fontSize:'0.82rem'}}, '다음 →')
                     ),
-                    plSelected && React.createElement(ProductDetail, {p:plSelected,onClose:()=>setPlSelected(null)})
+                    plSelected && React.createElement(ProductDetail, {p:plSelected,onClose:()=>setPlSelected(null)}),
+                    // ── Selection confirmation modal ──
+                    showSelectModal && React.createElement('div', {
+                        style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:'20px'},
+                        onClick:()=>!selSubmitting&&setShowSelectModal(false)
+                    },
+                        React.createElement('div', {
+                            onClick:e=>e.stopPropagation(),
+                            style:{background:'#fff',borderRadius:'14px',padding:'28px',width:'100%',maxWidth:'480px',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}
+                        },
+                            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'6px'}},
+                                React.createElement('span', {style:{fontSize:'1.4rem'}}, '🛒'),
+                                React.createElement('h3', {style:{fontSize:'1.15rem',fontWeight:800,color:'#0f172a',margin:0}}, 'Shopify 후보 추가')
+                            ),
+                            React.createElement('p', {style:{fontSize:'0.82rem',color:'#64748b',marginTop:'4px',marginBottom:'20px'}}, `${plChecked.size}개 상품을 Shopify 선정 목록에 추가합니다.`),
+                            // Wave input
+                            React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '웨이브 (런칭 그룹)'),
+                            React.createElement('div', {style:{display:'flex',gap:'6px',marginBottom:'16px',flexWrap:'wrap'}},
+                                ['1차-런칭','2차','Japan','테스트'].map(w =>
+                                    React.createElement('button', {
+                                        key:w,onClick:()=>setSelWave(w),
+                                        style:{padding:'6px 12px',borderRadius:'6px',border:selWave===w?'2px solid #6DAB3C':'1px solid #e2e8f0',background:selWave===w?'#f0f7ec':'#fff',color:selWave===w?'#4a7a2a':'#64748b',fontSize:'0.78rem',fontWeight:600,cursor:'pointer'}
+                                    }, w)
+                                ),
+                                React.createElement('input', {
+                                    type:'text',placeholder:'직접 입력...',value:selWave,
+                                    onChange:e=>setSelWave(e.target.value),
+                                    style:{padding:'6px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.78rem',flex:'1 0 140px',minWidth:'140px'}
+                                })
+                            ),
+                            // Status
+                            React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '상태'),
+                            React.createElement('div', {style:{display:'flex',gap:'6px',marginBottom:'16px'}},
+                                [{k:'candidate',t:'후보 (Candidate)',c:'#f59e0b'},{k:'approved',t:'승인 (Approved)',c:'#10b981'}].map(s =>
+                                    React.createElement('button', {
+                                        key:s.k,onClick:()=>setSelStatus(s.k),
+                                        style:{flex:1,padding:'10px',borderRadius:'6px',border:selStatus===s.k?`2px solid ${s.c}`:'1px solid #e2e8f0',background:selStatus===s.k?s.c+'15':'#fff',color:selStatus===s.k?s.c:'#64748b',fontSize:'0.8rem',fontWeight:700,cursor:'pointer'}
+                                    }, s.t)
+                                )
+                            ),
+                            // Notes
+                            React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '메모 (선택)'),
+                            React.createElement('textarea', {
+                                value:selNotes,onChange:e=>setSelNotes(e.target.value),
+                                placeholder:'예: 베스트셀러 우선 런칭, 시즌 상품 등...',
+                                style:{width:'100%',padding:'10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',resize:'vertical',minHeight:'60px',fontFamily:'inherit',marginBottom:'20px',boxSizing:'border-box'}
+                            }),
+                            // Actions
+                            React.createElement('div', {style:{display:'flex',gap:'10px',justifyContent:'flex-end'}},
+                                React.createElement('button', {
+                                    onClick:()=>setShowSelectModal(false),disabled:selSubmitting,
+                                    style:{padding:'9px 18px',borderRadius:'7px',border:'1px solid #e2e8f0',background:'#fff',color:'#64748b',fontSize:'0.85rem',fontWeight:600,cursor:selSubmitting?'default':'pointer'}
+                                }, '취소'),
+                                React.createElement('button', {
+                                    disabled:selSubmitting||plChecked.size===0,
+                                    onClick:async()=>{
+                                        setSelSubmitting(true);
+                                        try {
+                                            const res = await fetch('/api/shopify/selections', {
+                                                method:'POST',headers:{'Content-Type':'application/json'},
+                                                body: JSON.stringify({
+                                                    it_ids: Array.from(plChecked),
+                                                    wave: selWave, status: selStatus, notes: selNotes
+                                                })
+                                            });
+                                            if (!res.ok) { alert('선정 실패: ' + res.status); setSelSubmitting(false); return; }
+                                            const d = await res.json();
+                                            alert(`✅ 선정 완료\n신규: ${d.created||0}개\n업데이트: ${d.updated||0}개`);
+                                            setPlChecked(new Set());
+                                            setSelNotes('');
+                                            setShowSelectModal(false);
+                                            await refreshSpSelections();
+                                        } catch(e) { alert('오류: ' + e.message); }
+                                        setSelSubmitting(false);
+                                    },
+                                    style:{padding:'9px 20px',borderRadius:'7px',border:'none',background:'#0369a1',color:'#fff',fontSize:'0.85rem',fontWeight:700,cursor:selSubmitting?'default':'pointer',opacity:selSubmitting?0.6:1}
+                                }, selSubmitting?'처리 중...':`선정 확정 (${plChecked.size})`)
+                            )
+                        )
+                    ),
+                    // ── Rule-based selection modal ──
+                    showRuleModal && React.createElement('div', {
+                        style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:'20px',overflowY:'auto'},
+                        onClick:()=>setShowRuleModal(false)
+                    },
+                        React.createElement('div', {
+                            onClick:e=>e.stopPropagation(),
+                            style:{background:'#fff',borderRadius:'14px',padding:'28px',width:'100%',maxWidth:'680px',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}
+                        },
+                            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'6px'}},
+                                React.createElement('span', {style:{fontSize:'1.4rem'}}, '⚡'),
+                                React.createElement('h3', {style:{fontSize:'1.15rem',fontWeight:800,color:'#0f172a',margin:0}}, '룰 기반 선정')
+                            ),
+                            React.createElement('p', {style:{fontSize:'0.82rem',color:'#64748b',marginTop:'4px',marginBottom:'20px'}}, '카테고리와 재고 조건을 조합해서 한 번에 상품을 Shopify 후보로 등록합니다.'),
+                            // Category selectors
+                            React.createElement('div', {style:{marginBottom:'16px'}},
+                                React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '카테고리'),
+                                React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'8px'}},
+                                    React.createElement('input', {type:'text',placeholder:'Level 1 (대상별, 효능별...)',value:ruleL1,onChange:e=>{setRuleL1(e.target.value);setRulePreviewCount(null);},style:{padding:'8px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.78rem'}}),
+                                    React.createElement('input', {type:'text',placeholder:'Level 2',value:ruleL2,onChange:e=>{setRuleL2(e.target.value);setRulePreviewCount(null);},style:{padding:'8px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.78rem'}}),
+                                    React.createElement('input', {type:'text',placeholder:'Level 3',value:ruleL3,onChange:e=>{setRuleL3(e.target.value);setRulePreviewCount(null);},style:{padding:'8px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.78rem'}})
+                                ),
+                                React.createElement('p', {style:{fontSize:'0.7rem',color:'#94a3b8',marginTop:'6px',marginBottom:0}}, '※ 예: "대상별" > "부모님" > "혈행/혈압/당뇨" - 부분 일치가 아닌 정확히 일치해야 합니다.')
+                            ),
+                            // Stock/brand conditions
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'16px'}},
+                                React.createElement('div', null,
+                                    React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '최소 재고 수량 (qt)'),
+                                    React.createElement('input', {type:'number',value:ruleMinQty,min:0,onChange:e=>{setRuleMinQty(parseInt(e.target.value||'0'));setRulePreviewCount(null);},style:{width:'100%',padding:'8px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',boxSizing:'border-box'}})
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '브랜드 코드 (선택)'),
+                                    React.createElement('input', {type:'text',value:ruleBrand,placeholder:'예: 3M',onChange:e=>{setRuleBrand(e.target.value);setRulePreviewCount(null);},style:{width:'100%',padding:'8px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',boxSizing:'border-box'}})
+                                )
+                            ),
+                            React.createElement('label', {style:{display:'flex',alignItems:'center',gap:'8px',fontSize:'0.82rem',color:'#334155',marginBottom:'16px',cursor:'pointer'}},
+                                React.createElement('input', {type:'checkbox',checked:ruleOnlySelling,onChange:e=>{setRuleOnlySelling(e.target.checked);setRulePreviewCount(null);}}),
+                                '활성 상품만 (판매 중)'
+                            ),
+                            // Preview button
+                            React.createElement('button', {
+                                disabled:rulePreviewLoading,
+                                onClick:async()=>{
+                                    setRulePreviewLoading(true);
+                                    try {
+                                        // Step 1: fetch category it_ids (child SKUs)
+                                        const params = new URLSearchParams();
+                                        if (ruleL1) params.set('level1', ruleL1);
+                                        if (ruleL2) params.set('level2', ruleL2);
+                                        if (ruleL3) params.set('level3', ruleL3);
+                                        const cr = await fetch('/api/categories/products?'+params.toString());
+                                        if (!cr.ok) { alert('카테고리 조회 실패'); setRulePreviewLoading(false); return; }
+                                        const cd = await cr.json();
+                                        const catChildSet = new Set(cd.it_ids || []);
+                                        // Step 2: filter WMS products whose child SKU overlaps
+                                        const base = ruleOnlySelling ? plProducts : [...plProducts, ...plInactive];
+                                        const matched = base.filter(p => {
+                                            if (ruleBrand && (p.bc||'').toLowerCase() !== ruleBrand.toLowerCase()) return false;
+                                            if ((p.qt||0) < ruleMinQty) return false;
+                                            const childs = p.ch || [];
+                                            return childs.some(c => catChildSet.has(c));
+                                        });
+                                        setRulePreviewList(matched);
+                                        setRulePreviewCount(matched.length);
+                                    } catch(e) { alert('오류: '+e.message); }
+                                    setRulePreviewLoading(false);
+                                },
+                                style:{width:'100%',padding:'10px',borderRadius:'8px',border:'1px solid #6DAB3C',background:'#f0f7ec',color:'#4a7a2a',fontSize:'0.85rem',fontWeight:700,cursor:rulePreviewLoading?'default':'pointer',marginBottom:'16px'}
+                            }, rulePreviewLoading?'조회 중...':'🔍 미리보기 (조건 일치 상품 수)'),
+                            // Preview result
+                            rulePreviewCount !== null && React.createElement('div', {style:{padding:'14px',background:rulePreviewCount>0?'#f0f9ff':'#fef2f2',border:`1px solid ${rulePreviewCount>0?'#bae6fd':'#fecaca'}`,borderRadius:'8px',marginBottom:'16px'}},
+                                React.createElement('div', {style:{fontSize:'1.1rem',fontWeight:800,color:rulePreviewCount>0?'#0369a1':'#991b1b',marginBottom:'4px'}}, `${rulePreviewCount.toLocaleString()}개 상품이 조건에 일치`),
+                                rulePreviewCount>0 && React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b'}}, '샘플: ' + rulePreviewList.slice(0,5).map(p=>p.sku).join(', ') + (rulePreviewCount>5?' ...':''))
+                            ),
+                            // Wave + status for rule-based
+                            rulePreviewCount !== null && rulePreviewCount > 0 && React.createElement(React.Fragment, null,
+                                React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '웨이브'),
+                                React.createElement('div', {style:{display:'flex',gap:'6px',marginBottom:'14px',flexWrap:'wrap'}},
+                                    ['1차-런칭','2차','Japan','테스트'].map(w =>
+                                        React.createElement('button', {key:w,onClick:()=>setRuleWave(w),style:{padding:'6px 12px',borderRadius:'6px',border:ruleWave===w?'2px solid #6DAB3C':'1px solid #e2e8f0',background:ruleWave===w?'#f0f7ec':'#fff',color:ruleWave===w?'#4a7a2a':'#64748b',fontSize:'0.78rem',fontWeight:600,cursor:'pointer'}}, w)
+                                    ),
+                                    React.createElement('input', {type:'text',value:ruleWave,onChange:e=>setRuleWave(e.target.value),style:{padding:'6px 10px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.78rem',flex:'1 0 140px',minWidth:'140px'}})
+                                ),
+                                React.createElement('label', {style:{display:'block',fontSize:'0.78rem',fontWeight:700,color:'#334155',marginBottom:'6px'}}, '상태'),
+                                React.createElement('div', {style:{display:'flex',gap:'6px',marginBottom:'18px'}},
+                                    [{k:'candidate',t:'후보',c:'#f59e0b'},{k:'approved',t:'승인',c:'#10b981'}].map(s =>
+                                        React.createElement('button', {key:s.k,onClick:()=>setRuleStatus(s.k),style:{flex:1,padding:'9px',borderRadius:'6px',border:ruleStatus===s.k?`2px solid ${s.c}`:'1px solid #e2e8f0',background:ruleStatus===s.k?s.c+'15':'#fff',color:ruleStatus===s.k?s.c:'#64748b',fontSize:'0.8rem',fontWeight:700,cursor:'pointer'}}, s.t)
+                                    )
+                                )
+                            ),
+                            // Actions
+                            React.createElement('div', {style:{display:'flex',gap:'10px',justifyContent:'flex-end'}},
+                                React.createElement('button', {
+                                    onClick:()=>setShowRuleModal(false),
+                                    style:{padding:'9px 18px',borderRadius:'7px',border:'1px solid #e2e8f0',background:'#fff',color:'#64748b',fontSize:'0.85rem',fontWeight:600,cursor:'pointer'}
+                                }, '닫기'),
+                                rulePreviewCount !== null && rulePreviewCount > 0 && React.createElement('button', {
+                                    onClick:async()=>{
+                                        if (!confirm(`${rulePreviewCount}개 상품을 "${ruleWave}" 웨이브에 ${ruleStatus==='approved'?'승인':'후보'} 상태로 일괄 추가할까요?`)) return;
+                                        try {
+                                            const res = await fetch('/api/shopify/selections', {
+                                                method:'POST',headers:{'Content-Type':'application/json'},
+                                                body: JSON.stringify({
+                                                    it_ids: rulePreviewList.map(p=>p.sku),
+                                                    wave: ruleWave, status: ruleStatus,
+                                                    notes: `룰 기반: ${ruleL1||'-'}>${ruleL2||'-'}>${ruleL3||'-'}, qt≥${ruleMinQty}${ruleBrand?', brand='+ruleBrand:''}`
+                                                })
+                                            });
+                                            if (!res.ok) { alert('실패: '+res.status); return; }
+                                            const d = await res.json();
+                                            alert(`✅ 완료\n신규: ${d.created||0}개\n업데이트: ${d.updated||0}개`);
+                                            setShowRuleModal(false);
+                                            setRulePreviewCount(null);
+                                            setRulePreviewList([]);
+                                            await refreshSpSelections();
+                                        } catch(e) { alert('오류: '+e.message); }
+                                    },
+                                    style:{padding:'9px 20px',borderRadius:'7px',border:'none',background:'#6DAB3C',color:'#fff',fontSize:'0.85rem',fontWeight:700,cursor:'pointer'}
+                                }, `⚡ 일괄 선정 (${rulePreviewCount})`)
+                            )
+                        )
+                    )
+                );
+            };
+
+            // ============= SHOPIFY SELECTIONS PAGE =============
+            const [spListTab, setSpListTab] = useState('candidate');
+            const [spListWave, setSpListWave] = useState('');
+            const [spList, setSpList] = useState([]);
+            const [spListLoading, setSpListLoading] = useState(false);
+            const [spEditing, setSpEditing] = useState(null); // selection being edited
+            const [spBulkChecked, setSpBulkChecked] = useState(new Set());
+
+            const loadSpList = async () => {
+                setSpListLoading(true);
+                try {
+                    const params = new URLSearchParams();
+                    if (spListTab !== 'all') params.set('status', spListTab);
+                    if (spListWave) params.set('wave', spListWave);
+                    params.set('limit', '2000');
+                    const r = await fetch('/api/shopify/selections?'+params.toString());
+                    if (r.ok) {
+                        const d = await r.json();
+                        setSpList(d.selections || []);
+                    }
+                } catch(e) { console.error(e); }
+                setSpListLoading(false);
+            };
+
+            useEffect(() => {
+                if (activeSection === 'shopifySel') {
+                    loadSpList();
+                    refreshSpSelections();
+                }
+            }, [activeSection, spListTab, spListWave]);
+
+            // Index WMS products by SKU for quick join with selections
+            const wmsBySku = React.useMemo(() => {
+                const m = new Map();
+                [...plProducts, ...plInactive].forEach(p => m.set(p.sku, p));
+                return m;
+            }, [plProducts, plInactive]);
+
+            const renderShopifySelections = () => {
+                const stats = spStatsData || {};
+                const byStatus = stats.by_status || {};
+                const byWave = stats.by_wave || {};
+                const total = stats.total || 0;
+                const tabDefs = [
+                    {k:'candidate',t:'후보',c:'#f59e0b'},
+                    {k:'approved',t:'승인',c:'#10b981'},
+                    {k:'syncing',t:'동기화 중',c:'#3b82f6'},
+                    {k:'synced',t:'동기화 완료',c:'#6366f1'},
+                    {k:'failed',t:'실패',c:'#ef4444'},
+                    {k:'archived',t:'보관',c:'#94a3b8'},
+                    {k:'all',t:'전체',c:'#64748b'},
+                ];
+                const waves = Object.keys(byWave);
+
+                return React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'20px'}},
+                    // Header + stats
+                    React.createElement('div', {style:{background:'linear-gradient(135deg,#ecfdf5,#d1fae5)',borderRadius:'14px',padding:'22px',border:'1px solid #a7f3d0'}},
+                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'14px'}},
+                            React.createElement('span', {style:{fontSize:'1.4rem'}}, '🛒'),
+                            React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#065f46',margin:0}}, 'Shopify 선정 상품'),
+                            React.createElement('span', {style:{fontSize:'0.78rem',color:'#047857',marginLeft:'6px'}}, `WMS에서 선별한 Shopify 런칭 후보 관리`)
+                        ),
+                        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:'10px'}},
+                            React.createElement('div', {style:{padding:'12px',background:'#fff',borderRadius:'8px',borderLeft:'4px solid #065f46'}},
+                                React.createElement('div', {style:{fontSize:'0.7rem',color:'#64748b',fontWeight:600}}, '전체 선정'),
+                                React.createElement('div', {style:{fontSize:'1.35rem',fontWeight:800,color:'#065f46'}}, total.toLocaleString())
+                            ),
+                            tabDefs.slice(0,6).map(td =>
+                                React.createElement('div', {key:td.k,style:{padding:'12px',background:'#fff',borderRadius:'8px',borderLeft:`4px solid ${td.c}`}},
+                                    React.createElement('div', {style:{fontSize:'0.7rem',color:'#64748b',fontWeight:600}}, td.t),
+                                    React.createElement('div', {style:{fontSize:'1.2rem',fontWeight:800,color:td.c}}, (byStatus[td.k]||0).toLocaleString())
+                                )
+                            )
+                        ),
+                        waves.length > 0 && React.createElement('div', {style:{marginTop:'14px',display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}},
+                            React.createElement('span', {style:{fontSize:'0.75rem',color:'#047857',fontWeight:700}}, '웨이브별:'),
+                            Object.entries(byWave).map(([w,c]) =>
+                                React.createElement('span', {key:w,style:{padding:'4px 10px',background:'#fff',borderRadius:'14px',border:'1px solid #a7f3d0',fontSize:'0.74rem',color:'#065f46',fontWeight:600}}, `${w} ${c}`)
+                            )
+                        )
+                    ),
+                    // Tabs
+                    React.createElement('div', {style:{display:'flex',gap:'6px',flexWrap:'wrap',background:'#fff',padding:'6px',borderRadius:'10px',border:'1px solid #e2e8f0'}},
+                        tabDefs.map(td =>
+                            React.createElement('button', {
+                                key:td.k,
+                                onClick:()=>{setSpListTab(td.k);setSpBulkChecked(new Set());},
+                                style:{padding:'8px 14px',borderRadius:'6px',border:'none',cursor:'pointer',fontSize:'0.8rem',fontWeight:spListTab===td.k?700:500,background:spListTab===td.k?td.c:'transparent',color:spListTab===td.k?'#fff':'#64748b'}
+                            }, `${td.t} ${(byStatus[td.k]||(td.k==='all'?total:0)).toLocaleString()}`)
+                        )
+                    ),
+                    // Wave filter + bulk actions
+                    React.createElement('div', {style:{display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap'}},
+                        React.createElement('select', {
+                            value:spListWave,onChange:e=>setSpListWave(e.target.value),
+                            style:{padding:'8px 12px',borderRadius:'7px',border:'1px solid #e2e8f0',fontSize:'0.82rem',background:'#fff'}
+                        },
+                            React.createElement('option', {value:''}, '모든 웨이브'),
+                            waves.map(w => React.createElement('option', {key:w,value:w}, w))
+                        ),
+                        React.createElement('div', {style:{fontSize:'0.82rem',color:'#64748b'}}, `${spList.length.toLocaleString()}개 표시`),
+                        React.createElement('div', {style:{flex:1}}),
+                        spBulkChecked.size > 0 && React.createElement('div', {style:{display:'flex',gap:'6px',alignItems:'center'}},
+                            React.createElement('span', {style:{fontSize:'0.78rem',color:'#64748b',fontWeight:600}}, `${spBulkChecked.size}개 선택됨`),
+                            React.createElement('button', {
+                                onClick:async()=>{
+                                    if (!confirm(`${spBulkChecked.size}개를 "승인" 상태로 변경할까요?`)) return;
+                                    const r = await fetch('/api/shopify/selections/bulk-update', {
+                                        method:'POST',headers:{'Content-Type':'application/json'},
+                                        body:JSON.stringify({it_ids:Array.from(spBulkChecked),status:'approved'})
+                                    });
+                                    if (r.ok) { setSpBulkChecked(new Set()); await loadSpList(); await refreshSpSelections(); }
+                                },
+                                style:{padding:'6px 12px',borderRadius:'6px',border:'none',background:'#10b981',color:'#fff',fontSize:'0.76rem',fontWeight:700,cursor:'pointer'}
+                            }, '✓ 승인'),
+                            React.createElement('button', {
+                                onClick:async()=>{
+                                    if (!confirm(`${spBulkChecked.size}개를 "보관" 상태로 변경할까요?`)) return;
+                                    const r = await fetch('/api/shopify/selections/bulk-update', {
+                                        method:'POST',headers:{'Content-Type':'application/json'},
+                                        body:JSON.stringify({it_ids:Array.from(spBulkChecked),status:'archived'})
+                                    });
+                                    if (r.ok) { setSpBulkChecked(new Set()); await loadSpList(); await refreshSpSelections(); }
+                                },
+                                style:{padding:'6px 12px',borderRadius:'6px',border:'none',background:'#94a3b8',color:'#fff',fontSize:'0.76rem',fontWeight:700,cursor:'pointer'}
+                            }, '📁 보관')
+                        )
+                    ),
+                    // List table
+                    React.createElement('div', {style:{background:'#fff',borderRadius:'12px',border:'1px solid #e2e8f0',overflow:'hidden'}},
+                        spListLoading ? React.createElement('div', {style:{padding:'40px',textAlign:'center',color:'#94a3b8'}}, '로딩 중...') :
+                        spList.length === 0 ? React.createElement('div', {style:{padding:'40px',textAlign:'center',color:'#94a3b8',fontSize:'0.88rem'}}, '선정된 상품이 없습니다. 상품 목록에서 체크박스로 선정하거나 룰 기반 선정을 사용하세요.') :
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.8rem'}},
+                            React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc',borderBottom:'2px solid #e2e8f0'}},
+                                React.createElement('th', {style:{padding:'10px 6px',textAlign:'center',width:'36px'}},
+                                    React.createElement('input', {
+                                        type:'checkbox',
+                                        checked:spList.length>0&&spList.every(s=>spBulkChecked.has(s.it_id)),
+                                        onChange:e=>{
+                                            const ns = new Set(spBulkChecked);
+                                            if (e.target.checked) spList.forEach(s=>ns.add(s.it_id));
+                                            else spList.forEach(s=>ns.delete(s.it_id));
+                                            setSpBulkChecked(ns);
+                                        }
+                                    })
+                                ),
+                                ...['SKU','상품명','브랜드','재고','웨이브','상태','오버라이드','수정일',''].map((h,i) =>
+                                    React.createElement('th', {key:i,style:{padding:'10px 12px',textAlign:i>=3&&i<=5?'center':'left',fontSize:'0.7rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',whiteSpace:'nowrap'}}, h)
+                                )
+                            )),
+                            React.createElement('tbody', null, spList.map(sp => {
+                                const wp = wmsBySku.get(sp.it_id) || {};
+                                const hasOverride = sp.custom_title || sp.custom_price_usd || sp.custom_tags || sp.custom_description;
+                                const statusDef = tabDefs.find(t=>t.k===sp.status) || {c:'#64748b',t:sp.status};
+                                return React.createElement('tr', {key:sp.it_id,style:{borderBottom:'1px solid #f1f5f9',background:spBulkChecked.has(sp.it_id)?'#eff6ff':'transparent'}},
+                                    React.createElement('td', {style:{padding:'8px 6px',textAlign:'center'}},
+                                        React.createElement('input', {
+                                            type:'checkbox',
+                                            checked:spBulkChecked.has(sp.it_id),
+                                            onChange:e=>{
+                                                const ns = new Set(spBulkChecked);
+                                                if (e.target.checked) ns.add(sp.it_id);
+                                                else ns.delete(sp.it_id);
+                                                setSpBulkChecked(ns);
+                                            }
+                                        })
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 12px',fontFamily:'Menlo,monospace',fontSize:'0.74rem',color:'#475569'}}, sp.it_id),
+                                    React.createElement('td', {style:{padding:'8px 12px',maxWidth:'260px'}},
+                                        React.createElement('div', {style:{fontWeight:600,color:'#1e293b',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}, sp.custom_title || wp.kn || wp.en || '—'),
+                                        sp.custom_title && React.createElement('div', {style:{fontSize:'0.68rem',color:'#94a3b8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}, '원본: ' + (wp.kn||wp.en||'—'))
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 12px',fontSize:'0.74rem',color:'#64748b'}}, wp.bn || wp.bc || '—'),
+                                    React.createElement('td', {style:{padding:'8px 12px',textAlign:'center',fontWeight:600,color:(wp.qt||0)>0?'#0f766e':'#dc2626'}}, (wp.qt||0).toLocaleString()),
+                                    React.createElement('td', {style:{padding:'8px 12px',textAlign:'center'}},
+                                        sp.wave ? React.createElement('span', {style:{padding:'2px 8px',borderRadius:'10px',background:'#f0f7ec',color:'#4a7a2a',fontSize:'0.7rem',fontWeight:600}}, sp.wave) : '—'
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 12px',textAlign:'center'}},
+                                        React.createElement('span', {style:{padding:'3px 9px',borderRadius:'10px',background:statusDef.c+'15',color:statusDef.c,fontSize:'0.7rem',fontWeight:700}}, statusDef.t)
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 12px',textAlign:'center'}},
+                                        hasOverride ? React.createElement('span', {style:{fontSize:'0.7rem',color:'#d946ef',fontWeight:700}}, '✏️ 있음') : React.createElement('span', {style:{fontSize:'0.7rem',color:'#cbd5e1'}}, '—')
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 12px',fontSize:'0.7rem',color:'#94a3b8'}}, (sp.updated_at||'').slice(0,10)),
+                                    React.createElement('td', {style:{padding:'8px 12px',whiteSpace:'nowrap'}},
+                                        React.createElement('button', {
+                                            onClick:()=>setSpEditing({
+                                                ...sp,
+                                                _wp: wp
+                                            }),
+                                            style:{padding:'4px 10px',borderRadius:'5px',border:'1px solid #e2e8f0',background:'#fff',color:'#475569',fontSize:'0.72rem',fontWeight:600,cursor:'pointer'}
+                                        }, '편집')
+                                    )
+                                );
+                            }))
+                        )
+                    ),
+                    // Edit modal
+                    spEditing && React.createElement('div', {
+                        style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:'20px',overflowY:'auto'},
+                        onClick:()=>setSpEditing(null)
+                    },
+                        React.createElement('div', {
+                            onClick:e=>e.stopPropagation(),
+                            style:{background:'#fff',borderRadius:'14px',padding:'26px',width:'100%',maxWidth:'640px',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}
+                        },
+                            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}},
+                                React.createElement('span', {style:{fontSize:'1.3rem'}}, '✏️'),
+                                React.createElement('h3', {style:{fontSize:'1.1rem',fontWeight:800,color:'#0f172a',margin:0}}, '선정 편집'),
+                                React.createElement('span', {style:{fontSize:'0.75rem',color:'#94a3b8',fontFamily:'Menlo,monospace'}}, spEditing.it_id)
+                            ),
+                            React.createElement('div', {style:{padding:'10px 12px',background:'#f8fafc',borderRadius:'8px',marginBottom:'14px',fontSize:'0.78rem',color:'#475569'}},
+                                React.createElement('div', {style:{fontWeight:600,color:'#1e293b'}}, spEditing._wp?.kn || spEditing._wp?.en || '—'),
+                                React.createElement('div', {style:{fontSize:'0.72rem',color:'#94a3b8',marginTop:'2px'}}, `브랜드: ${spEditing._wp?.bn||'—'} · 재고: ${spEditing._wp?.qt||0}`)
+                            ),
+                            // Status + Wave
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'14px'}},
+                                React.createElement('div', null,
+                                    React.createElement('label', {style:{display:'block',fontSize:'0.75rem',fontWeight:700,color:'#334155',marginBottom:'5px'}}, '상태'),
+                                    React.createElement('select', {value:spEditing.status,onChange:e=>setSpEditing({...spEditing,status:e.target.value}),style:{width:'100%',padding:'8px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',boxSizing:'border-box'}},
+                                        ['candidate','approved','syncing','synced','failed','archived'].map(s => React.createElement('option', {key:s,value:s}, s))
+                                    )
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('label', {style:{display:'block',fontSize:'0.75rem',fontWeight:700,color:'#334155',marginBottom:'5px'}}, '웨이브'),
+                                    React.createElement('input', {type:'text',value:spEditing.wave||'',onChange:e=>setSpEditing({...spEditing,wave:e.target.value}),style:{width:'100%',padding:'8px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',boxSizing:'border-box'}})
+                                )
+                            ),
+                            // Overrides
+                            React.createElement('div', {style:{padding:'14px',background:'#fdf4ff',border:'1px solid #f0abfc',borderRadius:'8px',marginBottom:'14px'}},
+                                React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:700,color:'#86198f',marginBottom:'10px'}}, '🎨 Shopify 오버라이드 (비워두면 WMS 원본 사용)'),
+                                React.createElement('label', {style:{display:'block',fontSize:'0.72rem',fontWeight:600,color:'#701a75',marginBottom:'4px'}}, '커스텀 상품명'),
+                                React.createElement('input', {type:'text',value:spEditing.custom_title||'',placeholder:spEditing._wp?.kn||spEditing._wp?.en||'원본 상품명 사용',onChange:e=>setSpEditing({...spEditing,custom_title:e.target.value}),style:{width:'100%',padding:'7px 10px',borderRadius:'6px',border:'1px solid #f0abfc',fontSize:'0.8rem',marginBottom:'8px',boxSizing:'border-box',background:'#fff'}}),
+                                React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'8px'}},
+                                    React.createElement('div', null,
+                                        React.createElement('label', {style:{display:'block',fontSize:'0.72rem',fontWeight:600,color:'#701a75',marginBottom:'4px'}}, '커스텀 판매가 (USD)'),
+                                        React.createElement('input', {type:'number',step:'0.01',value:spEditing.custom_price_usd||'',placeholder:spEditing._wp?.pr||'—',onChange:e=>setSpEditing({...spEditing,custom_price_usd:e.target.value?parseFloat(e.target.value):null}),style:{width:'100%',padding:'7px 10px',borderRadius:'6px',border:'1px solid #f0abfc',fontSize:'0.8rem',boxSizing:'border-box',background:'#fff'}})
+                                    ),
+                                    React.createElement('div', null,
+                                        React.createElement('label', {style:{display:'block',fontSize:'0.72rem',fontWeight:600,color:'#701a75',marginBottom:'4px'}}, 'Compare-at (USD)'),
+                                        React.createElement('input', {type:'number',step:'0.01',value:spEditing.custom_compare_at_price||'',onChange:e=>setSpEditing({...spEditing,custom_compare_at_price:e.target.value?parseFloat(e.target.value):null}),style:{width:'100%',padding:'7px 10px',borderRadius:'6px',border:'1px solid #f0abfc',fontSize:'0.8rem',boxSizing:'border-box',background:'#fff'}})
+                                    )
+                                ),
+                                React.createElement('label', {style:{display:'block',fontSize:'0.72rem',fontWeight:600,color:'#701a75',marginBottom:'4px'}}, '추가 태그 (쉼표 구분)'),
+                                React.createElement('input', {type:'text',value:spEditing.custom_tags||'',placeholder:'예: new-arrival, bestseller, japan-launch',onChange:e=>setSpEditing({...spEditing,custom_tags:e.target.value}),style:{width:'100%',padding:'7px 10px',borderRadius:'6px',border:'1px solid #f0abfc',fontSize:'0.8rem',marginBottom:'8px',boxSizing:'border-box',background:'#fff'}}),
+                                React.createElement('label', {style:{display:'block',fontSize:'0.72rem',fontWeight:600,color:'#701a75',marginBottom:'4px'}}, '커스텀 설명'),
+                                React.createElement('textarea', {value:spEditing.custom_description||'',onChange:e=>setSpEditing({...spEditing,custom_description:e.target.value}),placeholder:'Shopify 전용 상품 설명...',style:{width:'100%',padding:'7px 10px',borderRadius:'6px',border:'1px solid #f0abfc',fontSize:'0.8rem',minHeight:'60px',fontFamily:'inherit',boxSizing:'border-box',resize:'vertical',background:'#fff'}})
+                            ),
+                            // Notes
+                            React.createElement('label', {style:{display:'block',fontSize:'0.75rem',fontWeight:700,color:'#334155',marginBottom:'5px'}}, '메모'),
+                            React.createElement('textarea', {value:spEditing.notes||'',onChange:e=>setSpEditing({...spEditing,notes:e.target.value}),style:{width:'100%',padding:'8px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',minHeight:'50px',fontFamily:'inherit',boxSizing:'border-box',resize:'vertical',marginBottom:'16px'}}),
+                            // Actions
+                            React.createElement('div', {style:{display:'flex',gap:'10px',justifyContent:'space-between',alignItems:'center'}},
+                                React.createElement('button', {
+                                    onClick:async()=>{
+                                        if (!confirm('이 선정을 삭제할까요? (WMS 상품은 그대로 유지됩니다)')) return;
+                                        const r = await fetch('/api/shopify/selections/'+spEditing.it_id, {method:'DELETE'});
+                                        if (r.ok) { setSpEditing(null); await loadSpList(); await refreshSpSelections(); }
+                                    },
+                                    style:{padding:'9px 14px',borderRadius:'7px',border:'1px solid #fecaca',background:'#fff',color:'#dc2626',fontSize:'0.8rem',fontWeight:600,cursor:'pointer'}
+                                }, '🗑 선정 삭제'),
+                                React.createElement('div', {style:{display:'flex',gap:'8px'}},
+                                    React.createElement('button', {
+                                        onClick:()=>setSpEditing(null),
+                                        style:{padding:'9px 18px',borderRadius:'7px',border:'1px solid #e2e8f0',background:'#fff',color:'#64748b',fontSize:'0.85rem',fontWeight:600,cursor:'pointer'}
+                                    }, '취소'),
+                                    React.createElement('button', {
+                                        onClick:async()=>{
+                                            const body = {
+                                                status: spEditing.status,
+                                                wave: spEditing.wave || null,
+                                                notes: spEditing.notes || null,
+                                                custom_title: spEditing.custom_title || null,
+                                                custom_description: spEditing.custom_description || null,
+                                                custom_tags: spEditing.custom_tags || null,
+                                                custom_price_usd: spEditing.custom_price_usd,
+                                                custom_compare_at_price: spEditing.custom_compare_at_price,
+                                            };
+                                            const r = await fetch('/api/shopify/selections/'+spEditing.it_id, {
+                                                method:'PATCH',headers:{'Content-Type':'application/json'},
+                                                body: JSON.stringify(body)
+                                            });
+                                            if (!r.ok) { alert('저장 실패'); return; }
+                                            setSpEditing(null);
+                                            await loadSpList();
+                                            await refreshSpSelections();
+                                        },
+                                        style:{padding:'9px 20px',borderRadius:'7px',border:'none',background:'#0369a1',color:'#fff',fontSize:'0.85rem',fontWeight:700,cursor:'pointer'}
+                                    }, '저장')
+                                )
+                            )
+                        )
+                    )
                 );
             };
 
@@ -3491,7 +4058,7 @@
                 )
             );
 
-            const renderers = {overview:renderOverview,productList:renderProductList,wms:renderWms,ople:renderOple,mapping:renderMapping,image:renderImage,gap:renderGap};
+            const renderers = {overview:renderOverview,productList:renderProductList,shopifySel:renderShopifySelections,wms:renderWms,ople:renderOple,mapping:renderMapping,image:renderImage,gap:renderGap};
 
             return React.createElement('div', {style:{maxWidth:'1200px'}},
                 React.createElement('div', {style:{marginBottom:'24px'}},

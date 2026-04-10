@@ -267,6 +267,51 @@ class ProductCategory(Base):
     )
 
 
+class ShopifyProduct(Base):
+    """Curated products selected for Shopify. Separate from WMS products table
+    so WMS data remains untouched and selection state is independent."""
+    __tablename__ = "shopify_products"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    it_id = Column(String(32), unique=True, index=True, nullable=False)
+    # e.g., WMS Master SKU like "3M-P022334"
+
+    # ── Selection state ──
+    status = Column(String(20), default="candidate", index=True)
+    # candidate → approved → syncing → synced / failed / archived
+
+    wave = Column(String(50), index=True)
+    # "1차-런칭", "2차", "Japan", etc.
+
+    priority = Column(Integer, default=0)
+
+    # ── Shopify sync state ──
+    shopify_product_id = Column(String(100))   # gid://shopify/Product/xxx
+    shopify_handle = Column(String(200))       # URL slug
+    shopify_status = Column(String(20))        # active / draft / archived
+    last_synced_at = Column(DateTime)
+    sync_error = Column(Text)
+
+    # ── Selection metadata ──
+    selected_by = Column(Integer)              # optional user id
+    selected_at = Column(DateTime, default=datetime.utcnow)
+    notes = Column(Text)
+
+    # ── Override fields (Shopify 전용 값, null 이면 WMS 원본 사용) ──
+    custom_title = Column(String(500))
+    custom_description = Column(Text)
+    custom_tags = Column(Text)                 # JSON array of extra tags
+    custom_price_usd = Column(Float)           # Shopify 판매가 override
+    custom_compare_at_price = Column(Float)    # Shopify 할인전 가격
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_sp_status_wave", "status", "wave"),
+    )
+
+
 class ScrapeJob(Base):
     __tablename__ = "scrape_jobs"
 

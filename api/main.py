@@ -1270,21 +1270,79 @@ def seed_demo_data(db: Session):
 from database import Category, ProductCategory
 
 @app.post("/api/categories/import")
-async def import_categories_csv(background_tasks: BackgroundTasks):
-    """Import category CSV from static/data directory."""
-    import sys as _sys
-    _sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-    from import_categories import import_csv
+async def import_categories_csv(db: Session = Depends(get_db)):
+    """Import category CSV into the SAME database used by all other endpoints."""
+    import csv as _csv
 
     csv_path = Path(__file__).resolve().parent.parent / "static" / "data" / "ople_categories.csv"
     if not csv_path.exists():
-        # Try uploads path
         csv_path = Path(__file__).resolve().parent.parent / "data" / "ople_categories.csv"
         if not csv_path.exists():
             raise HTTPException(status_code=404, detail="Category CSV not found. Place at static/data/ople_categories.csv")
 
-    result = import_csv(str(csv_path))
-    return {"status": "ok", "stats": result}
+    stats = {'categories_created': 0, 'mappings_created': 0, 'rows_processed': 0, 'skipped': 0}
+    cat_map = {}
+    pc_pairs = set()
+
+    with open(str(csv_path), 'r', encoding='utf-8-sig') as f:
+        reader = _csv.reader(f)
+        next(reader)  # skip header
+        for row in reader:
+            if len(row) < 4:
+                stats['skipped'] += 1
+                continue
+            it_id, cat_id, depth_path = row[0].strip(), row[2].strip(), row[3].strip()
+            if not it_id or not cat_id or not depth_path:
+                stats['skipped'] += 1
+                continue
+            stats['rows_processed'] += 1
+
+            if cat_id not in cat_map:
+                parts = [p.strip() for p in depth_path.split('>')]
+                l1 = parts[0] if len(parts) >= 1 else None
+                l2 = parts[1] if len(parts) >= 2 else None
+                l3 = parts[2] if len(parts) >= 3 else None
+                cat_map[cat_id] = {
+                    'depth_path': depth_path, 'level1': l1, 'level2': l2, 'level3': l3,
+                    'depth': len(parts), 'count': 0,
+                    'shopify_tag_cat': f"cat:{l1}" if l1 else None,
+                    'shopify_tag_sub': f"sub:{l2}" if l2 else None,
+                    'shopify_tag_sub2': f"sub2:{l3}" if l3 else None,
+                }
+            cat_map[cat_id]['count'] += 1
+            pc_pairs.add((it_id, cat_id))
+
+    # Upsert categories using the app's DB session
+    existing_cats = {c.category_id for c in db.query(Category.category_id).all()}
+    new_cats = []
+    for cat_id, info in cat_map.items():
+        if cat_id not in existing_cats:
+            new_cats.append(Category(
+                category_id=cat_id, depth_path=info['depth_path'],
+                level1=info['level1'], level2=info['level2'], level3=info['level3'],
+                depth=info['depth'], product_count=info['count'],
+                shopify_tag_cat=info['shopify_tag_cat'],
+                shopify_tag_sub=info['shopify_tag_sub'],
+                shopify_tag_sub2=info['shopify_tag_sub2'],
+            ))
+        else:
+            db.query(Category).filter(Category.category_id == cat_id).update({'product_count': info['count']})
+    if new_cats:
+        db.bulk_save_objects(new_cats)
+        db.commit()
+        stats['categories_created'] = len(new_cats)
+
+    # Insert product-category mappings in batches
+    existing_pcs = {(r[0], r[1]) for r in db.query(ProductCategory.it_id, ProductCategory.category_id).all()}
+    new_pcs = [ProductCategory(it_id=it_id, category_id=cat_id)
+               for it_id, cat_id in pc_pairs if (it_id, cat_id) not in existing_pcs]
+    batch_size = 2000
+    for i in range(0, len(new_pcs), batch_size):
+        db.bulk_save_objects(new_pcs[i:i + batch_size])
+        db.commit()
+    stats['mappings_created'] = len(new_pcs)
+
+    return {"status": "ok", "stats": stats}
 
 
 @app.get("/api/categories")

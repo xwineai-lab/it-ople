@@ -1776,7 +1776,119 @@ async def bulk_update_shopify_selections(payload: dict, db: Session = Depends(ge
     return {"status": "ok", "updated": count}
 
 
-# ── Shopify Metafield API ────────────────────────────────
+# ── Shopify Metafield Value Mapping API ──────────────────
+# OPLE 상품 데이터 → 22개 Shopify 메타필드 값 매핑 + 준비도(readiness) 평가.
+# 동기화 전에 메타필드 값이 잘 채워졌는지 확인하는 gate 역할.
+
+from metafield_mapper import (
+    build_metafields as _build_metafields,
+    assess_readiness as _assess_readiness,
+    reset_caches as _reset_mapper_caches,
+    REQUIRED_KEYS as _MF_REQUIRED_KEYS,
+    OPTIONAL_KEYS as _MF_OPTIONAL_KEYS,
+    SKIPPED_KEYS as _MF_SKIPPED_KEYS,
+)
+
+
+def _build_and_assess(sku: str, sp_row, db: Session) -> dict:
+    """Helper: build metafield values + readiness assessment for a SKU."""
+    mf = _build_metafields(sku, sp_row=sp_row, db=db)
+    readiness = _assess_readiness(mf)
+    return {"metafields": mf, "readiness": readiness}
+
+
+@app.get("/api/shopify/metafields/preview/{sku:path}")
+async def preview_metafields_for_sku(sku: str, db: Session = Depends(get_db)):
+    """Preview the metafield values that would be written to Shopify for
+    a given OPLE parent SKU (e.g. "3M-P022334").
+
+    Pulls from wms_active.json + wms_desc.json + OpleCategory table, and
+    applies any override fields from the ShopifyProduct row if one exists.
+    """
+    sp = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == sku).first()
+    return _build_and_assess(sku, sp_row=sp, db=db)
+
+
+@app.get("/api/shopify/selections/{it_id}/readiness")
+async def selection_readiness(it_id: str, db: Session = Depends(get_db)):
+    """Readiness assessment for a single ShopifyProduct selection.
+
+    Returns only the readiness report (lighter than /preview which includes
+    all metafield values) so the selection list can query it per-row.
+    """
+    sp = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
+    if not sp:
+        raise HTTPException(status_code=404, detail=f"Selection not found: {it_id}")
+
+    mf = _build_metafields(it_id, sp_row=sp, db=db)
+    readiness = _assess_readiness(mf)
+    return {
+        "it_id": it_id,
+        "status": sp.status,
+        "readiness": readiness,
+    }
+
+
+@app.post("/api/shopify/selections/readiness-batch")
+async def selections_readiness_batch(payload: dict, db: Session = Depends(get_db)):
+    """Batch readiness assessment.
+
+    Body: { it_ids: ["3M-P022334", ...] }
+    Returns: { results: { "<sku>": {ready: bool, missing_required: [], filled_count: int}, ... } }
+    """
+    it_ids = payload.get("it_ids") or []
+    if not isinstance(it_ids, list) or not it_ids:
+        raise HTTPException(status_code=400, detail="it_ids list is required")
+
+    # Fetch all selections in one query to minimize round-trips
+    sp_rows = db.query(ShopifyProduct).filter(ShopifyProduct.it_id.in_(it_ids)).all()
+    sp_map = {sp.it_id: sp for sp in sp_rows}
+
+    results = {}
+    for sku in it_ids:
+        sp = sp_map.get(sku)
+        mf = _build_metafields(sku, sp_row=sp, db=db)
+        r = _assess_readiness(mf)
+        # Compact form: only what the frontend badge needs
+        results[sku] = {
+            "ready": r["ready"],
+            "missing_required": r["missing_required"],
+            "missing_optional_count": len(r["missing_optional"]),
+            "filled_count": r["filled_count"],
+            "total_keys": r["total_keys"],
+            "has_selection": sp is not None,
+            "error": r.get("error"),
+        }
+
+    summary = {
+        "total": len(results),
+        "ready": sum(1 for v in results.values() if v["ready"]),
+        "not_ready": sum(1 for v in results.values() if not v["ready"]),
+    }
+    return {"summary": summary, "results": results}
+
+
+@app.get("/api/shopify/metafields/schema")
+async def metafields_schema():
+    """Return the required / optional / skipped key lists used by the
+    readiness assessor. Useful for the frontend tooltip."""
+    return {
+        "required": sorted(_MF_REQUIRED_KEYS),
+        "optional": sorted(_MF_OPTIONAL_KEYS),
+        "skipped": sorted(_MF_SKIPPED_KEYS),
+        "total": len(_MF_REQUIRED_KEYS) + len(_MF_OPTIONAL_KEYS),
+    }
+
+
+@app.post("/api/shopify/metafields/reload-cache")
+async def reload_metafield_caches():
+    """Hot-reload the in-memory wms_active.json / wms_desc.json caches.
+    Call after replacing the source data files on the server."""
+    _reset_mapper_caches()
+    return {"status": "ok", "message": "Metafield mapper caches cleared"}
+
+
+# ── Shopify Metafield Definition API ─────────────────────
 # Shopify Admin API를 통한 메타필드 Definition 관리
 
 SHOPIFY_STORE = os.getenv("SHOPIFY_STORE", "ople-7502.myshopify.com")

@@ -3462,6 +3462,10 @@
             const [spListLoading, setSpListLoading] = useState(false);
             const [spEditing, setSpEditing] = useState(null); // selection being edited
             const [spBulkChecked, setSpBulkChecked] = useState(new Set());
+            // Metafield readiness map: it_id → {ready, missing_required, filled_count, total_keys}
+            const [spReadiness, setSpReadiness] = useState({});
+            const [spReadinessLoading, setSpReadinessLoading] = useState(false);
+            const [spEditingMetafields, setSpEditingMetafields] = useState(null); // full preview for edit modal
 
             const loadSpList = async () => {
                 setSpListLoading(true);
@@ -3474,9 +3478,35 @@
                     if (r.ok) {
                         const d = await r.json();
                         setSpList(d.selections || []);
+                        // Fire-and-forget batch readiness fetch for the new list
+                        loadReadinessBatch((d.selections || []).map(s => s.it_id));
                     }
                 } catch(e) { console.error(e); }
                 setSpListLoading(false);
+            };
+
+            const loadReadinessBatch = async (itIds) => {
+                if (!itIds || itIds.length === 0) { setSpReadiness({}); return; }
+                setSpReadinessLoading(true);
+                try {
+                    const r = await fetch('/api/shopify/selections/readiness-batch', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ it_ids: itIds })
+                    });
+                    if (r.ok) {
+                        const d = await r.json();
+                        setSpReadiness(d.results || {});
+                    }
+                } catch(e) { console.error('readiness batch error', e); }
+                setSpReadinessLoading(false);
+            };
+
+            const loadEditingMetafields = async (sku) => {
+                setSpEditingMetafields(null);
+                try {
+                    const r = await fetch('/api/shopify/metafields/preview/'+encodeURIComponent(sku));
+                    if (r.ok) setSpEditingMetafields(await r.json());
+                } catch(e) { console.error(e); }
             };
 
             useEffect(() => {
@@ -3555,16 +3585,50 @@
                             React.createElement('option', {value:''}, '모든 웨이브'),
                             waves.map(w => React.createElement('option', {key:w,value:w}, w))
                         ),
-                        React.createElement('div', {style:{fontSize:'0.82rem',color:'#64748b'}}, `${spList.length.toLocaleString()}개 표시`),
+                        React.createElement('div', {style:{fontSize:'0.82rem',color:'#64748b',display:'flex',alignItems:'center',gap:'10px'}},
+                            `${spList.length.toLocaleString()}개 표시`,
+                            (() => {
+                                if (spReadinessLoading) return React.createElement('span', {style:{fontSize:'0.72rem',color:'#94a3b8'}}, '(메타필드 확인 중…)');
+                                const shown = spList.map(s => spReadiness[s.it_id]).filter(Boolean);
+                                if (shown.length === 0) return null;
+                                const ready = shown.filter(r => r.ready).length;
+                                const pct = Math.round((ready / shown.length) * 100);
+                                return React.createElement('span', {
+                                    style:{padding:'2px 10px',borderRadius:'10px',background:pct===100?'#dcfce7':pct>=50?'#fef3c7':'#fef2f2',color:pct===100?'#166534':pct>=50?'#92400e':'#991b1b',fontSize:'0.72rem',fontWeight:700},
+                                    title:'쇼피파이 동기화 준비도 (필수 메타필드 모두 채워진 비율)'
+                                }, `메타필드 ${ready}/${shown.length} (${pct}%)`);
+                            })()
+                        ),
                         React.createElement('div', {style:{flex:1}}),
                         spBulkChecked.size > 0 && React.createElement('div', {style:{display:'flex',gap:'6px',alignItems:'center'}},
                             React.createElement('span', {style:{fontSize:'0.78rem',color:'#64748b',fontWeight:600}}, `${spBulkChecked.size}개 선택됨`),
+                            (() => {
+                                const checkedIds = Array.from(spBulkChecked);
+                                const notReadyIds = checkedIds.filter(id => {
+                                    const rd = spReadiness[id];
+                                    return rd && !rd.ready;
+                                });
+                                const badgeStyle = notReadyIds.length > 0
+                                    ? {padding:'3px 8px',borderRadius:'10px',background:'#fef2f2',color:'#991b1b',fontSize:'0.7rem',fontWeight:700}
+                                    : {padding:'3px 8px',borderRadius:'10px',background:'#dcfce7',color:'#166534',fontSize:'0.7rem',fontWeight:700};
+                                return React.createElement('span', {style:badgeStyle, title: notReadyIds.length > 0 ? '일부 선택 항목에 필수 메타필드 누락' : '모든 선택 항목 메타필드 OK'},
+                                    notReadyIds.length > 0 ? `⚠ ${notReadyIds.length}개 메타필드 누락` : '✓ 전부 준비 완료');
+                            })(),
                             React.createElement('button', {
                                 onClick:async()=>{
-                                    if (!confirm(`${spBulkChecked.size}개를 "승인" 상태로 변경할까요?`)) return;
+                                    const checkedIds = Array.from(spBulkChecked);
+                                    const notReadyIds = checkedIds.filter(id => {
+                                        const rd = spReadiness[id];
+                                        return rd && !rd.ready;
+                                    });
+                                    if (notReadyIds.length > 0) {
+                                        if (!confirm(`선택된 ${checkedIds.length}개 중 ${notReadyIds.length}개에 필수 메타필드가 누락되어 있습니다.\n\n누락 항목은 승인 후에도 쇼피파이 동기화가 차단됩니다.\n그래도 승인 상태로 변경할까요?`)) return;
+                                    } else {
+                                        if (!confirm(`${checkedIds.length}개를 "승인" 상태로 변경할까요?\n(메타필드 전부 준비 완료)`)) return;
+                                    }
                                     const r = await fetch('/api/shopify/selections/bulk-update', {
                                         method:'POST',headers:{'Content-Type':'application/json'},
-                                        body:JSON.stringify({it_ids:Array.from(spBulkChecked),status:'approved'})
+                                        body:JSON.stringify({it_ids:checkedIds,status:'approved'})
                                     });
                                     if (r.ok) { setSpBulkChecked(new Set()); await loadSpList(); await refreshSpSelections(); }
                                 },
@@ -3601,8 +3665,8 @@
                                         }
                                     })
                                 ),
-                                ...['SKU','상품명','브랜드','재고','웨이브','상태','오버라이드','수정일',''].map((h,i) =>
-                                    React.createElement('th', {key:i,style:{padding:'10px 12px',textAlign:i>=3&&i<=5?'center':'left',fontSize:'0.7rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',whiteSpace:'nowrap'}}, h)
+                                ...['SKU','상품명','브랜드','재고','웨이브','상태','메타필드','오버라이드','수정일',''].map((h,i) =>
+                                    React.createElement('th', {key:i,style:{padding:'10px 12px',textAlign:i>=3&&i<=6?'center':'left',fontSize:'0.7rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',whiteSpace:'nowrap'}}, h)
                                 )
                             )),
                             React.createElement('tbody', null, spList.map(sp => {
@@ -3635,16 +3699,35 @@
                                     React.createElement('td', {style:{padding:'8px 12px',textAlign:'center'}},
                                         React.createElement('span', {style:{padding:'3px 9px',borderRadius:'10px',background:statusDef.c+'15',color:statusDef.c,fontSize:'0.7rem',fontWeight:700}}, statusDef.t)
                                     ),
+                                    (() => {
+                                        const rd = spReadiness[sp.it_id];
+                                        let content;
+                                        if (!rd) {
+                                            content = React.createElement('span', {style:{fontSize:'0.68rem',color:'#cbd5e1'}}, '…');
+                                        } else if (rd.ready) {
+                                            content = React.createElement('span', {
+                                                title:`${rd.filled_count}/${rd.total_keys} 필드 채움`,
+                                                style:{padding:'3px 9px',borderRadius:'10px',background:'#dcfce7',color:'#166534',fontSize:'0.68rem',fontWeight:700}
+                                            }, `✓ OK ${rd.filled_count}/${rd.total_keys}`);
+                                        } else {
+                                            const missingCount = (rd.missing_required||[]).length;
+                                            content = React.createElement('span', {
+                                                title:`누락 필수: ${(rd.missing_required||[]).join(', ') || '없음'}${rd.error?' · '+rd.error:''}`,
+                                                style:{padding:'3px 9px',borderRadius:'10px',background:'#fef2f2',color:'#991b1b',fontSize:'0.68rem',fontWeight:700,cursor:'help'}
+                                            }, `✗ ${missingCount}개 누락`);
+                                        }
+                                        return React.createElement('td', {style:{padding:'8px 12px',textAlign:'center'}}, content);
+                                    })(),
                                     React.createElement('td', {style:{padding:'8px 12px',textAlign:'center'}},
                                         hasOverride ? React.createElement('span', {style:{fontSize:'0.7rem',color:'#d946ef',fontWeight:700}}, '✏️ 있음') : React.createElement('span', {style:{fontSize:'0.7rem',color:'#cbd5e1'}}, '—')
                                     ),
                                     React.createElement('td', {style:{padding:'8px 12px',fontSize:'0.7rem',color:'#94a3b8'}}, (sp.updated_at||'').slice(0,10)),
                                     React.createElement('td', {style:{padding:'8px 12px',whiteSpace:'nowrap'}},
                                         React.createElement('button', {
-                                            onClick:()=>setSpEditing({
-                                                ...sp,
-                                                _wp: wp
-                                            }),
+                                            onClick:()=>{
+                                                setSpEditing({...sp, _wp: wp});
+                                                loadEditingMetafields(sp.it_id);
+                                            },
                                             style:{padding:'4px 10px',borderRadius:'5px',border:'1px solid #e2e8f0',background:'#fff',color:'#475569',fontSize:'0.72rem',fontWeight:600,cursor:'pointer'}
                                         }, '편집')
                                     )
@@ -3655,7 +3738,7 @@
                     // Edit modal
                     spEditing && React.createElement('div', {
                         style:{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:'20px',overflowY:'auto'},
-                        onClick:()=>setSpEditing(null)
+                        onClick:()=>{setSpEditing(null); setSpEditingMetafields(null);}
                     },
                         React.createElement('div', {
                             onClick:e=>e.stopPropagation(),
@@ -3703,6 +3786,32 @@
                                 React.createElement('label', {style:{display:'block',fontSize:'0.72rem',fontWeight:600,color:'#701a75',marginBottom:'4px'}}, '커스텀 설명'),
                                 React.createElement('textarea', {value:spEditing.custom_description||'',onChange:e=>setSpEditing({...spEditing,custom_description:e.target.value}),placeholder:'Shopify 전용 상품 설명...',style:{width:'100%',padding:'7px 10px',borderRadius:'6px',border:'1px solid #f0abfc',fontSize:'0.8rem',minHeight:'60px',fontFamily:'inherit',boxSizing:'border-box',resize:'vertical',background:'#fff'}})
                             ),
+                            // Metafield readiness preview
+                            (() => {
+                                const mfResp = spEditingMetafields;
+                                const rd = mfResp && mfResp.readiness;
+                                const mf = mfResp && mfResp.metafields;
+                                const headerBg = !rd ? '#f1f5f9' : (rd.ready ? '#dcfce7' : '#fef2f2');
+                                const headerColor = !rd ? '#475569' : (rd.ready ? '#166534' : '#991b1b');
+                                const headerText = !rd ? '메타필드 확인 중…' :
+                                    (rd.ready ? `✓ 메타필드 준비 완료 (${rd.filled_count}/${rd.total_keys})` :
+                                                `✗ 필수 메타필드 누락 ${rd.missing_required.length}개 (${rd.filled_count}/${rd.total_keys})`);
+                                return React.createElement('div', {style:{padding:'12px',background:headerBg,border:`1px solid ${headerColor}33`,borderRadius:'8px',marginBottom:'14px'}},
+                                    React.createElement('div', {style:{fontSize:'0.8rem',fontWeight:800,color:headerColor,marginBottom:rd?'8px':0}}, headerText),
+                                    rd && rd.missing_required.length > 0 && React.createElement('div', {style:{fontSize:'0.72rem',color:'#991b1b',marginBottom:'6px'}},
+                                        '누락 필수: ' + rd.missing_required.join(', ')
+                                    ),
+                                    rd && rd.missing_optional && rd.missing_optional.length > 0 && React.createElement('div', {style:{fontSize:'0.7rem',color:'#94a3b8',marginBottom:'6px'}},
+                                        '비어있는 선택 필드: ' + rd.missing_optional.join(', ')
+                                    ),
+                                    mf && React.createElement('details', {style:{marginTop:'6px'}},
+                                        React.createElement('summary', {style:{fontSize:'0.72rem',color:'#475569',cursor:'pointer',fontWeight:600}}, '메타필드 값 미리보기 (JSON)'),
+                                        React.createElement('pre', {style:{background:'#0f172a',color:'#a5f3fc',padding:'10px',borderRadius:'6px',fontSize:'0.68rem',maxHeight:'260px',overflow:'auto',marginTop:'6px',fontFamily:'Menlo,monospace',lineHeight:1.5}},
+                                            JSON.stringify(Object.fromEntries(Object.entries(mf).filter(([k,_])=>k!=='_meta')), null, 2)
+                                        )
+                                    )
+                                );
+                            })(),
                             // Notes
                             React.createElement('label', {style:{display:'block',fontSize:'0.75rem',fontWeight:700,color:'#334155',marginBottom:'5px'}}, '메모'),
                             React.createElement('textarea', {value:spEditing.notes||'',onChange:e=>setSpEditing({...spEditing,notes:e.target.value}),style:{width:'100%',padding:'8px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'0.82rem',minHeight:'50px',fontFamily:'inherit',boxSizing:'border-box',resize:'vertical',marginBottom:'16px'}}),
@@ -3712,17 +3821,22 @@
                                     onClick:async()=>{
                                         if (!confirm('이 선정을 삭제할까요? (WMS 상품은 그대로 유지됩니다)')) return;
                                         const r = await fetch('/api/shopify/selections/'+spEditing.it_id, {method:'DELETE'});
-                                        if (r.ok) { setSpEditing(null); await loadSpList(); await refreshSpSelections(); }
+                                        if (r.ok) { setSpEditing(null); setSpEditingMetafields(null); await loadSpList(); await refreshSpSelections(); }
                                     },
                                     style:{padding:'9px 14px',borderRadius:'7px',border:'1px solid #fecaca',background:'#fff',color:'#dc2626',fontSize:'0.8rem',fontWeight:600,cursor:'pointer'}
                                 }, '🗑 선정 삭제'),
                                 React.createElement('div', {style:{display:'flex',gap:'8px'}},
                                     React.createElement('button', {
-                                        onClick:()=>setSpEditing(null),
+                                        onClick:()=>{setSpEditing(null); setSpEditingMetafields(null);},
                                         style:{padding:'9px 18px',borderRadius:'7px',border:'1px solid #e2e8f0',background:'#fff',color:'#64748b',fontSize:'0.85rem',fontWeight:600,cursor:'pointer'}
                                     }, '취소'),
                                     React.createElement('button', {
                                         onClick:async()=>{
+                                            // Gate: block saving to approved/syncing if metafields not ready
+                                            const rd = spEditingMetafields && spEditingMetafields.readiness;
+                                            if (rd && !rd.ready && (spEditing.status === 'approved' || spEditing.status === 'syncing')) {
+                                                if (!confirm(`필수 메타필드 ${rd.missing_required.length}개가 누락되었습니다:\n\n${rd.missing_required.join(', ')}\n\n이 상태로는 쇼피파이 동기화가 차단됩니다.\n그래도 저장할까요?`)) return;
+                                            }
                                             const body = {
                                                 status: spEditing.status,
                                                 wave: spEditing.wave || null,
@@ -3739,6 +3853,7 @@
                                             });
                                             if (!r.ok) { alert('저장 실패'); return; }
                                             setSpEditing(null);
+                                            setSpEditingMetafields(null);
                                             await loadSpList();
                                             await refreshSpSelections();
                                         },

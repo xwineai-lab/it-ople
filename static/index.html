@@ -2897,6 +2897,22 @@
                 const [detailTab, setDetailTab] = useState('info');
                 const [descHtml, setDescHtml] = useState(null);
                 const [descLoading, setDescLoading] = useState(false);
+                const [catData, setCatData] = useState(null);
+
+                // Load categories on mount — use child SKUs (OPLE it_ids) for WMS products
+                useEffect(() => {
+                    const childSkus = p.ch && p.ch.length > 0 ? p.ch.map(c => c.sku) : [];
+                    if (childSkus.length > 0) {
+                        fetch(`/api/products/categories/bulk?ids=${childSkus.join(',')}`).then(r=>r.ok?r.json():null).then(d=>{
+                            if(d && d.categories && d.categories.length>0) setCatData(d);
+                        }).catch(()=>{});
+                    } else {
+                        const itId = p.sku || String(p.id);
+                        fetch(`/api/products/${itId}/categories`).then(r=>r.ok?r.json():null).then(d=>{
+                            if(d && d.categories && d.categories.length>0) setCatData(d);
+                        }).catch(()=>{});
+                    }
+                }, [p]);
 
                 // Load description when tab is clicked
                 useEffect(() => {
@@ -2934,6 +2950,28 @@
                         React.createElement(F, {label:'Brand Name',val:p.bn,w:'25%'}),
                         React.createElement(F, {label:'Product Name (eng) - 영문명',val:p.en,w:'100%'}),
                         React.createElement(F, {label:'Product Name (kor) - 한글명',val:p.kn,w:'100%'}),
+                        // ── Category info ──
+                        catData && React.createElement('div', {style:{width:'100%',marginBottom:'14px'}},
+                            React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b',marginBottom:'6px',fontWeight:600}}, `카테고리 (${catData.categories.length})`),
+                            React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:'4px',marginBottom:'10px'}},
+                                catData.categories.map((c,i) => React.createElement('div', {key:i,style:{display:'flex',alignItems:'center',gap:'6px',fontSize:'0.8rem',color:'#334155'}},
+                                    React.createElement('span', {style:{color:'#6DAB3C',fontSize:'0.75rem'}}, '📂'),
+                                    React.createElement('span', null, c.depth_path)
+                                ))
+                            ),
+                            catData.shopify_tags && catData.shopify_tags.length > 0 && React.createElement('div', {style:{marginTop:'2px'}},
+                                React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b',marginBottom:'6px',fontWeight:600}}, 'Shopify Tags'),
+                                React.createElement('div', {style:{display:'flex',gap:'5px',flexWrap:'wrap'}},
+                                    catData.shopify_tags.map((tag,i) => {
+                                        const isC = tag.startsWith('cat:'), isS = tag.startsWith('sub:'), isS2 = tag.startsWith('sub2:');
+                                        const bg = isC ? '#dbeafe' : isS ? '#ede9fe' : isS2 ? '#fce7f3' : '#f1f5f9';
+                                        const cl = isC ? '#1e40af' : isS ? '#5b21b6' : isS2 ? '#9d174d' : '#475569';
+                                        const bd = isC ? '#93c5fd' : isS ? '#c4b5fd' : isS2 ? '#f9a8d4' : '#e2e8f0';
+                                        return React.createElement('span', {key:i,style:{display:'inline-block',padding:'2px 8px',borderRadius:'4px',fontSize:'0.7rem',fontWeight:600,background:bg,color:cl,border:'1px solid '+bd}}, tag);
+                                    })
+                                )
+                            )
+                        ),
                         React.createElement(F, {label:'Status - 상태',val:p.st==='selling'?'판매중(Selling)':p.st==='discontinued'?'단종(Discontinued)':'미지정',w:'25%'}),
                         React.createElement(F, {label:'FOOD - 식품여부',val:p.fd?'식품 O':'식품 X',w:'25%'}),
                         React.createElement(F, {label:'Glass - 유리',val:p.gl?'유리 O':'유리 X',w:'25%'}),

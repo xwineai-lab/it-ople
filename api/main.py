@@ -101,7 +101,19 @@ if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 @app.get("/", response_class=HTMLResponse)
-async def root():
+async def root(request: Request):
+    # Shopify install kickoff: when merchant clicks "Install app" in Dev Dashboard,
+    # Shopify redirects to App URL with ?shop=X&hmac=Y&timestamp=Z (no code).
+    # Detect that and forward to our OAuth install endpoint to start the authorize flow.
+    qp = request.query_params
+    if qp.get("shop") and qp.get("hmac") and not qp.get("code"):
+        from fastapi.responses import RedirectResponse
+        shop = qp.get("shop")
+        return RedirectResponse(
+            url=f"/api/shopify/oauth/install?shop={shop}",
+            status_code=302,
+        )
+
     index_path = static_dir / "index.html"
     if index_path.exists():
         return index_path.read_text(encoding="utf-8")
@@ -1942,31 +1954,74 @@ async def reload_metafield_caches():
 # Shopify Admin API를 통한 메타필드 Definition 관리
 
 SHOPIFY_STORE = os.getenv("SHOPIFY_STORE", "ople-7502.myshopify.com")
-SHOPIFY_API_VERSION = "2025-01"
+SHOPIFY_API_VERSION = os.getenv("SHOPIFY_API_VERSION", "2025-01")
 SHOPIFY_GRAPHQL_URL = f"https://{SHOPIFY_STORE}/admin/api/{SHOPIFY_API_VERSION}/graphql.json"
 
+# OAuth configuration (opleaep Dev Dashboard app)
+SHOPIFY_API_KEY = os.getenv("SHOPIFY_API_KEY", "f5add71ac6273d9eb9a43e0d155255af")
+SHOPIFY_API_SECRET = os.getenv("SHOPIFY_API_SECRET", "")
+SHOPIFY_OAUTH_SCOPES = os.getenv(
+    "SHOPIFY_OAUTH_SCOPES",
+    "read_products,write_products,read_product_listings,write_product_listings",
+)
+SHOPIFY_APP_URL = os.getenv("SHOPIFY_APP_URL", "https://it-ople.onrender.com")
+SHOPIFY_TOKEN_FILE = Path(os.getenv("SHOPIFY_TOKEN_FILE", "/tmp/shopify_token.json"))
+
+
+def _load_shopify_token_file() -> Optional[dict]:
+    if SHOPIFY_TOKEN_FILE.exists():
+        try:
+            return json.loads(SHOPIFY_TOKEN_FILE.read_text())
+        except Exception:
+            return None
+    return None
+
+
+def _save_shopify_token_file(shop: str, access_token: str, scope: str = "") -> None:
+    try:
+        SHOPIFY_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SHOPIFY_TOKEN_FILE.write_text(json.dumps({
+            "shop": shop,
+            "access_token": access_token,
+            "scope": scope,
+            "saved_at": datetime.utcnow().isoformat() + "Z",
+        }))
+    except Exception:
+        pass
+
+
 def _get_shopify_access_token() -> Optional[str]:
-    """Prisma SQLite 세션에서 Shopify access_token 읽기"""
+    """Get Shopify access token from (1) OAuth callback file, (2) env var, (3) legacy Prisma SQLite."""
+    # 1) Ephemeral file written by our /api/shopify/oauth/callback
+    file_token = _load_shopify_token_file()
+    if file_token and file_token.get("access_token"):
+        return file_token["access_token"]
+
+    # 2) Environment variable (most persistent across Render deploys)
+    env_token = os.getenv("SHOPIFY_ACCESS_TOKEN")
+    if env_token:
+        return env_token
+
+    # 3) Legacy Remix app SQLite session (ephemeral on Render)
     import sqlite3
     db_path = "/app/shopify-app/prisma/dev.sqlite"
     if not os.path.exists(db_path):
-        # 로컬 개발 환경
         local_path = Path(__file__).parent.parent / "shopify-app" / "prisma" / "dev.sqlite"
         if local_path.exists():
             db_path = str(local_path)
         else:
-            return os.getenv("SHOPIFY_ACCESS_TOKEN")
+            return None
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.execute(
             "SELECT accessToken FROM Session WHERE shop = ? LIMIT 1",
-            (SHOPIFY_STORE,)
+            (SHOPIFY_STORE,),
         )
         row = cursor.fetchone()
         conn.close()
-        return row[0] if row else os.getenv("SHOPIFY_ACCESS_TOKEN")
+        return row[0] if row else None
     except Exception:
-        return os.getenv("SHOPIFY_ACCESS_TOKEN")
+        return None
 
 
 async def _shopify_graphql(query: str, variables: dict) -> dict:
@@ -2131,6 +2186,165 @@ async def delete_shopify_metafield(definition_key: str, delete_values: bool = Tr
         raise HTTPException(status_code=400, detail=errors[0]["message"])
 
     return {"deleted": target["key"], "name": target["name"], "id": target["id"]}
+
+
+# ── Shopify OAuth install flow (opleaep app) ─────────────
+
+def _verify_shopify_hmac(query_params: dict, secret: str) -> bool:
+    """Verify Shopify OAuth callback HMAC per legacy install flow."""
+    import hmac as _hmac
+    import hashlib
+    provided = query_params.get("hmac", "")
+    if not provided or not secret:
+        return False
+    filtered = {k: v for k, v in query_params.items() if k not in ("hmac", "signature")}
+    message = "&".join(f"{k}={v}" for k, v in sorted(filtered.items()))
+    computed = _hmac.new(secret.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
+    return _hmac.compare_digest(computed, provided)
+
+
+@app.get("/api/shopify/oauth/install")
+async def shopify_oauth_install(shop: str = Query("ople-7502.myshopify.com")):
+    """Start OAuth: redirect merchant to shop's /admin/oauth/authorize URL."""
+    from fastapi.responses import RedirectResponse
+    import secrets
+
+    if not shop.endswith(".myshopify.com"):
+        shop = f"{shop}.myshopify.com"
+
+    state = secrets.token_hex(16)
+    redirect_uri = f"{SHOPIFY_APP_URL}/api/shopify/oauth/callback"
+    authorize_url = (
+        f"https://{shop}/admin/oauth/authorize"
+        f"?client_id={SHOPIFY_API_KEY}"
+        f"&scope={SHOPIFY_OAUTH_SCOPES}"
+        f"&redirect_uri={redirect_uri}"
+        f"&state={state}"
+    )
+    return RedirectResponse(url=authorize_url, status_code=302)
+
+
+@app.get("/api/shopify/oauth/callback", response_class=HTMLResponse)
+async def shopify_oauth_callback(request: Request):
+    """Handle OAuth callback: exchange code for access token and display it."""
+    params = dict(request.query_params)
+    code = params.get("code")
+    shop = params.get("shop", "")
+
+    if not code:
+        return HTMLResponse(
+            "<h2>Shopify OAuth: missing 'code' parameter</h2>"
+            f"<p>This endpoint expects a merchant to have completed consent.</p>"
+            f"<pre>{json.dumps(params, indent=2, ensure_ascii=False)}</pre>"
+            f"<p><a href='/api/shopify/oauth/install?shop={shop or 'ople-7502.myshopify.com'}'>"
+            f"Start install flow</a></p>",
+            status_code=400,
+        )
+
+    if not SHOPIFY_API_SECRET:
+        return HTMLResponse(
+            "<h2>Server not configured</h2>"
+            "<p><code>SHOPIFY_API_SECRET</code> env var is not set on the server. "
+            "Set it in Render → Environment and redeploy before installing.</p>",
+            status_code=500,
+        )
+
+    if not _verify_shopify_hmac(params, SHOPIFY_API_SECRET):
+        return HTMLResponse(
+            "<h2>HMAC verification failed</h2>"
+            "<p>The callback signature did not match. Possible tampering or wrong secret.</p>"
+            f"<pre>{json.dumps(params, indent=2, ensure_ascii=False)}</pre>",
+            status_code=400,
+        )
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"https://{shop}/admin/oauth/access_token",
+            json={
+                "client_id": SHOPIFY_API_KEY,
+                "client_secret": SHOPIFY_API_SECRET,
+                "code": code,
+            },
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            return HTMLResponse(
+                f"<h2>Token exchange failed</h2>"
+                f"<p>Shopify returned <code>{resp.status_code}</code></p>"
+                f"<pre>{resp.text}</pre>",
+                status_code=500,
+            )
+        token_data = resp.json()
+
+    access_token = token_data.get("access_token", "")
+    granted_scope = token_data.get("scope", "")
+    if not access_token:
+        return HTMLResponse(
+            f"<h2>No access_token in Shopify response</h2>"
+            f"<pre>{json.dumps(token_data, indent=2)}</pre>",
+            status_code=500,
+        )
+
+    _save_shopify_token_file(shop, access_token, granted_scope)
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><title>Shopify OAuth 성공</title>
+<style>
+body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:760px;margin:40px auto;padding:24px;color:#1a1a1a;line-height:1.55}}
+h1{{font-size:22px;margin:0 0 16px}}
+.ok{{background:#d1fae5;border:1px solid #10b981;padding:12px 16px;border-radius:8px;margin-bottom:20px}}
+.token{{background:#0d1117;color:#e6edf3;padding:14px 16px;border-radius:8px;font-family:"SF Mono",Monaco,Consolas,monospace;word-break:break-all;font-size:12px;line-height:1.5}}
+.note{{background:#fff8e1;border:1px solid #ffc107;padding:14px 16px;border-radius:8px;margin:20px 0}}
+button{{padding:8px 16px;background:#1a73e8;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;margin-top:8px}}
+button:hover{{background:#1557b0}}
+code{{background:#f1f3f4;padding:2px 6px;border-radius:4px;font-size:13px}}
+a{{color:#1a73e8}}
+ul{{margin:8px 0;padding-left:20px}}
+li{{margin:4px 0}}
+</style></head><body>
+<div class="ok"><strong>✅ Shopify OAuth 설치 성공</strong> — <code>{shop}</code></div>
+<h1>Admin API Access Token</h1>
+<div class="token" id="token">{access_token}</div>
+<button onclick="navigator.clipboard.writeText(document.getElementById('token').textContent);this.textContent='✓ 복사됨!';">토큰 복사</button>
+<p><strong>Granted scopes:</strong> <code>{granted_scope}</code></p>
+<div class="note">
+<strong>⚠️ 다음 단계 (필수):</strong>
+<ul>
+<li>이 토큰을 <strong>Render 대시보드 → it-ople 서비스 → Environment</strong>에서 <code>SHOPIFY_ACCESS_TOKEN</code> 환경변수로 저장하세요.</li>
+<li>저장 후 "Save, rebuild, and deploy" 클릭.</li>
+<li>재배포되면 메타필드 API가 영구적으로 작동합니다.</li>
+</ul>
+현재 토큰은 임시 파일(<code>{SHOPIFY_TOKEN_FILE}</code>)에 저장되어 <strong>다음 배포 전까지만</strong> 사용 가능합니다.
+</div>
+<h3>지금 바로 확인</h3>
+<ul>
+<li><a href="/api/shopify/metafields" target="_blank">GET /api/shopify/metafields</a> — 현재 정의 목록 (0개여야 함)</li>
+<li>POST /api/shopify/metafields/create-all — 22개 메타필드 일괄 생성</li>
+</ul>
+<p><a href="/">← 대시보드로 돌아가기</a></p>
+</body></html>""")
+
+
+@app.get("/api/shopify/oauth/status")
+async def shopify_oauth_status():
+    """Report which source supplied the current access token (if any)."""
+    sources = []
+    file_tok = _load_shopify_token_file()
+    if file_tok and file_tok.get("access_token"):
+        sources.append({"source": "file", "path": str(SHOPIFY_TOKEN_FILE), "shop": file_tok.get("shop"), "saved_at": file_tok.get("saved_at")})
+    if os.getenv("SHOPIFY_ACCESS_TOKEN"):
+        sources.append({"source": "env", "var": "SHOPIFY_ACCESS_TOKEN"})
+    token = _get_shopify_access_token()
+    return {
+        "has_token": bool(token),
+        "token_preview": (token[:6] + "…" + token[-4:]) if token else None,
+        "sources_found": sources,
+        "api_key_configured": bool(SHOPIFY_API_KEY),
+        "api_secret_configured": bool(SHOPIFY_API_SECRET),
+        "app_url": SHOPIFY_APP_URL,
+        "shop": SHOPIFY_STORE,
+        "scopes": SHOPIFY_OAUTH_SCOPES,
+    }
 
 
 # ── Run ──────────────────────────────────────────────────

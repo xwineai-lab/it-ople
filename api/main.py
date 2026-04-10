@@ -1264,6 +1264,150 @@ def seed_demo_data(db: Session):
     db.commit()
     print(f"Seeded {len(demo_products)} products, {len(demo_mappings)} mappings, {len(demo_reviews)} reviews, {len(unique_iherb_products)} iHerb products (deduplicated from {len(demo_iherb_products)}, incl. {len(chrome_scraped_products)} Chrome-scraped)")
 
+# ── Category API ─────────────────────────────────────────
+# 오플 카테고리 관리 및 임포트
+
+from database import Category, ProductCategory
+
+@app.post("/api/categories/import")
+async def import_categories_csv(background_tasks: BackgroundTasks):
+    """Import category CSV from static/data directory."""
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from import_categories import import_csv
+
+    csv_path = Path(__file__).resolve().parent.parent / "static" / "data" / "ople_categories.csv"
+    if not csv_path.exists():
+        # Try uploads path
+        csv_path = Path(__file__).resolve().parent.parent / "data" / "ople_categories.csv"
+        if not csv_path.exists():
+            raise HTTPException(status_code=404, detail="Category CSV not found. Place at static/data/ople_categories.csv")
+
+    result = import_csv(str(csv_path))
+    return {"status": "ok", "stats": result}
+
+
+@app.get("/api/categories")
+async def list_categories(
+    level1: Optional[str] = None,
+    level2: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """List categories with optional level filters. Returns category tree."""
+    q = db.query(Category)
+    if level1:
+        q = q.filter(Category.level1 == level1)
+    if level2:
+        q = q.filter(Category.level2 == level2)
+    cats = q.order_by(Category.level1, Category.level2, Category.level3).all()
+
+    return {
+        "total": len(cats),
+        "categories": [
+            {
+                "category_id": c.category_id,
+                "depth_path": c.depth_path,
+                "level1": c.level1,
+                "level2": c.level2,
+                "level3": c.level3,
+                "depth": c.depth,
+                "product_count": c.product_count,
+                "shopify_tags": {
+                    "cat": c.shopify_tag_cat,
+                    "sub": c.shopify_tag_sub,
+                    "sub2": c.shopify_tag_sub2,
+                }
+            }
+            for c in cats
+        ]
+    }
+
+
+@app.get("/api/categories/tree")
+async def category_tree(db: Session = Depends(get_db)):
+    """Return category tree grouped by level1 → level2 → level3."""
+    cats = db.query(Category).order_by(Category.level1, Category.level2, Category.level3).all()
+
+    tree = {}
+    for c in cats:
+        l1 = c.level1 or "기타"
+        l2 = c.level2
+        l3 = c.level3
+
+        if l1 not in tree:
+            tree[l1] = {"count": 0, "subcategories": {}}
+        tree[l1]["count"] += c.product_count
+
+        if l2:
+            if l2 not in tree[l1]["subcategories"]:
+                tree[l1]["subcategories"][l2] = {"count": 0, "items": []}
+            tree[l1]["subcategories"][l2]["count"] += c.product_count
+            if l3:
+                tree[l1]["subcategories"][l2]["items"].append({
+                    "name": l3,
+                    "category_id": c.category_id,
+                    "count": c.product_count,
+                    "shopify_tag": c.shopify_tag_sub2
+                })
+
+    return {"tree": tree}
+
+
+@app.get("/api/categories/stats")
+async def category_stats(db: Session = Depends(get_db)):
+    """Summary statistics of the category system."""
+    total_cats = db.query(Category).count()
+    total_mappings = db.query(ProductCategory).count()
+    unique_products = db.query(func.count(func.distinct(ProductCategory.it_id))).scalar()
+
+    # Top level1 groups
+    level1_stats = db.query(
+        Category.level1,
+        func.sum(Category.product_count).label("total")
+    ).group_by(Category.level1).order_by(desc("total")).all()
+
+    return {
+        "total_categories": total_cats,
+        "total_mappings": total_mappings,
+        "unique_products_with_categories": unique_products,
+        "level1_distribution": [{"name": l1, "count": cnt} for l1, cnt in level1_stats]
+    }
+
+
+@app.get("/api/products/{it_id}/categories")
+async def product_categories(it_id: str, db: Session = Depends(get_db)):
+    """Get all categories for a specific product."""
+    pcs = db.query(ProductCategory).filter(ProductCategory.it_id == it_id).all()
+    if not pcs:
+        return {"it_id": it_id, "categories": [], "shopify_tags": []}
+
+    cat_ids = [pc.category_id for pc in pcs]
+    cats = db.query(Category).filter(Category.category_id.in_(cat_ids)).all()
+
+    shopify_tags = set()
+    categories = []
+    for c in cats:
+        categories.append({
+            "category_id": c.category_id,
+            "depth_path": c.depth_path,
+            "level1": c.level1,
+            "level2": c.level2,
+            "level3": c.level3,
+        })
+        if c.shopify_tag_cat:
+            shopify_tags.add(c.shopify_tag_cat)
+        if c.shopify_tag_sub:
+            shopify_tags.add(c.shopify_tag_sub)
+        if c.shopify_tag_sub2:
+            shopify_tags.add(c.shopify_tag_sub2)
+
+    return {
+        "it_id": it_id,
+        "categories": categories,
+        "shopify_tags": sorted(shopify_tags)
+    }
+
+
 # ── Shopify Metafield API ────────────────────────────────
 # Shopify Admin API를 통한 메타필드 Definition 관리
 

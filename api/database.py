@@ -220,6 +220,53 @@ class IHerbProduct(Base):
     )
 
 
+# ── OPLE Category System ───────────────────────────────
+# 오플닷컴 카테고리 (태그 전략의 기반 데이터)
+# category_depth 예: "대상별 > 부모님 > 혈행/혈압/당뇨"
+# → Shopify 태그: cat:대상별, sub:부모님, sub2:혈행/혈압/당뇨
+
+class Category(Base):
+    """OPLE category tree — 517 unique categories across multiple axes."""
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    category_id = Column(String(20), unique=True, index=True, nullable=False)  # 오플 카테고리 코드 (e.g. "101213")
+    depth_path = Column(String(500), nullable=False)      # 전체 경로: "대상별 > 부모님 > 혈행/혈압/당뇨"
+    level1 = Column(String(100), index=True)               # 1차: "대상별"
+    level2 = Column(String(100), index=True)               # 2차: "부모님"
+    level3 = Column(String(100))                           # 3차: "혈행/혈압/당뇨"
+    depth = Column(Integer, default=1)                     # 깊이 (1~3)
+    product_count = Column(Integer, default=0)             # 이 카테고리에 속한 상품 수
+
+    # Shopify 태그 매핑
+    shopify_tag_cat = Column(String(100))    # cat:{level1} → Shopify main category tag
+    shopify_tag_sub = Column(String(100))    # sub:{level2} → Shopify subcategory tag
+    shopify_tag_sub2 = Column(String(100))   # sub2:{level3} → Shopify 3rd-level tag
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    products = relationship("ProductCategory", back_populates="category")
+
+    __table_args__ = (
+        Index("idx_cat_level12", "level1", "level2"),
+    )
+
+
+class ProductCategory(Base):
+    """Many-to-many: one product can belong to multiple categories."""
+    __tablename__ = "product_categories"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    it_id = Column(String(20), index=True, nullable=False)        # OPLE product ID
+    category_id = Column(String(20), ForeignKey("categories.category_id"), index=True, nullable=False)
+
+    category = relationship("Category", back_populates="products")
+
+    __table_args__ = (
+        Index("idx_pc_unique", "it_id", "category_id", unique=True),
+    )
+
+
 class ScrapeJob(Base):
     __tablename__ = "scrape_jobs"
 

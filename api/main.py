@@ -2223,69 +2223,140 @@ def _coerce_metafield_value(value, mf_type: str) -> Optional[str]:
     return s if s != "" else None
 
 
-def _category_tags_for(db: Session, it_id: str) -> list[str]:
-    """WMS 계층 카테고리 태그 (cat:/sub:/sub2:)."""
+def _category_tags_for(db: Session, parent_sku: str) -> list[str]:
+    """WMS 계층 카테고리 태그 (cat:/sub:/sub2:).
+
+    ProductCategory.it_id 는 **자식 SKU**(10자리 OPLE it_id)를 저장하므로
+    부모 SKU로 바로 조회하면 빈 결과가 나온다. 카탈로그(wms_active.json)에서
+    부모 → 자식 SKU 목록을 가져온 뒤 그 자식 SKU들로 lookup 해야 한다.
+
+    Category 모델의 prebuilt `shopify_tag_cat/sub/sub2` 필드를 그대로 사용.
+    여러 자식이 겹치면 dedup, 입력 순서는 cat → sub → sub2 순으로 정렬.
+    """
     try:
-        rows = (
-            db.query(Category)
-            .join(ProductCategory, Category.id == ProductCategory.category_id)
-            .filter(ProductCategory.it_id == it_id)
-            .all()
-        )
+        from metafield_mapper import load_ople_catalog
+        catalog = load_ople_catalog()
+    except Exception:
+        catalog = {}
+
+    product = catalog.get(parent_sku) or {}
+    child_skus: list[str] = []
+    for c in (product.get("ch") or []):
+        if isinstance(c, dict):
+            sku = c.get("sku")
+        else:
+            sku = c
+        if sku:
+            child_skus.append(str(sku))
+
+    # Fallback: 부모 SKU 자체도 혹시 mapping 돼 있을 수 있으니 포함
+    lookup_ids = list({*child_skus, parent_sku})
+    if not lookup_ids:
+        return []
+
+    try:
+        cat_ids = [
+            row[0] for row in (
+                db.query(ProductCategory.category_id)
+                .filter(ProductCategory.it_id.in_(lookup_ids))
+                .distinct()
+                .all()
+            )
+        ]
+        if not cat_ids:
+            return []
+        cats = db.query(Category).filter(Category.category_id.in_(cat_ids)).all()
     except Exception:
         return []
-    tags = []
-    for cat in rows:
-        level = getattr(cat, "level", None) or getattr(cat, "depth", None)
-        name = getattr(cat, "name", None) or getattr(cat, "category_name", None)
-        if not name:
-            continue
-        if level == 1:
-            tags.append(f"cat:{name}")
-        elif level == 2:
-            tags.append(f"sub:{name}")
-        elif level == 3:
-            tags.append(f"sub2:{name}")
-        else:
-            tags.append(str(name))
-    return tags
+
+    bucket_cat: set[str] = set()
+    bucket_sub: set[str] = set()
+    bucket_sub2: set[str] = set()
+    for c in cats:
+        if getattr(c, "shopify_tag_cat", None):
+            bucket_cat.add(c.shopify_tag_cat)
+        if getattr(c, "shopify_tag_sub", None):
+            bucket_sub.add(c.shopify_tag_sub)
+        if getattr(c, "shopify_tag_sub2", None):
+            bucket_sub2.add(c.shopify_tag_sub2)
+
+    return sorted(bucket_cat) + sorted(bucket_sub) + sorted(bucket_sub2)
 
 
 @app.post("/api/shopify/selections/{it_id}/push")
 async def push_selection_to_shopify(
     it_id: str,
     force: bool = False,
+    replace: bool = False,
     db: Session = Depends(get_db),
 ):
     """선정된 상품(ShopifyProduct)을 실제 Shopify 스토어에 productCreate.
 
     Query params:
-      force=true — readiness 가 false여도 강제로 푸시 (누락 필드는 건너뜀)
+      force=true   — readiness 가 false여도 강제로 푸시 (누락 필드는 건너뜀)
+      replace=true — 이미 푸시된 상품이 있으면 productDelete 후 새로 생성 (업서트)
 
     Workflow:
       1. ShopifyProduct row 조회
-      2. _build_metafields + _assess_readiness 로 준비도 확인
-      3. ready=false 이고 force=false 면 400
-      4. status="syncing" 으로 전환
-      5. productCreate mutation (title, descriptionHtml, vendor, tags,
+      2. replace=true & 기존 shopify_product_id 존재 → productDelete 먼저
+      3. _build_metafields + _assess_readiness 로 준비도 확인
+      4. ready=false 이고 force=false 면 400
+      5. status="syncing" 으로 전환
+      6. productCreate mutation (title, descriptionHtml, vendor, tags,
          status=DRAFT, metafields=[...])
-      6. 성공 시 shopify_product_id/handle 기록, status="synced"
-      7. 실패 시 sync_error 기록, status="failed"
+      7. 성공 시 shopify_product_id/handle 기록, status="synced"
+      8. 실패 시 sync_error 기록, status="failed"
     """
     sp = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
     if not sp:
         raise HTTPException(status_code=404, detail=f"Selection not found: {it_id}")
 
-    # 이미 푸시된 경우 재푸시 방지 (force 로 우회 가능)
-    if sp.shopify_product_id and not force:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "error": "Already pushed to Shopify",
-                "shopify_product_id": sp.shopify_product_id,
-                "hint": "Use force=true to re-push (creates a new product)",
-            },
-        )
+    # 이미 푸시된 경우 분기: replace → 삭제 후 새 생성, force → 새 중복 생성, 아니면 409
+    replaced_product_id: Optional[str] = None
+    if sp.shopify_product_id:
+        if replace:
+            delete_mutation = """
+            mutation ProductDelete($input: ProductDeleteInput!) {
+              productDelete(input: $input) {
+                deletedProductId
+                userErrors { field message }
+              }
+            }
+            """
+            try:
+                del_resp = await _shopify_graphql(
+                    delete_mutation,
+                    {"input": {"id": sp.shopify_product_id}},
+                )
+            except Exception as e:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"productDelete request failed: {e}",
+                )
+            del_data = (del_resp.get("data") or {}).get("productDelete") or {}
+            del_errors = del_data.get("userErrors") or []
+            if del_errors:
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "error": "productDelete failed",
+                        "userErrors": del_errors,
+                    },
+                )
+            replaced_product_id = sp.shopify_product_id
+            sp.shopify_product_id = None
+            sp.shopify_handle = None
+            sp.shopify_status = None
+            db.commit()
+        elif not force:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "Already pushed to Shopify",
+                    "shopify_product_id": sp.shopify_product_id,
+                    "hint": "Use replace=true to delete and re-create, or force=true to create a duplicate",
+                },
+            )
 
     mf = _build_metafields(it_id, sp_row=sp, db=db)
     readiness = _assess_readiness(mf)
@@ -2402,6 +2473,7 @@ async def push_selection_to_shopify(
     return {
         "status": "ok",
         "it_id": it_id,
+        "replaced_product_id": replaced_product_id,
         "shopify_product_id": sp.shopify_product_id,
         "shopify_handle": sp.shopify_handle,
         "admin_url": f"https://admin.shopify.com/store/ople-7502/products/{(sp.shopify_product_id or '').rsplit('/', 1)[-1]}",

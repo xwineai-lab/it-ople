@@ -216,6 +216,31 @@ METAFIELD_DEFINITIONS = [
         "type": "boolean",
         "pin": False,
     },
+    # ━━━ 상품 상세 섹션 (3개) ━━━
+    {
+        "name": "섭취방법",
+        "namespace": "custom",
+        "key": "suggested_use",
+        "description": "복용법/섭취방법 (WMS 라벨에서 파싱)",
+        "type": "multi_line_text_field",
+        "pin": False,
+    },
+    {
+        "name": "기타 성분",
+        "namespace": "custom",
+        "key": "other_ingredients",
+        "description": "기타 성분 정보 (WMS 라벨에서 파싱)",
+        "type": "multi_line_text_field",
+        "pin": False,
+    },
+    {
+        "name": "주의사항",
+        "namespace": "custom",
+        "key": "warnings",
+        "description": "주의사항/경고 (WMS 라벨에서 파싱)",
+        "type": "multi_line_text_field",
+        "pin": False,
+    },
 ]
 
 

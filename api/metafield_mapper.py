@@ -234,6 +234,66 @@ def load_ople_desc() -> dict:
     return _desc_cache
 
 
+def parse_wms_sections(html: str) -> dict:
+    """Parse WMS description HTML into structured sections.
+
+    WMS product labels typically contain bold-text markers like
+    "SUGGESTED USAGE:", "Other Ingredients:", "WARNING:" that
+    delimit logical sections. This parser splits on those markers.
+
+    Returns dict with keys:
+      - product_info: main product description (label header + marketing copy)
+      - suggested_use: dosage / usage instructions
+      - other_ingredients: ingredients list
+      - warnings: warnings, cautions, storage info
+    """
+    if not html:
+        return {}
+
+    # Remove leading \N (already cleaned by _clean_description_html but defensive)
+    if html.startswith("\\N"):
+        html = html[2:]
+
+    # Split into paragraphs by <P> tags
+    parts = re.split(r'</?P[^>]*>', html, flags=re.IGNORECASE)
+    parts = [p.strip() for p in parts if p.strip()]
+
+    sections: dict[str, list] = {
+        "product_info": [],
+        "suggested_use": [],
+        "other_ingredients": [],
+        "warnings": [],
+    }
+
+    current = "product_info"
+
+    for part in parts:
+        text_only = re.sub(r'<[^>]+>', '', part).strip()
+        lower = text_only.lower()
+
+        # Check for section markers (bold headings in WMS labels)
+        if re.search(r'suggested\s+us(age|e)\s*:', lower):
+            current = "suggested_use"
+        elif re.search(r'directions?\s*:', lower):
+            current = "suggested_use"
+        elif re.search(r'other\s+ingredients?\s*:', lower):
+            current = "other_ingredients"
+        elif re.search(r'warning\s*:', lower) or (
+            lower.startswith('caution') and ':' in lower[:15]
+        ):
+            current = "warnings"
+
+        sections[current].append(part)
+
+    # Join each section back to HTML paragraphs
+    result = {}
+    for key, parts_list in sections.items():
+        if parts_list:
+            result[key] = '<P>' + '</P>\n<P>'.join(parts_list) + '</P>'
+
+    return result
+
+
 def reset_caches():
     """Clear caches so next call reloads from disk. Used by hot reload tools."""
     global _catalog_cache, _desc_cache, _child_to_parent_cache
@@ -367,6 +427,9 @@ OPTIONAL_KEYS = {
     "category_id",
     "child_products",
     "ople_mapped",
+    "suggested_use",
+    "other_ingredients",
+    "warnings",
 }
 
 # Keys explicitly not populated by automation (user confirmed)
@@ -449,7 +512,12 @@ def build_metafields(
     # Base values from OPLE
     name_ko = override_title or product.get("kn") or None
     name_en = product.get("en") or None
-    description_html = override_desc or desc_map.get(parent_sku)
+    raw_desc_html = desc_map.get(parent_sku)
+    description_html = override_desc or raw_desc_html
+
+    # Parse WMS label HTML into structured sections
+    wms_sections = parse_wms_sections(raw_desc_html) if raw_desc_html else {}
+
     price_usd = override_price if override_price is not None else product.get("pr")
     if price_usd == 0:
         price_usd = None
@@ -507,6 +575,11 @@ def build_metafields(
         "category_name": category_name,
         "parent_category": parent_category,
         "category_id": category_id,
+
+        # ━━━ 상품 상세 섹션 (WMS 라벨에서 파싱) ━━━
+        "suggested_use": wms_sections.get("suggested_use") or None,
+        "other_ingredients": wms_sections.get("other_ingredients") or None,
+        "warnings": wms_sections.get("warnings") or None,
 
         # ━━━ 구성품 & 이미지 & 매핑 ━━━
         "child_products": child_products_json,

@@ -1962,7 +1962,7 @@ SHOPIFY_API_KEY = os.getenv("SHOPIFY_API_KEY", "f5add71ac6273d9eb9a43e0d155255af
 SHOPIFY_API_SECRET = os.getenv("SHOPIFY_API_SECRET", "")
 SHOPIFY_OAUTH_SCOPES = os.getenv(
     "SHOPIFY_OAUTH_SCOPES",
-    "read_products,write_products,read_product_listings,write_product_listings,read_online_store_navigation,write_online_store_navigation",
+    "read_products,write_products,read_product_listings,write_product_listings,read_online_store_navigation,write_online_store_navigation,read_publications,write_publications",
 )
 SHOPIFY_APP_URL = os.getenv("SHOPIFY_APP_URL", "https://it-ople.onrender.com")
 SHOPIFY_TOKEN_FILE = Path(os.getenv("SHOPIFY_TOKEN_FILE", "/tmp/shopify_token.json"))
@@ -2348,6 +2348,59 @@ def _category_tags_for(db: Session, parent_sku: str) -> list[str]:
     return sorted(bucket_cat) + sorted(bucket_sub) + sorted(bucket_sub2)
 
 
+# ── Brand code → English brand name mapping (Smart Collection 연동용) ──
+BRAND_CODE_TO_EN: dict[str, str] = {
+    "JAR": "Jarrow Formulas",
+    "SOL": "Solgar",
+    "NOW": "NOW Foods",
+    "CGN": "California Gold Nutrition",
+    "LEX": "Life Extension",
+    "GOL": "Garden of Life",
+    "NWY": "Nature's Way",
+    "THR": "Thorne",
+    "DRB": "Doctor's Best",
+    "PEN": "Pure Encapsulations",
+}
+
+# ── Product name → form tag detection (제형 태그 자동 감지) ──
+_FORM_TAG_KEYWORDS: list[tuple[str, str]] = [
+    ("소프트젤", "form:소프트젤"),
+    ("구미", "form:구미"),
+    ("젤리", "form:구미"),
+    ("파우더", "form:분말"),
+    ("분말", "form:분말"),
+    ("액상", "form:액상"),
+    ("시럽", "form:액상"),
+    ("정제", "form:정제"),
+    ("타블렛", "form:정제"),
+    ("캡슐", "form:캡슐"),   # 캡슐은 마지막에 (소프트젤캡슐 구분)
+]
+
+
+def _extra_taxonomy_tags(brand_code: str | None, product_name: str | None) -> list[str]:
+    """brand:/form: 태그를 자동 생성.
+
+    brand: — BRAND_CODE_TO_EN 매핑으로 영문 브랜드명 태그
+    form:  — 상품명 키워드 매칭으로 제형 태그
+    """
+    tags: list[str] = []
+
+    # brand tag
+    if brand_code:
+        en_brand = BRAND_CODE_TO_EN.get(brand_code.upper())
+        if en_brand:
+            tags.append(f"brand:{en_brand}")
+
+    # form tag (first match wins — order matters in _FORM_TAG_KEYWORDS)
+    name = product_name or ""
+    for keyword, tag in _FORM_TAG_KEYWORDS:
+        if keyword in name:
+            tags.append(tag)
+            break
+
+    return tags
+
+
 @app.post("/api/shopify/selections/{it_id}/push")
 async def push_selection_to_shopify(
     it_id: str,
@@ -2442,6 +2495,18 @@ async def push_selection_to_shopify(
     vendor = mf.get("brand_name_ko") or mf.get("brand_code") or ""
 
     tags = _category_tags_for(db, it_id)
+    # brand:/form: 태그 자동 생성 (카탈로그 brand_code + 상품명 기반)
+    try:
+        from metafield_mapper import load_ople_catalog as _load_cat
+        _cat_entry = (_load_cat() or {}).get(it_id) or {}
+    except Exception:
+        _cat_entry = {}
+    tags.extend(
+        _extra_taxonomy_tags(
+            brand_code=_cat_entry.get("bc") or mf.get("brand_code"),
+            product_name=title,
+        )
+    )
     if sp.custom_tags:
         try:
             extra = json.loads(sp.custom_tags) if isinstance(sp.custom_tags, str) else sp.custom_tags
@@ -2527,6 +2592,7 @@ async def push_selection_to_shopify(
             "vendor": vendor,
             "tags": tags,
             "status": "DRAFT",
+            "templateSuffix": "ople",
             "metafields": mf_inputs,
         },
         "media": media_inputs or None,
@@ -2570,7 +2636,7 @@ async def push_selection_to_shopify(
         "replaced_product_id": replaced_product_id,
         "shopify_product_id": sp.shopify_product_id,
         "shopify_handle": sp.shopify_handle,
-        "admin_url": f"https://admin.shopify.com/store/ople-7502/products/{(sp.shopify_product_id or '').rsplit('/', 1)[-1]}",
+        "admin_url": f"https://admin.shopify.com/store/newople/products/{(sp.shopify_product_id or '').rsplit('/', 1)[-1]}",
         "title": product.get("title"),
         "vendor": product.get("vendor"),
         "tags": product.get("tags"),

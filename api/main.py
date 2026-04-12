@@ -2944,15 +2944,15 @@ async def build_main_menu(req: BuildMainMenuRequest):
 
     # 4. menuUpdate 뮤테이션
     update_mutation = """
-    mutation menuUpdate($id: ID!, $items: [MenuItemCreateInput!]!) {
-      menuUpdate(id: $id, items: $items) {
-        menu { id title itemsCount }
+    mutation menuUpdate($id: ID!, $title: String!, $items: [MenuItemUpdateInput!]!) {
+      menuUpdate(id: $id, title: $title, items: $items) {
+        menu { id title handle itemsCount }
         userErrors { field message }
       }
     }
     """
     update_resp = await _shopify_graphql(
-        update_mutation, {"id": menu_id, "items": menu_items}
+        update_mutation, {"id": menu_id, "title": menu_data["title"], "items": menu_items}
     )
     update_data = (update_resp.get("data") or {}).get("menuUpdate") or {}
     errors = update_data.get("userErrors") or []

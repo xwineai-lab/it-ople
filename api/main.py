@@ -3227,6 +3227,567 @@ async def shopify_oauth_status():
     }
 
 
+# ── Shopify Bulk Sync (전체 일괄 동기화) ─────────────────
+
+# In-memory sync job tracker
+_sync_jobs: dict[str, dict] = {}
+
+
+async def _run_bulk_sync(job_id: str, force: bool, replace: bool):
+    """Background task: push all approved/candidate selections to Shopify."""
+    from database import SessionLocal, ShopifyProduct
+
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(ShopifyProduct)
+            .filter(ShopifyProduct.status.in_(["approved", "candidate", "failed"]))
+            .order_by(desc(ShopifyProduct.priority), desc(ShopifyProduct.selected_at))
+            .all()
+        )
+        it_ids = [r.it_id for r in rows]
+        job = _sync_jobs[job_id]
+        job["total"] = len(it_ids)
+        job["status"] = "running"
+
+        for idx, it_id in enumerate(it_ids):
+            if job.get("cancelled"):
+                job["status"] = "cancelled"
+                break
+            job["current"] = idx + 1
+            job["current_it_id"] = it_id
+            try:
+                # Re-fetch row in this session
+                sp = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
+                if not sp:
+                    job["skipped"].append({"it_id": it_id, "reason": "not found"})
+                    continue
+
+                # Skip already-synced unless replace
+                if sp.shopify_product_id and not replace:
+                    job["skipped"].append({"it_id": it_id, "reason": "already synced"})
+                    continue
+
+                # Build metafields & tags
+                mf = _build_metafields(it_id, sp_row=sp, db=db)
+                readiness = _assess_readiness(mf)
+                if not readiness.get("ready") and not force:
+                    job["skipped"].append({
+                        "it_id": it_id,
+                        "reason": "not ready",
+                        "missing": readiness.get("missing_required", []),
+                    })
+                    continue
+
+                # Replace existing if requested
+                if sp.shopify_product_id and replace:
+                    delete_mutation = """
+                    mutation ProductDelete($input: ProductDeleteInput!) {
+                      productDelete(input: $input) {
+                        deletedProductId
+                        userErrors { field message }
+                      }
+                    }
+                    """
+                    try:
+                        await _shopify_graphql(
+                            delete_mutation,
+                            {"input": {"id": sp.shopify_product_id}},
+                        )
+                    except Exception:
+                        pass
+                    sp.shopify_product_id = None
+                    sp.shopify_handle = None
+                    sp.shopify_status = None
+                    db.commit()
+
+                # Build product input
+                title = sp.custom_title or mf.get("name_ko") or mf.get("name_en") or it_id
+                description = sp.custom_description or mf.get("description_html") or ""
+                vendor = mf.get("brand_name_ko") or mf.get("brand_code") or ""
+
+                tags = _category_tags_for(db, it_id)
+                try:
+                    from metafield_mapper import load_ople_catalog as _load_cat
+                    _cat_entry = (_load_cat() or {}).get(it_id) or {}
+                except Exception:
+                    _cat_entry = {}
+                tags.extend(
+                    _extra_taxonomy_tags(
+                        brand_code=_cat_entry.get("bc") or mf.get("brand_code"),
+                        product_name=title,
+                    )
+                )
+                if sp.custom_tags:
+                    try:
+                        extra = json.loads(sp.custom_tags) if isinstance(sp.custom_tags, str) else sp.custom_tags
+                        if isinstance(extra, list):
+                            tags.extend(str(t) for t in extra if t)
+                    except Exception:
+                        pass
+                tags.append(f"ople_sku:{it_id}")
+                seen = set()
+                tags = [t for t in tags if not (t in seen or seen.add(t))]
+
+                mf_types = _metafield_types_map()
+                mf_inputs: list[dict] = []
+                for key, mtype in mf_types.items():
+                    if key not in mf:
+                        continue
+                    coerced = _coerce_metafield_value(mf.get(key), mtype)
+                    if coerced is None:
+                        continue
+                    mf_inputs.append({
+                        "namespace": "custom",
+                        "key": key,
+                        "type": mtype,
+                        "value": coerced,
+                    })
+
+                # Media
+                media_inputs: list[dict] = []
+                try:
+                    from metafield_mapper import load_ople_catalog, resolve_image_urls
+                    catalog = load_ople_catalog()
+                    product_entry = catalog.get(it_id) or {}
+                    image_urls = resolve_image_urls(product_entry)
+                except Exception:
+                    image_urls = []
+                if not image_urls:
+                    single = mf.get("image_url")
+                    if single:
+                        image_urls = [single]
+                for ix, url in enumerate(image_urls):
+                    alt_suffix = "" if ix == 0 else " (후면)"
+                    media_inputs.append({
+                        "originalSource": url,
+                        "mediaContentType": "IMAGE",
+                        "alt": ((title or it_id) + alt_suffix)[:255],
+                    })
+
+                sp.status = "syncing"
+                sp.sync_error = None
+                db.commit()
+
+                mutation = """
+                mutation ProductCreate($input: ProductInput!, $media: [CreateMediaInput!]) {
+                  productCreate(input: $input, media: $media) {
+                    product { id handle status title }
+                    userErrors { field message }
+                  }
+                }
+                """
+                variables = {
+                    "input": {
+                        "title": title,
+                        "descriptionHtml": description,
+                        "vendor": vendor,
+                        "tags": tags,
+                        "status": "DRAFT",
+                        "templateSuffix": "ople",
+                        "metafields": mf_inputs,
+                    },
+                    "media": media_inputs or None,
+                }
+
+                resp = await _shopify_graphql(mutation, variables)
+                data = (resp.get("data") or {}).get("productCreate") or {}
+                errors = data.get("userErrors") or []
+                product = data.get("product") or {}
+
+                if errors or not product:
+                    err_msg = "; ".join(e.get("message", "") for e in errors) or "Unknown error"
+                    sp.status = "failed"
+                    sp.sync_error = err_msg
+                    db.commit()
+                    job["failed"].append({"it_id": it_id, "error": err_msg})
+                else:
+                    sp.shopify_product_id = product.get("id")
+                    sp.shopify_handle = product.get("handle")
+                    sp.shopify_status = (product.get("status") or "").lower() or None
+                    sp.last_synced_at = datetime.utcnow()
+                    sp.status = "synced"
+                    sp.sync_error = None
+                    db.commit()
+                    job["synced"].append({
+                        "it_id": it_id,
+                        "shopify_id": product.get("id"),
+                        "title": product.get("title"),
+                    })
+
+                # Small delay to avoid rate limits
+                await asyncio.sleep(0.5)
+
+            except Exception as e:
+                job["failed"].append({"it_id": it_id, "error": str(e)})
+                try:
+                    sp_err = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
+                    if sp_err:
+                        sp_err.status = "failed"
+                        sp_err.sync_error = str(e)
+                        db.commit()
+                except Exception:
+                    pass
+
+        if job["status"] != "cancelled":
+            job["status"] = "completed"
+        job["finished_at"] = datetime.utcnow().isoformat()
+
+    except Exception as e:
+        _sync_jobs[job_id]["status"] = "error"
+        _sync_jobs[job_id]["error"] = str(e)
+    finally:
+        db.close()
+
+
+@app.post("/api/shopify/sync-all")
+async def start_bulk_sync(
+    background_tasks: BackgroundTasks,
+    force: bool = False,
+    replace: bool = False,
+):
+    """Start bulk sync of all approved/candidate/failed selections to Shopify.
+
+    Returns a job_id to poll progress via GET /api/shopify/sync-all/status/{job_id}
+    """
+    # Check no active job
+    for jid, j in _sync_jobs.items():
+        if j.get("status") == "running":
+            return {
+                "error": "A sync job is already running",
+                "job_id": jid,
+                "progress": f"{j.get('current', 0)}/{j.get('total', 0)}",
+            }
+
+    job_id = f"sync_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+    _sync_jobs[job_id] = {
+        "status": "starting",
+        "total": 0,
+        "current": 0,
+        "current_it_id": None,
+        "synced": [],
+        "failed": [],
+        "skipped": [],
+        "started_at": datetime.utcnow().isoformat(),
+        "finished_at": None,
+        "force": force,
+        "replace": replace,
+    }
+
+    background_tasks.add_task(_run_bulk_sync, job_id, force, replace)
+    return {"job_id": job_id, "status": "starting"}
+
+
+@app.get("/api/shopify/sync-all/status/{job_id}")
+async def sync_job_status(job_id: str):
+    """Poll bulk sync job progress."""
+    job = _sync_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {
+        "job_id": job_id,
+        "status": job["status"],
+        "total": job["total"],
+        "current": job["current"],
+        "current_it_id": job.get("current_it_id"),
+        "synced_count": len(job["synced"]),
+        "failed_count": len(job["failed"]),
+        "skipped_count": len(job["skipped"]),
+        "synced": job["synced"][-10:],
+        "failed": job["failed"][-10:],
+        "skipped": job["skipped"][-10:],
+        "started_at": job["started_at"],
+        "finished_at": job.get("finished_at"),
+    }
+
+
+@app.post("/api/shopify/sync-all/cancel/{job_id}")
+async def cancel_sync_job(job_id: str):
+    """Cancel a running bulk sync job."""
+    job = _sync_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job["cancelled"] = True
+    return {"status": "cancelling", "job_id": job_id}
+
+
+# ── Shopify Sync Dashboard ──────────────────────────────
+
+@app.get("/shopify-sync", response_class=HTMLResponse)
+async def shopify_sync_dashboard():
+    """Web dashboard for Shopify product sync."""
+    return HTMLResponse("""<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OPLE Shopify 동기화 대시보드</title>
+<style>
+  :root { --accent: #ed4f00; --bg: #fef4e9; --dark: #0b0b0d; --card: #fff; --border: #e5e5e5; --green: #22c55e; --red: #ef4444; --yellow: #eab308; --blue: #3b82f6; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--dark); min-height:100vh; }
+  .header { background: var(--dark); color: var(--bg); padding: 20px 32px; display:flex; align-items:center; gap:20px; }
+  .header h1 { font-size:22px; font-weight:700; }
+  .header .badge { background: var(--accent); padding: 4px 12px; border-radius:99px; font-size:12px; font-weight:600; }
+  .container { max-width:1200px; margin:0 auto; padding:24px 32px; }
+  .stats-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:16px; margin-bottom:24px; }
+  .stat-card { background:var(--card); border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.06); text-align:center; }
+  .stat-card .num { font-size:32px; font-weight:800; line-height:1.1; }
+  .stat-card .label { font-size:12px; color:#666; margin-top:6px; letter-spacing:0.04em; text-transform:uppercase; }
+  .stat-card.synced .num { color: var(--green); }
+  .stat-card.failed .num { color: var(--red); }
+  .stat-card.pending .num { color: var(--yellow); }
+  .actions { display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap; align-items:center; }
+  .btn { border:none; border-radius:10px; padding:12px 28px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:8px; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:#c93f00; transform:translateY(-1px); }
+  .btn-primary:disabled { background:#ccc; cursor:not-allowed; transform:none; }
+  .btn-secondary { background:var(--card); color:var(--dark); border:1px solid var(--border); }
+  .btn-secondary:hover { background:#f5f5f5; }
+  .btn-danger { background:var(--red); color:#fff; }
+  .btn-danger:hover { background:#dc2626; }
+  .progress-bar { width:100%; height:8px; background:#e5e5e5; border-radius:4px; overflow:hidden; margin:12px 0; }
+  .progress-bar .fill { height:100%; background:var(--accent); border-radius:4px; transition:width 0.3s; }
+  .sync-status { background:var(--card); border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.06); margin-bottom:24px; display:none; }
+  .sync-status.active { display:block; }
+  .sync-status h3 { font-size:16px; margin-bottom:8px; }
+  .sync-log { max-height:200px; overflow-y:auto; font-size:13px; background:#f9f9f9; border-radius:8px; padding:12px; margin-top:12px; }
+  .sync-log .item { padding:4px 0; border-bottom:1px solid #eee; display:flex; gap:8px; }
+  .sync-log .item:last-child { border:none; }
+  .sync-log .ok { color:var(--green); }
+  .sync-log .fail { color:var(--red); }
+  .sync-log .skip { color:#999; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  th { background:#f5f0eb; text-align:left; padding:12px 16px; font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#666; }
+  td { padding:10px 16px; font-size:13px; border-top:1px solid var(--border); }
+  tr:hover td { background:#faf8f5; }
+  .badge-status { display:inline-block; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600; }
+  .badge-synced { background:#dcfce7; color:#166534; }
+  .badge-failed { background:#fee2e2; color:#991b1b; }
+  .badge-candidate { background:#fef3c7; color:#92400e; }
+  .badge-approved { background:#dbeafe; color:#1e40af; }
+  .badge-syncing { background:#e0e7ff; color:#3730a3; }
+  .empty { text-align:center; padding:60px; color:#999; }
+  .spinner { width:18px; height:18px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite; display:inline-block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .checkbox-col { width:40px; text-align:center; }
+  .checkbox-col input { width:16px; height:16px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>OPLE Shopify 동기화</h1>
+  <span class="badge">대시보드</span>
+</div>
+
+<div class="container">
+  <div class="stats-row" id="stats">
+    <div class="stat-card"><div class="num" id="stat-total">-</div><div class="label">전체</div></div>
+    <div class="stat-card synced"><div class="num" id="stat-synced">-</div><div class="label">동기화 완료</div></div>
+    <div class="stat-card failed"><div class="num" id="stat-failed">-</div><div class="label">실패</div></div>
+    <div class="stat-card pending"><div class="num" id="stat-pending">-</div><div class="label">대기중</div></div>
+    <div class="stat-card"><div class="num" id="stat-rate">-</div><div class="label">성공률</div></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="btn-sync" onclick="startSync()">
+      ⚡ 전체 동기화 시작
+    </button>
+    <button class="btn btn-secondary" onclick="startSync(true)">
+      🔄 강제 동기화 (누락 무시)
+    </button>
+    <button class="btn btn-danger" id="btn-cancel" onclick="cancelSync()" style="display:none">
+      ✋ 중단
+    </button>
+    <button class="btn btn-secondary" onclick="loadData()">
+      새로고침
+    </button>
+  </div>
+
+  <div class="sync-status" id="sync-panel">
+    <h3 id="sync-title">동기화 진행중...</h3>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="progress-bar" style="flex:1"><div class="fill" id="progress-fill" style="width:0%"></div></div>
+      <span id="progress-text" style="font-size:13px;font-weight:600;min-width:60px">0/0</span>
+    </div>
+    <p style="font-size:12px;color:#666;margin-top:6px">현재: <span id="sync-current">-</span></p>
+    <div class="sync-log" id="sync-log"></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>IT_ID</th>
+        <th>상품명</th>
+        <th>브랜드</th>
+        <th>상태</th>
+        <th>Wave</th>
+        <th>Shopify ID</th>
+        <th>마지막 동기화</th>
+        <th>오류</th>
+      </tr>
+    </thead>
+    <tbody id="table-body">
+      <tr><td colspan="8" class="empty">로딩중...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+let currentJobId = null;
+let pollTimer = null;
+
+async function loadData() {
+  try {
+    const [statsRes, listRes] = await Promise.all([
+      fetch('/api/shopify/selections/stats'),
+      fetch('/api/shopify/selections?limit=500')
+    ]);
+    const stats = await statsRes.json();
+    const list = await listRes.json();
+
+    document.getElementById('stat-total').textContent = stats.total;
+    document.getElementById('stat-synced').textContent = stats.synced;
+    document.getElementById('stat-failed').textContent = stats.failed;
+    const pending = (stats.by_status?.candidate || 0) + (stats.by_status?.approved || 0);
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('stat-rate').textContent = stats.sync_success_rate + '%';
+
+    const tbody = document.getElementById('table-body');
+    if (!list.selections || list.selections.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">선정된 상품이 없습니다</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = list.selections.map(s => {
+      const statusClass = `badge-${s.status || 'candidate'}`;
+      const statusLabel = { synced:'완료', failed:'실패', syncing:'진행중', candidate:'후보', approved:'승인' }[s.status] || s.status;
+      const syncDate = s.last_synced_at ? new Date(s.last_synced_at).toLocaleString('ko-KR') : '-';
+      const shopifyLink = s.shopify_product_id
+        ? `<a href="https://admin.shopify.com/store/newople/products/${s.shopify_product_id.split('/').pop()}" target="_blank" style="color:var(--accent);font-size:12px">${s.shopify_product_id.split('/').pop()}</a>`
+        : '-';
+      const error = s.sync_error ? `<span style="color:var(--red);font-size:11px" title="${s.sync_error}">${s.sync_error.substring(0,40)}...</span>` : '-';
+      return `<tr>
+        <td style="font-weight:600;font-size:12px">${s.it_id}</td>
+        <td>${s.custom_title || '-'}</td>
+        <td style="font-size:12px">${'-'}</td>
+        <td><span class="badge-status ${statusClass}">${statusLabel}</span></td>
+        <td style="font-size:12px">${s.wave || '-'}</td>
+        <td>${shopifyLink}</td>
+        <td style="font-size:12px">${syncDate}</td>
+        <td>${error}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function startSync(force=false) {
+  const btn = document.getElementById('btn-sync');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 시작중...';
+
+  try {
+    const params = new URLSearchParams();
+    if (force) params.set('force', 'true');
+    const res = await fetch('/api/shopify/sync-all?' + params.toString(), { method:'POST' });
+    const data = await res.json();
+
+    if (data.error) {
+      alert(data.error);
+      btn.disabled = false;
+      btn.innerHTML = '⚡ 전체 동기화 시작';
+      return;
+    }
+
+    currentJobId = data.job_id;
+    document.getElementById('sync-panel').classList.add('active');
+    document.getElementById('btn-cancel').style.display = '';
+    document.getElementById('sync-log').innerHTML = '';
+    startPolling();
+  } catch(e) {
+    alert('동기화 시작 실패: ' + e.message);
+    btn.disabled = false;
+    btn.innerHTML = '⚡ 전체 동기화 시작';
+  }
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollStatus, 1500);
+}
+
+let lastSyncedCount = 0;
+let lastFailedCount = 0;
+
+async function pollStatus() {
+  if (!currentJobId) return;
+  try {
+    const res = await fetch(`/api/shopify/sync-all/status/${currentJobId}`);
+    const job = await res.json();
+
+    const pct = job.total ? Math.round(job.current / job.total * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `${job.current}/${job.total}`;
+    document.getElementById('sync-current').textContent = job.current_it_id || '-';
+
+    const log = document.getElementById('sync-log');
+    // Append new synced items
+    if (job.synced && job.synced.length > lastSyncedCount) {
+      for (let i = lastSyncedCount; i < job.synced.length; i++) {
+        const item = job.synced[i];
+        log.innerHTML += `<div class="item"><span class="ok">✓</span> ${item.it_id} → ${item.title || ''}</div>`;
+      }
+      lastSyncedCount = job.synced.length;
+    }
+    if (job.failed && job.failed.length > lastFailedCount) {
+      for (let i = lastFailedCount; i < job.failed.length; i++) {
+        const item = job.failed[i];
+        log.innerHTML += `<div class="item"><span class="fail">✗</span> ${item.it_id}: ${item.error}</div>`;
+      }
+      lastFailedCount = job.failed.length;
+    }
+    log.scrollTop = log.scrollHeight;
+
+    document.getElementById('sync-title').textContent =
+      job.status === 'completed' ? `동기화 완료 (성공: ${job.synced_count}, 실패: ${job.failed_count}, 건너뜀: ${job.skipped_count})` :
+      job.status === 'cancelled' ? '동기화 중단됨' :
+      job.status === 'error' ? '동기화 오류 발생' :
+      `동기화 진행중... (${job.synced_count} 성공, ${job.failed_count} 실패)`;
+
+    if (['completed', 'cancelled', 'error'].includes(job.status)) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+      currentJobId = null;
+      lastSyncedCount = 0;
+      lastFailedCount = 0;
+      document.getElementById('btn-sync').disabled = false;
+      document.getElementById('btn-sync').innerHTML = '⚡ 전체 동기화 시작';
+      document.getElementById('btn-cancel').style.display = 'none';
+      loadData();
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function cancelSync() {
+  if (!currentJobId) return;
+  try {
+    await fetch(`/api/shopify/sync-all/cancel/${currentJobId}`, { method:'POST' });
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>""")
+
+
 # ── Run ──────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn

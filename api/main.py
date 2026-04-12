@@ -2786,6 +2786,134 @@ async def list_shopify_collections(limit: int = 100):
     return {"count": len(items), "collections": items}
 
 
+# ── Shopify Navigation Menu Builder ───────────────────────
+
+
+class NavMenuItem(BaseModel):
+    title: str
+    collection_handle: Optional[str] = None  # 컬렉션 핸들 (있으면 해당 컬렉션 링크)
+    url: Optional[str] = None                # 직접 URL (collection_handle 없을 때)
+    children: list["NavMenuItem"] = []
+
+
+NavMenuItem.model_rebuild()
+
+
+class BuildMainMenuRequest(BaseModel):
+    items: list[NavMenuItem]
+
+
+@app.post("/api/shopify/navigation/build-main-menu")
+async def build_main_menu(req: BuildMainMenuRequest):
+    """기본 메뉴(main-menu)를 컬렉션 기반 드롭다운 메뉴로 재구성.
+
+    - 각 NavMenuItem 은 title + (collection_handle 또는 url) + children
+    - children 이 있으면 Shopify 드롭다운 메뉴로 표시됨
+    - 기존 메뉴 항목은 모두 교체됨 (홈/문의하기 유지하려면 items 에 포함할 것)
+    """
+    # 1. 컬렉션 handle → GID 매핑
+    colls_query = """
+    query { collections(first: 250) { edges { node { id handle title } } } }
+    """
+    colls_resp = await _shopify_graphql(colls_query, {})
+    edges = (((colls_resp.get("data") or {}).get("collections") or {}).get("edges") or [])
+    handle_to_gid: dict[str, str] = {}
+    for e in edges:
+        n = e.get("node") or {}
+        if n.get("handle"):
+            handle_to_gid[n["handle"]] = n["id"]
+
+    # 2. 기존 main-menu 찾기
+    menu_query = """
+    query {
+      menu(handle: "main-menu") { id title handle }
+    }
+    """
+    menu_resp = await _shopify_graphql(menu_query, {})
+    menu_data = (menu_resp.get("data") or {}).get("menu")
+
+    if not menu_data:
+        return {
+            "error": "main-menu not found via menu(handle:). Check scopes.",
+            "raw": menu_resp,
+        }
+
+    menu_id = menu_data["id"]
+
+    # 3. 아이템 트리 빌드
+    unresolved_handles: list[str] = []
+
+    def build_item(nav: NavMenuItem) -> dict:
+        item: dict = {"title": nav.title}
+        if nav.collection_handle:
+            gid = handle_to_gid.get(nav.collection_handle)
+            if gid:
+                item["type"] = "COLLECTION"
+                item["resourceId"] = gid
+            else:
+                unresolved_handles.append(nav.collection_handle)
+                item["type"] = "HTTP"
+                item["url"] = f"/collections/{nav.collection_handle}"
+        elif nav.url:
+            item["type"] = "HTTP"
+            item["url"] = nav.url
+        else:
+            # 링크 없는 드롭다운 부모 → FRONTPAGE 또는 빈 HTTP
+            item["type"] = "HTTP"
+            item["url"] = ""
+        if nav.children:
+            item["items"] = [build_item(c) for c in nav.children]
+        return item
+
+    menu_items = [build_item(i) for i in req.items]
+
+    # 4. menuUpdate 뮤테이션
+    update_mutation = """
+    mutation menuUpdate($id: ID!, $items: [MenuItemCreateInput!]!) {
+      menuUpdate(id: $id, items: $items) {
+        menu { id title itemsCount }
+        userErrors { field message }
+      }
+    }
+    """
+    update_resp = await _shopify_graphql(
+        update_mutation, {"id": menu_id, "items": menu_items}
+    )
+    update_data = (update_resp.get("data") or {}).get("menuUpdate") or {}
+    errors = update_data.get("userErrors") or []
+
+    return {
+        "menu_id": menu_id,
+        "items_submitted": len(menu_items),
+        "children_total": sum(len(i.children) for i in req.items),
+        "collections_resolved": len(handle_to_gid),
+        "unresolved_handles": unresolved_handles,
+        "errors": errors,
+        "raw": update_data,
+    }
+
+
+@app.get("/api/shopify/navigation/main-menu")
+async def get_main_menu():
+    """현재 main-menu 구조 조회."""
+    query = """
+    query {
+      menu(handle: "main-menu") {
+        id title handle
+        items {
+          id title type url
+          items { id title type url }
+        }
+      }
+    }
+    """
+    resp = await _shopify_graphql(query, {})
+    menu = (resp.get("data") or {}).get("menu")
+    if not menu:
+        return {"error": "main-menu not found", "raw": resp}
+    return menu
+
+
 # ── Shopify OAuth install flow (opleaep app) ─────────────
 
 def _verify_shopify_hmac(query_params: dict, secret: str) -> bool:

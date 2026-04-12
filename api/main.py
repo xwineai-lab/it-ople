@@ -2532,6 +2532,7 @@ class SmartCollectionItem(BaseModel):
 class BulkSmartCollectionsRequest(BaseModel):
     collections: list[SmartCollectionItem]
     publish_to_online_store: bool = True
+    publication_id: Optional[str] = None  # 명시 제공 시 자동탐색 스킵 (예: gid://shopify/Publication/...)
     dry_run: bool = False
 
 
@@ -2599,8 +2600,14 @@ async def bulk_create_smart_collections(req: BulkSmartCollectionsRequest):
         }
 
     publication_id: Optional[str] = None
+    publication_detected_via: Optional[str] = None
     if req.publish_to_online_store:
-        publication_id = await _find_online_store_publication_id()
+        if req.publication_id:
+            publication_id = req.publication_id
+            publication_detected_via = "explicit"
+        else:
+            publication_id = await _find_online_store_publication_id()
+            publication_detected_via = "auto" if publication_id else "auto_failed"
 
     create_mutation = """
     mutation CollectionCreate($input: CollectionInput!) {
@@ -2714,8 +2721,34 @@ async def bulk_create_smart_collections(req: BulkSmartCollectionsRequest):
         "errors": sum(1 for r in results if r.get("status") in ("error", "exception")),
         "published": sum(1 for r in results if r.get("published_to_online_store")),
         "publication_id": publication_id,
+        "publication_detected_via": publication_detected_via,
     }
     return {"summary": summary, "results": results}
+
+
+@app.get("/api/shopify/publications")
+async def list_shopify_publications():
+    """현재 토큰이 볼 수 있는 Publication 목록 (디버깅용)."""
+    query = """
+    query {
+      publications(first: 20) {
+        edges { node { id name } }
+      }
+    }
+    """
+    try:
+        resp = await _shopify_graphql(query, {})
+    except Exception as e:
+        return {"error": str(e), "publications": []}
+    edges = (((resp.get("data") or {}).get("publications") or {}).get("edges") or [])
+    return {
+        "count": len(edges),
+        "publications": [
+            {"id": (e.get("node") or {}).get("id"), "name": (e.get("node") or {}).get("name")}
+            for e in edges
+        ],
+        "raw_errors": resp.get("errors"),
+    }
 
 
 @app.get("/api/shopify/collections")

@@ -3470,6 +3470,53 @@
             const [spFxInfo, setSpFxInfo] = useState(null);
             const [spFxLoading, setSpFxLoading] = useState(false);
 
+            // ── Shopify 동기화 상태 ──
+            const [syncJobId, setSyncJobId] = useState(null);
+            const [syncStatus, setSyncStatus] = useState(null); // {status,current,total,synced,failed,skipped}
+            const [syncRunning, setSyncRunning] = useState(false);
+
+            const startBulkSync = async () => {
+                if (syncRunning) return;
+                const approvedCount = spSelections ? (spSelections.by_status?.approved || 0) : 0;
+                const candidateCount = spSelections ? (spSelections.by_status?.candidate || 0) : 0;
+                const total = approvedCount + candidateCount;
+                if (total === 0) { alert('동기화할 상품이 없습니다. (승인 또는 후보 상태 상품 필요)'); return; }
+                if (!confirm(`승인/후보 상태 ${total}개 상품을 Shopify에 동기화합니다.\n\n이미 동기화된 상품은 건너뜁니다.\n계속할까요?`)) return;
+                setSyncRunning(true);
+                setSyncStatus(null);
+                try {
+                    const r = await fetch('/api/shopify/sync-all', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({force:true})});
+                    if (!r.ok) { alert('동기화 시작 실패: ' + r.status); setSyncRunning(false); return; }
+                    const data = await r.json();
+                    setSyncJobId(data.job_id);
+                    pollSyncStatus(data.job_id);
+                } catch(e) { alert('동기화 오류: ' + e.message); setSyncRunning(false); }
+            };
+
+            const pollSyncStatus = (jobId) => {
+                const poll = async () => {
+                    try {
+                        const r = await fetch(`/api/shopify/sync-all/status/${jobId}`);
+                        if (!r.ok) { setSyncRunning(false); return; }
+                        const data = await r.json();
+                        setSyncStatus(data);
+                        if (data.status === 'running') {
+                            setTimeout(poll, 2000);
+                        } else {
+                            setSyncRunning(false);
+                            loadSpList();
+                            refreshSpSelections();
+                        }
+                    } catch(e) { setSyncRunning(false); }
+                };
+                poll();
+            };
+
+            const cancelSync = async () => {
+                if (!syncJobId) return;
+                try { await fetch(`/api/shopify/sync-all/cancel/${syncJobId}`, {method:'POST'}); } catch(e) {}
+            };
+
             const loadFxInfo = async (forceRefresh = false) => {
                 setSpFxLoading(true);
                 try {
@@ -3597,6 +3644,56 @@
                             React.createElement('span', {style:{fontSize:'0.75rem',color:'#047857',fontWeight:700}}, '웨이브별:'),
                             Object.entries(byWave).map(([w,c]) =>
                                 React.createElement('span', {key:w,style:{padding:'4px 10px',background:'#fff',borderRadius:'14px',border:'1px solid #a7f3d0',fontSize:'0.74rem',color:'#065f46',fontWeight:600}}, `${w} ${c}`)
+                            )
+                        ),
+                        // ── Shopify 동기화 버튼 + 진행바 ──
+                        React.createElement('div', {style:{marginTop:'16px',padding:'14px 18px',background:'#fff',borderRadius:'10px',border:'1px solid #a7f3d0',display:'flex',flexDirection:'column',gap:'10px'}},
+                            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'12px',flexWrap:'wrap'}},
+                                React.createElement('span', {style:{fontSize:'1.1rem'}}, '🔄'),
+                                React.createElement('span', {style:{fontSize:'0.88rem',fontWeight:700,color:'#065f46'}}, 'Shopify 동기화'),
+                                React.createElement('span', {style:{fontSize:'0.74rem',color:'#64748b'}}, '승인/후보 상품을 Shopify 스토어에 일괄 푸시'),
+                                React.createElement('div', {style:{flex:1}}),
+                                syncRunning ?
+                                    React.createElement('button', {
+                                        onClick:cancelSync,
+                                        style:{padding:'8px 18px',borderRadius:'8px',border:'none',background:'#ef4444',color:'#fff',fontSize:'0.82rem',fontWeight:700,cursor:'pointer'}
+                                    }, '⏹ 중지') :
+                                    React.createElement(React.Fragment, null,
+                                        React.createElement('button', {
+                                            onClick:async()=>{
+                                                if (!confirm('동기화된 상품의 상태를 초기화합니다.\n(Shopify 연결 해제 → 재동기화 가능)\n\n계속할까요?')) return;
+                                                try {
+                                                    const r = await fetch('/api/shopify/selections/reset-synced', {method:'POST'});
+                                                    if (r.ok) { const d = await r.json(); alert(`${d.reset}개 상품 상태 초기화 완료`); loadSpList(); refreshSpSelections(); }
+                                                    else alert('초기화 실패');
+                                                } catch(e) { alert('오류: '+e.message); }
+                                            },
+                                            style:{padding:'8px 14px',borderRadius:'8px',border:'1px solid #e2e8f0',background:'#fff',color:'#64748b',fontSize:'0.78rem',fontWeight:600,cursor:'pointer'}
+                                        }, '↺ 상태 초기화'),
+                                        React.createElement('button', {
+                                            onClick:startBulkSync,
+                                            style:{padding:'8px 18px',borderRadius:'8px',border:'none',background:'linear-gradient(135deg,#6366f1,#4f46e5)',color:'#fff',fontSize:'0.82rem',fontWeight:700,cursor:'pointer',boxShadow:'0 2px 6px rgba(99,102,241,0.3)'}
+                                        }, '🚀 전체 동기화 시작')
+                                    )
+                            ),
+                            syncStatus && React.createElement(React.Fragment, null,
+                                React.createElement('div', {style:{width:'100%',height:'8px',background:'#e2e8f0',borderRadius:'4px',overflow:'hidden'}},
+                                    React.createElement('div', {style:{
+                                        width:`${syncStatus.total > 0 ? Math.round((syncStatus.current / syncStatus.total) * 100) : 0}%`,
+                                        height:'100%',
+                                        background:syncStatus.status === 'running' ? 'linear-gradient(90deg,#6366f1,#818cf8)' : (syncStatus.status === 'done' || syncStatus.status === 'completed') ? '#10b981' : syncStatus.status === 'cancelled' ? '#f59e0b' : '#ef4444',
+                                        borderRadius:'4px',
+                                        transition:'width 0.3s ease'
+                                    }})
+                                ),
+                                React.createElement('div', {style:{display:'flex',gap:'14px',fontSize:'0.74rem',color:'#64748b',flexWrap:'wrap'}},
+                                    React.createElement('span', null, `진행: ${syncStatus.current || 0}/${syncStatus.total || 0}`),
+                                    (syncStatus.synced_count||0) > 0 && React.createElement('span', {style:{color:'#10b981',fontWeight:700}}, `✓ 성공: ${syncStatus.synced_count}`),
+                                    (syncStatus.failed_count||0) > 0 && React.createElement('span', {style:{color:'#ef4444',fontWeight:700}}, `✗ 실패: ${syncStatus.failed_count}`),
+                                    (syncStatus.skipped_count||0) > 0 && React.createElement('span', {style:{color:'#94a3b8'}}, `— 건너뜀: ${syncStatus.skipped_count}`),
+                                    (syncStatus.status === 'done' || syncStatus.status === 'completed') && React.createElement('span', {style:{color:'#6366f1',fontWeight:700}}, '✓ 완료!'),
+                                    syncStatus.status === 'cancelled' && React.createElement('span', {style:{color:'#f59e0b',fontWeight:700}}, '중지됨')
+                                )
                             )
                         )
                     ),

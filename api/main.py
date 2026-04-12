@@ -2299,12 +2299,14 @@ def _category_tags_for(db: Session, parent_sku: str) -> list[str]:
     여러 자식이 겹치면 dedup, 입력 순서는 cat → sub → sub2 순으로 정렬.
     """
     try:
-        from metafield_mapper import load_ople_catalog
+        from metafield_mapper import load_ople_catalog, resolve_parent_sku
         catalog = load_ople_catalog()
+        resolved_sku, _ = resolve_parent_sku(parent_sku)
     except Exception:
         catalog = {}
+        resolved_sku = parent_sku
 
-    product = catalog.get(parent_sku) or {}
+    product = catalog.get(resolved_sku) or {}
     child_skus: list[str] = []
     for c in (product.get("ch") or []):
         if isinstance(c, dict):
@@ -2497,8 +2499,9 @@ async def push_selection_to_shopify(
     tags = _category_tags_for(db, it_id)
     # brand:/form: 태그 자동 생성 (카탈로그 brand_code + 상품명 기반)
     try:
-        from metafield_mapper import load_ople_catalog as _load_cat
-        _cat_entry = (_load_cat() or {}).get(it_id) or {}
+        from metafield_mapper import load_ople_catalog as _load_cat, resolve_parent_sku as _resolve
+        _resolved_sku, _ = _resolve(it_id)
+        _cat_entry = (_load_cat() or {}).get(_resolved_sku) or {}
     except Exception:
         _cat_entry = {}
     tags.extend(
@@ -2563,11 +2566,13 @@ async def push_selection_to_shopify(
     """
     # Build ordered media list: front image first, rear image second.
     # Uses resolve_image_urls which returns [front, rear].
+    # Resolve child SKU → parent SKU for catalog lookup.
     media_inputs: list[dict] = []
     try:
-        from metafield_mapper import load_ople_catalog, resolve_image_urls
+        from metafield_mapper import load_ople_catalog, resolve_image_urls, resolve_parent_sku
+        resolved_sku, _ = resolve_parent_sku(it_id)
         catalog = load_ople_catalog()
-        product_entry = catalog.get(it_id) or {}
+        product_entry = catalog.get(resolved_sku) or {}
         image_urls = resolve_image_urls(product_entry)
     except Exception:
         image_urls = []
@@ -3308,8 +3313,9 @@ async def _run_bulk_sync(job_id: str, force: bool, replace: bool):
 
                 tags = _category_tags_for(db, it_id)
                 try:
-                    from metafield_mapper import load_ople_catalog as _load_cat
-                    _cat_entry = (_load_cat() or {}).get(it_id) or {}
+                    from metafield_mapper import load_ople_catalog as _load_cat, resolve_parent_sku as _resolve
+                    _resolved_sku, _ = _resolve(it_id)
+                    _cat_entry = (_load_cat() or {}).get(_resolved_sku) or {}
                 except Exception:
                     _cat_entry = {}
                 tags.extend(
@@ -3344,12 +3350,13 @@ async def _run_bulk_sync(job_id: str, force: bool, replace: bool):
                         "value": coerced,
                     })
 
-                # Media
+                # Media — resolve child→parent for catalog lookup
                 media_inputs: list[dict] = []
                 try:
-                    from metafield_mapper import load_ople_catalog, resolve_image_urls
+                    from metafield_mapper import load_ople_catalog, resolve_image_urls, resolve_parent_sku
+                    resolved_sku, _ = resolve_parent_sku(it_id)
                     catalog = load_ople_catalog()
-                    product_entry = catalog.get(it_id) or {}
+                    product_entry = catalog.get(resolved_sku) or {}
                     image_urls = resolve_image_urls(product_entry)
                 except Exception:
                     image_urls = []
@@ -3509,6 +3516,28 @@ async def cancel_sync_job(job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
     job["cancelled"] = True
     return {"status": "cancelling", "job_id": job_id}
+
+
+@app.post("/api/shopify/selections/reset-synced")
+async def reset_synced_selections(db: Session = Depends(get_db)):
+    """Reset all 'synced' selections back to 'approved' so they can be re-synced.
+
+    Also clears shopify_product_id/handle/status for records whose Shopify
+    product was deleted. Useful after cleaning up garbage products.
+    """
+    rows = db.query(ShopifyProduct).filter(
+        ShopifyProduct.status.in_(["synced", "syncing", "failed"])
+    ).all()
+    count = 0
+    for row in rows:
+        row.status = "approved"
+        row.shopify_product_id = None
+        row.shopify_handle = None
+        row.shopify_status = None
+        row.sync_error = None
+        count += 1
+    db.commit()
+    return {"reset": count, "message": f"Reset {count} selections to approved status"}
 
 
 # ── Shopify Sync Dashboard ──────────────────────────────

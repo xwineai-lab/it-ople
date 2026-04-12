@@ -26,6 +26,7 @@ from typing import Any, Optional
 # ── Runtime caches ─────────────────────────────────────────
 _catalog_cache: Optional[dict] = None   # {parent_sku: product_dict}
 _desc_cache: Optional[dict] = None      # {parent_sku: html_string}
+_child_to_parent_cache: Optional[dict] = None  # {child_sku: parent_sku}
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "static" / "data"
 
@@ -127,6 +128,48 @@ def load_ople_catalog() -> dict:
     return catalog
 
 
+def _build_child_to_parent_map(catalog: dict) -> dict:
+    """Build reverse lookup: child_sku (10-digit OPLE IT ID) → parent_sku.
+
+    ShopifyProduct.it_id stores the 10-digit OPLE child ID (e.g. "1417406120"),
+    but the catalog is keyed by parent SKU (e.g. "SOL-P003579"). The child IDs
+    live inside each parent's `ch` array. This map lets us resolve any child ID
+    back to the parent product that contains the actual name, brand, price, etc.
+    """
+    global _child_to_parent_cache
+    if _child_to_parent_cache is not None:
+        return _child_to_parent_cache
+
+    child_map = {}
+    for parent_sku, product in catalog.items():
+        for c in (product.get("ch") or []):
+            if isinstance(c, dict):
+                child_sku = c.get("sku")
+            else:
+                child_sku = str(c)
+            if child_sku:
+                child_map[str(child_sku)] = parent_sku
+    _child_to_parent_cache = child_map
+    return child_map
+
+
+def resolve_parent_sku(sku: str) -> tuple[str, bool]:
+    """Given either a parent SKU or child SKU, return (parent_sku, was_child).
+
+    If `sku` is already a parent key in the catalog, returns (sku, False).
+    If `sku` is a child ID found in the child→parent map, returns (parent_sku, True).
+    If not found at all, returns (sku, False) so the caller can handle the miss.
+    """
+    catalog = load_ople_catalog()
+    if sku in catalog:
+        return (sku, False)
+    child_map = _build_child_to_parent_map(catalog)
+    parent = child_map.get(sku)
+    if parent:
+        return (parent, True)
+    return (sku, False)
+
+
 def load_ople_desc() -> dict:
     """Lazy-load wms_desc.json → {parent_sku: html_string}.
 
@@ -152,9 +195,10 @@ def load_ople_desc() -> dict:
 
 def reset_caches():
     """Clear caches so next call reloads from disk. Used by hot reload tools."""
-    global _catalog_cache, _desc_cache
+    global _catalog_cache, _desc_cache, _child_to_parent_cache
     _catalog_cache = None
     _desc_cache = None
+    _child_to_parent_cache = None
 
 
 # ── Category lookup ────────────────────────────────────────
@@ -329,13 +373,22 @@ def build_metafields(
     catalog = load_ople_catalog()
     desc_map = load_ople_desc()
 
+    # Resolve child SKU → parent SKU if needed.
+    # ShopifyProduct.it_id may be a 10-digit child OPLE ID (e.g. "1417406120")
+    # while the catalog is keyed by parent SKU (e.g. "SOL-P003579").
+    original_sku = parent_sku
+    resolved_parent, was_child = resolve_parent_sku(parent_sku)
+    if was_child:
+        parent_sku = resolved_parent
+
     product = catalog.get(parent_sku)
     if not product:
         return {
             "_meta": {
                 "parent_sku": parent_sku,
+                "original_sku": original_sku,
                 "found_in_catalog": False,
-                "error": f"SKU not found in wms_active.json: {parent_sku}",
+                "error": f"SKU not found in wms_active.json: {parent_sku} (original: {original_sku})",
             }
         }
 
@@ -422,6 +475,8 @@ def build_metafields(
         # ━━━ Debug / 운영 정보 ━━━
         "_meta": {
             "parent_sku": parent_sku,
+            "original_sku": original_sku,
+            "resolved_from_child": was_child,
             "found_in_catalog": True,
             "has_override_title": bool(override_title),
             "has_override_description": bool(override_desc),

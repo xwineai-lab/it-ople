@@ -2823,19 +2823,29 @@ async def build_main_menu(req: BuildMainMenuRequest):
         if n.get("handle"):
             handle_to_gid[n["handle"]] = n["id"]
 
-    # 2. 기존 main-menu 찾기
+    # 2. 기존 main-menu 찾기 (menus 복수형 쿼리 → handle 필터)
     menu_query = """
     query {
-      menu(handle: "main-menu") { id title handle }
+      menus(first: 20) {
+        edges { node { id title handle } }
+      }
     }
     """
     menu_resp = await _shopify_graphql(menu_query, {})
-    menu_data = (menu_resp.get("data") or {}).get("menu")
+    menu_edges = (((menu_resp.get("data") or {}).get("menus") or {}).get("edges") or [])
+    menu_data = None
+    all_menus = []
+    for e in menu_edges:
+        n = e.get("node") or {}
+        all_menus.append({"id": n.get("id"), "handle": n.get("handle"), "title": n.get("title")})
+        if n.get("handle") == "main-menu":
+            menu_data = n
 
     if not menu_data:
         return {
-            "error": "main-menu not found via menu(handle:). Check scopes.",
-            "raw": menu_resp,
+            "error": "main-menu not found among menus",
+            "all_menus": all_menus,
+            "raw_errors": menu_resp.get("errors"),
         }
 
     menu_id = menu_data["id"]
@@ -2898,20 +2908,33 @@ async def get_main_menu():
     """현재 main-menu 구조 조회."""
     query = """
     query {
-      menu(handle: "main-menu") {
-        id title handle
-        items {
-          id title type url
-          items { id title type url }
+      menus(first: 20) {
+        edges {
+          node {
+            id title handle
+            items {
+              id title type url
+              items { id title type url }
+            }
+          }
         }
       }
     }
     """
     resp = await _shopify_graphql(query, {})
-    menu = (resp.get("data") or {}).get("menu")
-    if not menu:
-        return {"error": "main-menu not found", "raw": resp}
-    return menu
+    edges = (((resp.get("data") or {}).get("menus") or {}).get("edges") or [])
+    for e in edges:
+        n = e.get("node") or {}
+        if n.get("handle") == "main-menu":
+            return n
+    return {
+        "error": "main-menu not found",
+        "all_menus": [
+            {"id": (e.get("node") or {}).get("id"), "handle": (e.get("node") or {}).get("handle")}
+            for e in edges
+        ],
+        "raw_errors": resp.get("errors"),
+    }
 
 
 # ── Shopify OAuth install flow (opleaep app) ─────────────

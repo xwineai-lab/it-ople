@@ -1962,7 +1962,7 @@ SHOPIFY_API_KEY = os.getenv("SHOPIFY_API_KEY", "f5add71ac6273d9eb9a43e0d155255af
 SHOPIFY_API_SECRET = os.getenv("SHOPIFY_API_SECRET", "")
 SHOPIFY_OAUTH_SCOPES = os.getenv(
     "SHOPIFY_OAUTH_SCOPES",
-    "read_products,write_products,read_product_listings,write_product_listings",
+    "read_products,write_products,read_product_listings,write_product_listings,read_online_store_navigation,write_online_store_navigation",
 )
 SHOPIFY_APP_URL = os.getenv("SHOPIFY_APP_URL", "https://it-ople.onrender.com")
 SHOPIFY_TOKEN_FILE = Path(os.getenv("SHOPIFY_TOKEN_FILE", "/tmp/shopify_token.json"))

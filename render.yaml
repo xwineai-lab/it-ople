@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: it-ople
+    runtime: docker
+    plan: free
+    disk:
+      name: ople-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////var/data/ople.db

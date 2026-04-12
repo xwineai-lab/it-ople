@@ -12,7 +12,11 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/ople.db")
+# Render persistent disk: mount at /var/data in Render dashboard.
+# Fallback to local ./data for development.
+_DEFAULT_DB_DIR = "/var/data" if os.path.isdir("/var/data") else "./data"
+_DB_PATH = os.path.join(_DEFAULT_DB_DIR, "ople.db")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{_DB_PATH}")
 
 # SQLite needs check_same_thread=False
 if DATABASE_URL.startswith("sqlite"):

@@ -18,7 +18,7 @@ COPY scraper/ ./scraper/
 COPY scripts/ ./scripts/
 COPY static/ ./static/
 
-RUN mkdir -p data
+RUN mkdir -p data /var/data
 
 # ── Node.js (Shopify Remix App) ──
 COPY shopify-app/ ./shopify-app/

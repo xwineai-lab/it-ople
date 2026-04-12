@@ -3477,8 +3477,8 @@
 
             const startBulkSync = async () => {
                 if (syncRunning) return;
-                const approvedCount = spSelections ? (spSelections.by_status?.approved || 0) : 0;
-                const candidateCount = spSelections ? (spSelections.by_status?.candidate || 0) : 0;
+                const approvedCount = spStatsData ? (spStatsData.by_status?.approved || 0) : 0;
+                const candidateCount = spStatsData ? (spStatsData.by_status?.candidate || 0) : 0;
                 const total = approvedCount + candidateCount;
                 if (total === 0) { alert('동기화할 상품이 없습니다. (승인 또는 후보 상태 상품 필요)'); return; }
                 if (!confirm(`승인/후보 상태 ${total}개 상품을 Shopify에 동기화합니다.\n\n이미 동기화된 상품은 건너뜁니다.\n계속할까요?`)) return;
@@ -3580,10 +3580,21 @@
                 }
             }, [activeSection, spListTab, spListWave]);
 
-            // Index WMS products by SKU for quick join with selections
+            // Index WMS products by SKU for quick join with selections.
+            // Also map child SKUs (10-digit OPLE IDs) → parent product so
+            // ShopifyProduct.it_id (which is a child ID) resolves correctly.
             const wmsBySku = React.useMemo(() => {
                 const m = new Map();
-                [...plProducts, ...plInactive].forEach(p => m.set(p.sku, p));
+                [...plProducts, ...plInactive].forEach(p => {
+                    m.set(p.sku, p);
+                    // Map each child SKU to the parent product
+                    if (Array.isArray(p.ch)) {
+                        p.ch.forEach(c => {
+                            const csku = typeof c === 'object' ? c.sku : String(c);
+                            if (csku) m.set(csku, p);
+                        });
+                    }
+                });
                 return m;
             }, [plProducts, plInactive]);
 

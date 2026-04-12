@@ -1948,6 +1948,24 @@
                                             </div>
                                         )}
 
+                                        {/* WMS Product Description (fallback when iHerb data is sparse) */}
+                                        {detailData.wms?.wms_desc_html && !detailData.description?.description_ko && (
+                                            <div>
+                                                <h4 className="font-bold text-gray-900 mb-2">상품 정보 <span className="text-xs font-normal text-green-600 ml-1">OPLE WMS</span></h4>
+                                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-sm text-gray-700 prose prose-sm max-w-none"
+                                                     style={{maxHeight:'400px', overflowY:'auto'}}
+                                                     dangerouslySetInnerHTML={{__html: detailData.wms.wms_desc_html}} />
+                                            </div>
+                                        )}
+
+                                        {/* WMS fallback info banner */}
+                                        {detailData.wms?.has_wms_data && !detailData.description?.description_ko && (
+                                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
+                                                ℹ️ iHerb 스크래핑 데이터 미수집 상품입니다. OPLE WMS 데이터로 대체 표시 중입니다.
+                                                {detailData.wms.parent_sku && <span className="ml-1 font-mono">(SKU: {detailData.wms.parent_sku})</span>}
+                                            </div>
+                                        )}
+
                                         {/* Product Specs */}
                                         {detailData.specs && (
                                             <div>

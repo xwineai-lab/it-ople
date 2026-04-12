@@ -807,24 +807,77 @@ def get_iherb_products(
 
 @app.get("/api/iherb/products/{product_id}")
 def get_iherb_product_detail(product_id: str, db: Session = Depends(get_db)):
-    """Full iHerb product detail with ALL collected information."""
+    """Full iHerb product detail with ALL collected information.
+
+    Enriches empty fields with WMS data (wms_active.json + wms_desc.json)
+    when iHerb scrape data is missing or incomplete.
+    """
     product = db.query(IHerbProduct).filter(
         (IHerbProduct.product_id == product_id) | (IHerbProduct.iherb_id == product_id)
     ).first()
     if not product: raise HTTPException(404, "iHerb product not found")
-    return {
+
+    # ── WMS fallback enrichment ──────────────────────────────
+    # Try to find OPLE parent SKU via IHerbMapping → resolve_parent_sku → WMS data
+    wms_product = None
+    wms_desc_html = None
+    wms_parent_sku = None
+    try:
+        from metafield_mapper import load_ople_catalog, load_ople_desc, resolve_parent_sku
+
+        # 1) Find OPLE it_id via IHerbMapping
+        mapping = db.query(IHerbMapping).filter(
+            IHerbMapping.iherb_id == product.iherb_id
+        ).first()
+        ople_id = mapping.ople_id if mapping else None
+
+        # 2) Resolve to parent SKU (ople_id may be a child SKU)
+        if ople_id:
+            parent_sku, _ = resolve_parent_sku(ople_id)
+            wms_parent_sku = parent_sku
+        else:
+            # Fallback: try matching by UPC or product name
+            catalog = load_ople_catalog()
+            upc = product.upc_barcode or ""
+            for sku, p in catalog.items():
+                if upc and p.get("upc") == upc:
+                    wms_parent_sku = sku
+                    break
+
+        # 3) Fetch WMS catalog data and description HTML
+        if wms_parent_sku:
+            catalog = load_ople_catalog()
+            wms_product = catalog.get(wms_parent_sku)
+            desc_map = load_ople_desc()
+            wms_desc_html = desc_map.get(wms_parent_sku)
+    except Exception:
+        pass  # WMS enrichment is best-effort; don't break the endpoint
+
+    # Helper: return first non-empty value
+    def _fb(*vals):
+        for v in vals:
+            if v:
+                return v
+        return None
+
+    result = {
         "basic": {"iherb_id": product.iherb_id, "product_id": product.product_id,
-                  "name": product.name, "name_ko": product.name_ko, "subtitle": product.subtitle,
-                  "brand": product.brand, "brand_ko": getattr(product, 'brand_ko', None),
+                  "name": _fb(product.name, wms_product and wms_product.get("en")),
+                  "name_ko": _fb(product.name_ko, wms_product and wms_product.get("kn")),
+                  "subtitle": product.subtitle,
+                  "brand": _fb(product.brand, wms_product and wms_product.get("bn")),
+                  "brand_ko": _fb(getattr(product, 'brand_ko', None), wms_product and wms_product.get("bn")),
                   "brand_url": product.brand_url, "url": product.url, "image_url": product.image_url},
-        "pricing": {"price_usd": product.price_usd, "price_original": product.price_original,
+        "pricing": {"price_usd": product.price_usd if product.price_usd else (wms_product.get("pr") if wms_product else 0),
+                    "price_original": product.price_original,
                     "discount_pct": product.discount_pct, "price_per_unit": product.price_per_unit,
                     "price_krw": product.price_krw, "in_stock": product.in_stock, "stock_status": product.stock_status},
         "images": {"main": product.image_url, "thumbnail": product.thumbnail_url, "all": product.image_urls or []},
         "rating": {"rating": product.rating, "count": product.review_count,
                    "distribution": product.rating_distribution,
                    "top_positive": product.top_positive_review, "top_critical": product.top_critical_review},
-        "description": {"description": product.description, "description_ko": getattr(product, 'description_ko', None),
+        "description": {"description": _fb(product.description, wms_desc_html),
+                       "description_ko": getattr(product, 'description_ko', None),
                        "features": product.features, "features_ko": getattr(product, 'features_ko', None),
                        "suggested_use": product.suggested_use, "suggested_use_ko": getattr(product, 'suggested_use_ko', None),
                        "warnings": product.warnings, "warnings_ko": getattr(product, 'warnings_ko', None),
@@ -837,7 +890,9 @@ def get_iherb_product_detail(product_id: str, db: Session = Depends(get_db)):
                      "serving_size": product.serving_size,
                      "servings_per_container": product.servings_per_container},
         "specs": {"product_form": product.product_form, "count": product.count, "weight": product.weight,
-                 "dimensions": product.dimensions, "upc_barcode": product.upc_barcode, "sku": product.sku,
+                 "dimensions": product.dimensions,
+                 "upc_barcode": _fb(product.upc_barcode, wms_product and wms_product.get("upc")),
+                 "sku": _fb(product.sku, wms_parent_sku),
                  "shipping_weight": product.shipping_weight},
         "certifications": {"badges": json.loads(product.badges) if isinstance(product.badges, str) and product.badges.startswith("[") else (product.badges or []),
                           "certifications": product.certifications, "best_by_date": product.best_by_date},
@@ -851,6 +906,23 @@ def get_iherb_product_detail(product_id: str, db: Session = Depends(get_db)):
                 "ko_scraped_at": getattr(product, 'ko_scraped_at', None) and product.ko_scraped_at.isoformat() if getattr(product, 'ko_scraped_at', None) else None,
                 "updated_at": product.updated_at.isoformat() if product.updated_at else None},
     }
+
+    # ── WMS enrichment metadata ──────────────────────────────
+    if wms_parent_sku:
+        result["wms"] = {
+            "parent_sku": wms_parent_sku,
+            "has_wms_data": wms_product is not None,
+            "has_wms_desc": wms_desc_html is not None,
+            "wms_desc_html": wms_desc_html,
+            "wms_name_ko": wms_product.get("kn") if wms_product else None,
+            "wms_brand": wms_product.get("bn") if wms_product else None,
+            "wms_price": wms_product.get("pr") if wms_product else None,
+            "wms_upc": wms_product.get("upc") if wms_product else None,
+        }
+    else:
+        result["wms"] = None
+
+    return result
 
 @app.get("/api/iherb/stats")
 def get_iherb_stats(db: Session = Depends(get_db)):

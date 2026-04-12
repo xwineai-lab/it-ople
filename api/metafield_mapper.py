@@ -170,6 +170,44 @@ def resolve_parent_sku(sku: str) -> tuple[str, bool]:
     return (sku, False)
 
 
+def _clean_description_html(html: str) -> str:
+    """Clean WMS description HTML artifacts.
+
+    wms_desc.json descriptions have consistent artifacts:
+      - Leading `\\N` (SQL null marker from upstream export)
+      - Trailing numeric garbage: `\\n0\\n0\\n\\\\N\\n0\\n0\\n0.00\\n0.00\\n0.00`
+        (residual CSV columns that leaked into the description field)
+      - Mangled double-quote escapes: `",` → `,` inside HTML text
+      - Mangled style attributes: `style=""FONT-WEIGHT: bold""` → `style="font-weight:bold"`
+
+    This function strips them so Shopify gets clean HTML.
+    """
+    if not html:
+        return html
+
+    # 1. Remove leading \N (literal backslash-N, not newline)
+    if html.startswith("\\N"):
+        html = html[2:]
+
+    # 2. Remove trailing numeric garbage
+    #    Pattern: lines of just numbers/decimals + optional \N at the end
+    html = re.sub(r'(?:\n(?:\d+(?:\.\d+)?|\\N))+\s*$', '', html)
+
+    # 3. Fix mangled double-quote pairs in style attributes
+    #    `style=""FONT-WEIGHT: bold""` → `style="font-weight: bold"`
+    html = re.sub(
+        r'style=""([^"]*?)""',
+        lambda m: f'style="{m.group(1).lower()}"',
+        html,
+    )
+
+    # 4. Fix stray escaped commas: `",` is an artifact of CSV export
+    #    Only fix inside text content (between > and <), not in attributes
+    html = html.replace('",', ',')
+
+    return html.strip()
+
+
 def load_ople_desc() -> dict:
     """Lazy-load wms_desc.json → {parent_sku: html_string}.
 
@@ -189,7 +227,10 @@ def load_ople_desc() -> dict:
     with open(path, "r", encoding="utf-8") as f:
         raw = json.load(f)
 
-    _desc_cache = {k: _sanitize_str(v) if isinstance(v, str) else v for k, v in raw.items()}
+    _desc_cache = {
+        k: _clean_description_html(_sanitize_str(v)) if isinstance(v, str) else v
+        for k, v in raw.items()
+    }
     return _desc_cache
 
 

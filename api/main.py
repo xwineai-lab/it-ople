@@ -2518,6 +2518,241 @@ async def push_selection_to_shopify(
     }
 
 
+# ── Shopify Smart Collections bulk-create ────────────────
+
+class SmartCollectionItem(BaseModel):
+    """하나의 스마트 컬렉션 정의. 태그 1개에 EQUALS 매칭되는 단순 룰셋."""
+    title: str
+    handle: Optional[str] = None  # 비우면 Shopify가 title에서 자동 생성
+    tag: str                      # 예: "cat:보충제", "sub:장 건강", "brand:Jarrow Formulas"
+    description_html: Optional[str] = ""
+    sort_order: str = "BEST_SELLING"  # ALPHA_ASC/DESC, BEST_SELLING, CREATED, CREATED_DESC, MANUAL, PRICE_ASC/DESC
+
+
+class BulkSmartCollectionsRequest(BaseModel):
+    collections: list[SmartCollectionItem]
+    publish_to_online_store: bool = True
+    dry_run: bool = False
+
+
+async def _find_online_store_publication_id() -> Optional[str]:
+    """온라인 스토어 Publication GID 조회 (publishablePublish 용)."""
+    query = """
+    query {
+      publications(first: 20) {
+        edges { node { id name } }
+      }
+    }
+    """
+    try:
+        resp = await _shopify_graphql(query, {})
+    except Exception:
+        return None
+    edges = (((resp.get("data") or {}).get("publications") or {}).get("edges") or [])
+    # "Online Store" 또는 한글 "온라인 스토어" 모두 대응
+    for e in edges:
+        name = (e.get("node") or {}).get("name") or ""
+        if "Online Store" in name or "온라인" in name:
+            return e["node"].get("id")
+    # 첫 번째 publication을 기본값으로
+    if edges:
+        return edges[0]["node"].get("id")
+    return None
+
+
+async def _find_collection_by_handle(handle: str) -> Optional[dict]:
+    """핸들로 기존 컬렉션 조회 (idempotent upsert 용)."""
+    if not handle:
+        return None
+    query = """
+    query ($q: String!) {
+      collections(first: 1, query: $q) {
+        edges { node { id handle title } }
+      }
+    }
+    """
+    try:
+        resp = await _shopify_graphql(query, {"q": f"handle:{handle}"})
+    except Exception:
+        return None
+    edges = (((resp.get("data") or {}).get("collections") or {}).get("edges") or [])
+    if edges:
+        return edges[0].get("node")
+    return None
+
+
+@app.post("/api/shopify/collections/bulk-create")
+async def bulk_create_smart_collections(req: BulkSmartCollectionsRequest):
+    """태그 기반 Smart Collection 을 일괄 생성(또는 핸들 일치 시 업데이트).
+
+    - 각 아이템은 `{title, handle, tag}` 만 있으면 됨
+    - ruleSet: tag EQUALS <tag> (단일 규칙, 합집합 아님)
+    - sortOrder: 기본 BEST_SELLING
+    - publish_to_online_store=true 면 Online Store 채널에 출판
+    - dry_run=true 면 실제 호출 없이 미리보기만
+    """
+    if req.dry_run:
+        return {
+            "dry_run": True,
+            "count": len(req.collections),
+            "preview": [c.dict() for c in req.collections],
+        }
+
+    publication_id: Optional[str] = None
+    if req.publish_to_online_store:
+        publication_id = await _find_online_store_publication_id()
+
+    create_mutation = """
+    mutation CollectionCreate($input: CollectionInput!) {
+      collectionCreate(input: $input) {
+        collection { id handle title ruleSet { rules { column relation condition } } }
+        userErrors { field message }
+      }
+    }
+    """
+    update_mutation = """
+    mutation CollectionUpdate($input: CollectionInput!) {
+      collectionUpdate(input: $input) {
+        collection { id handle title ruleSet { rules { column relation condition } } }
+        userErrors { field message }
+      }
+    }
+    """
+    publish_mutation = """
+    mutation PublishablePublish($id: ID!, $input: [PublicationInput!]!) {
+      publishablePublish(id: $id, input: $input) {
+        userErrors { field message }
+      }
+    }
+    """
+
+    results: list[dict] = []
+
+    for item in req.collections:
+        existing = await _find_collection_by_handle(item.handle) if item.handle else None
+
+        input_payload: dict = {
+            "title": item.title,
+            "descriptionHtml": item.description_html or "",
+            "ruleSet": {
+                "appliedDisjunctively": False,
+                "rules": [
+                    {"column": "TAG", "relation": "EQUALS", "condition": item.tag}
+                ],
+            },
+            "sortOrder": item.sort_order,
+        }
+        if item.handle:
+            input_payload["handle"] = item.handle
+
+        try:
+            if existing:
+                input_payload["id"] = existing["id"]
+                resp = await _shopify_graphql(update_mutation, {"input": input_payload})
+                data = (resp.get("data") or {}).get("collectionUpdate") or {}
+                action = "updated"
+            else:
+                resp = await _shopify_graphql(create_mutation, {"input": input_payload})
+                data = (resp.get("data") or {}).get("collectionCreate") or {}
+                action = "created"
+
+            errors = data.get("userErrors") or []
+            collection = data.get("collection") or {}
+
+            if errors or not collection:
+                results.append({
+                    "title": item.title,
+                    "handle": item.handle,
+                    "tag": item.tag,
+                    "status": "error",
+                    "action": action,
+                    "user_errors": errors,
+                })
+                continue
+
+            # Online Store 채널 출판
+            published = False
+            if req.publish_to_online_store and publication_id:
+                try:
+                    pub_resp = await _shopify_graphql(
+                        publish_mutation,
+                        {
+                            "id": collection["id"],
+                            "input": [{"publicationId": publication_id}],
+                        },
+                    )
+                    pub_errors = (((pub_resp.get("data") or {}).get("publishablePublish") or {}).get("userErrors") or [])
+                    published = not pub_errors
+                except Exception:
+                    published = False
+
+            results.append({
+                "title": item.title,
+                "handle": collection.get("handle") or item.handle,
+                "tag": item.tag,
+                "status": "ok",
+                "action": action,
+                "id": collection.get("id"),
+                "rules": collection.get("ruleSet", {}).get("rules"),
+                "published_to_online_store": published,
+            })
+        except HTTPException:
+            raise
+        except Exception as e:
+            results.append({
+                "title": item.title,
+                "handle": item.handle,
+                "tag": item.tag,
+                "status": "exception",
+                "error": str(e),
+            })
+
+    summary = {
+        "total": len(req.collections),
+        "created": sum(1 for r in results if r.get("status") == "ok" and r.get("action") == "created"),
+        "updated": sum(1 for r in results if r.get("status") == "ok" and r.get("action") == "updated"),
+        "errors": sum(1 for r in results if r.get("status") in ("error", "exception")),
+        "published": sum(1 for r in results if r.get("published_to_online_store")),
+        "publication_id": publication_id,
+    }
+    return {"summary": summary, "results": results}
+
+
+@app.get("/api/shopify/collections")
+async def list_shopify_collections(limit: int = 100):
+    """현재 Shopify 스토어의 컬렉션 목록 조회 (중복 확인/검증용)."""
+    limit = max(1, min(limit, 250))
+    query = """
+    query ($first: Int!) {
+      collections(first: $first) {
+        edges {
+          node {
+            id
+            handle
+            title
+            productsCount { count }
+            ruleSet { rules { column relation condition } appliedDisjunctively }
+          }
+        }
+      }
+    }
+    """
+    resp = await _shopify_graphql(query, {"first": limit})
+    edges = (((resp.get("data") or {}).get("collections") or {}).get("edges") or [])
+    items = []
+    for e in edges:
+        n = e.get("node") or {}
+        items.append({
+            "id": n.get("id"),
+            "handle": n.get("handle"),
+            "title": n.get("title"),
+            "products_count": (n.get("productsCount") or {}).get("count"),
+            "rules": (n.get("ruleSet") or {}).get("rules"),
+            "rule_disjunctive": (n.get("ruleSet") or {}).get("appliedDisjunctively"),
+        })
+    return {"count": len(items), "collections": items}
+
+
 # ── Shopify OAuth install flow (opleaep app) ─────────────
 
 def _verify_shopify_hmac(query_params: dict, secret: str) -> bool:

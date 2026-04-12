@@ -2043,6 +2043,71 @@ async def _shopify_graphql(query: str, variables: dict) -> dict:
         return resp.json()
 
 
+async def _shopify_rest(method: str, path: str, json_body: dict = None) -> dict:
+    """Shopify REST Admin API 요청 (write_products 스코프로 사용 가능)."""
+    token = _get_shopify_access_token()
+    if not token:
+        raise HTTPException(status_code=500, detail="Shopify access token not found")
+    url = f"https://{SHOPIFY_STORE}/admin/api/{SHOPIFY_API_VERSION}/{path}"
+    headers = {
+        "X-Shopify-Access-Token": token,
+        "Content-Type": "application/json",
+    }
+    async with httpx.AsyncClient() as client:
+        if method.upper() == "GET":
+            resp = await client.get(url, headers=headers, timeout=30)
+        elif method.upper() == "PUT":
+            resp = await client.put(url, headers=headers, json=json_body or {}, timeout=30)
+        else:
+            resp = await client.request(method.upper(), url, headers=headers, json=json_body, timeout=30)
+        resp.raise_for_status()
+        return resp.json()
+
+
+@app.post("/api/shopify/collections/publish-all")
+async def publish_all_collections():
+    """REST API로 모든 Smart Collection을 published=true로 설정.
+
+    write_products 스코프만으로 동작 (publications 스코프 불필요).
+    """
+    # Smart Collections 조회 (REST, 최대 250개)
+    data = await _shopify_rest("GET", "smart_collections.json?limit=250&fields=id,title,handle,published_at")
+    collections = data.get("smart_collections", [])
+
+    results: list[dict] = []
+    published_count = 0
+    already_count = 0
+
+    for coll in collections:
+        cid = coll["id"]
+        title = coll.get("title", "")
+        handle = coll.get("handle", "")
+
+        if coll.get("published_at"):
+            results.append({"id": cid, "handle": handle, "status": "already_published"})
+            already_count += 1
+            continue
+
+        try:
+            await _shopify_rest("PUT", f"smart_collections/{cid}.json", {
+                "smart_collection": {"id": cid, "published": True}
+            })
+            results.append({"id": cid, "handle": handle, "title": title, "status": "published"})
+            published_count += 1
+        except Exception as e:
+            results.append({"id": cid, "handle": handle, "status": "error", "error": str(e)})
+
+    return {
+        "summary": {
+            "total": len(collections),
+            "newly_published": published_count,
+            "already_published": already_count,
+            "errors": len(collections) - published_count - already_count,
+        },
+        "results": results,
+    }
+
+
 @app.get("/api/shopify/metafields")
 async def list_shopify_metafields():
     """Shopify custom 네임스페이스 메타필드 Definition 목록"""

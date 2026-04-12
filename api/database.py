@@ -18,9 +18,23 @@ _DEFAULT_DB_DIR = "/var/data" if os.path.isdir("/var/data") else "./data"
 _DB_PATH = os.path.join(_DEFAULT_DB_DIR, "ople.db")
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{_DB_PATH}")
 
-# SQLite needs check_same_thread=False
+# SQLite needs check_same_thread=False + WAL mode for better concurrency
 if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False, "timeout": 30},
+        pool_pre_ping=True,
+    )
+
+    # Enable WAL mode for concurrent reads/writes (critical for background sync tasks)
+    from sqlalchemy import event
+
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_conn, connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
+        cursor.close()
 else:
     engine = create_engine(DATABASE_URL)
 

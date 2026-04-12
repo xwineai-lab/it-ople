@@ -3448,6 +3448,11 @@ async def _run_bulk_sync(job_id: str, force: bool, replace: bool):
                 await asyncio.sleep(0.5)
 
             except Exception as e:
+                # Rollback any broken transaction before continuing
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
                 job["failed"].append({"it_id": it_id, "error": str(e)})
                 try:
                     sp_err = db.query(ShopifyProduct).filter(ShopifyProduct.it_id == it_id).first()
@@ -3456,7 +3461,10 @@ async def _run_bulk_sync(job_id: str, force: bool, replace: bool):
                         sp_err.sync_error = str(e)
                         db.commit()
                 except Exception:
-                    pass
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
 
         if job["status"] != "cancelled":
             job["status"] = "completed"

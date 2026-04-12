@@ -1719,6 +1719,28 @@ async def shopify_selections_stats(db: Session = Depends(get_db)):
     }
 
 
+@app.post("/api/shopify/selections/reset-synced")
+async def reset_synced_selections(db: Session = Depends(get_db)):
+    """Reset all 'synced' selections back to 'approved' so they can be re-synced.
+
+    Also clears shopify_product_id/handle/status for records whose Shopify
+    product was deleted. Useful after cleaning up garbage products.
+    """
+    rows = db.query(ShopifyProduct).filter(
+        ShopifyProduct.status.in_(["synced", "syncing", "failed"])
+    ).all()
+    count = 0
+    for row in rows:
+        row.status = "approved"
+        row.shopify_product_id = None
+        row.shopify_handle = None
+        row.shopify_status = None
+        row.sync_error = None
+        count += 1
+    db.commit()
+    return {"reset": count, "message": f"Reset {count} selections to approved status"}
+
+
 @app.patch("/api/shopify/selections/{it_id}")
 async def update_shopify_selection(it_id: str, payload: dict, db: Session = Depends(get_db)):
     """Update status / wave / notes / overrides for a single selection."""
@@ -3516,28 +3538,6 @@ async def cancel_sync_job(job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
     job["cancelled"] = True
     return {"status": "cancelling", "job_id": job_id}
-
-
-@app.post("/api/shopify/selections/reset-synced")
-async def reset_synced_selections(db: Session = Depends(get_db)):
-    """Reset all 'synced' selections back to 'approved' so they can be re-synced.
-
-    Also clears shopify_product_id/handle/status for records whose Shopify
-    product was deleted. Useful after cleaning up garbage products.
-    """
-    rows = db.query(ShopifyProduct).filter(
-        ShopifyProduct.status.in_(["synced", "syncing", "failed"])
-    ).all()
-    count = 0
-    for row in rows:
-        row.status = "approved"
-        row.shopify_product_id = None
-        row.shopify_handle = None
-        row.shopify_status = None
-        row.sync_error = None
-        count += 1
-    db.commit()
-    return {"reset": count, "message": f"Reset {count} selections to approved status"}
 
 
 # ── Shopify Sync Dashboard ──────────────────────────────

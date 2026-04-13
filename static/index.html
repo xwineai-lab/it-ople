@@ -2893,7 +2893,7 @@
                 if (plLoaded) return;
                 setPlLoading(true);
                 try {
-                    const res = await fetch('/static/data/wms_active.json');
+                    const res = await fetch('/static/data/wms_active.json?v=' + Date.now(), {cache: 'no-store'});
                     const data = await res.json();
                     setPlProducts(data);
                     setPlLoaded(true);
@@ -2904,7 +2904,7 @@
                 if (plInactiveLoaded) return;
                 setPlLoading(true);
                 try {
-                    const res = await fetch('/static/data/wms_inactive.json');
+                    const res = await fetch('/static/data/wms_inactive.json?v=' + Date.now(), {cache: 'no-store'});
                     const data = await res.json();
                     setPlInactive(data);
                     setPlInactiveLoaded(true);

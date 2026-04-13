@@ -3201,8 +3201,8 @@
                                             setPlChecked(ns);
                                         },style:{cursor:'pointer'}})
                                     ),
-                                    ...['','IMG','SKU Info','Product Name','Safe/Max/InBox','Qty','Purchase Price','Status',''].map((h,i) => {
-                                        const w = [30,60,null,null,120,70,110,110,70][i];
+                                    ...['','IMG','SKU Info','Product Name','Safe/Max/InBox','Qty','Weight','Purchase Price','Status',''].map((h,i) => {
+                                        const w = [30,60,null,null,120,70,65,110,110,70][i];
                                         const align = i<=3?'left':'center';
                                         return React.createElement('th', {key:i,style:{padding:'10px 12px',textAlign:align,fontSize:'0.7rem',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.04em',width:w?w+'px':undefined,whiteSpace:'nowrap'}}, h);
                                     })
@@ -3242,6 +3242,9 @@
                                     React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}},
                                         React.createElement('div', {style:{fontSize:'0.92rem',fontWeight:700,color:p.qt>0?'#059669':'#94a3b8'}}, p.qt||0),
                                         React.createElement('div', {style:{fontSize:'0.66rem',color:p.os?'#ef4444':'#94a3b8'}}, p.os?'Not Ordered':'In Stock')
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}},
+                                        React.createElement('div', {style:{fontSize:'0.82rem',fontWeight:600,color:p.wt>0?'#1e293b':'#cbd5e1'}}, p.wt>0?p.wt+' lb':'-')
                                     ),
                                     React.createElement('td', {style:{padding:'8px 10px',textAlign:'center'}},
                                         React.createElement('div', {style:{fontSize:'0.82rem',fontWeight:600,color:p.pr>0?'#1e293b':'#cbd5e1'}}, p.pr>0?`$${p.pr.toFixed(2)}`:'-'),

@@ -302,6 +302,61 @@ def get_wms_description(sku: str):
         return {"sku": sku, "desc": "", "found": False}
     return {"sku": sku, "desc": desc, "found": True}
 
+
+# ── Trust Signals (legacy order data) ────────────────────
+_TRUST_CACHE = {"data": None}
+def _load_trust():
+    if _TRUST_CACHE["data"] is None:
+        path = os.path.join(os.path.dirname(__file__), "trust_signals.json")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                arr = json.load(f)
+            _TRUST_CACHE["data"] = {x["sku"]: x for x in arr}
+        except Exception:
+            _TRUST_CACHE["data"] = {}
+    return _TRUST_CACHE["data"]
+
+@app.get("/api/trust/{sku}")
+def get_trust_signals(sku: str):
+    """Per-SKU trust signals derived from legacy order data."""
+    data = _load_trust()
+    row = data.get(sku)
+    if not row:
+        return {"sku": sku, "found": False}
+    bt = []
+    s = row.get("bought_together_top3", "") or ""
+    for chunk in s.split(" | "):
+        if "(" in chunk and chunk.endswith(")"):
+            name, q = chunk.rsplit("(", 1)
+            try: qty = int(q.rstrip(")"))
+            except: qty = 0
+            bt.append({"name": name.strip(), "qty": qty})
+    badges = [b for b in (row.get("badges", "") or "").split(",") if b]
+    return {
+        "sku": sku, "found": True,
+        "upc": row.get("upc"), "brand": row.get("brand"),
+        "item_name": row.get("item_name"),
+        "total_qty": row.get("total_qty"),
+        "total_buyers": row.get("total_buyers"),
+        "total_orders": row.get("total_orders"),
+        "total_rev_krw": row.get("total_rev_krw"),
+        "recent30_qty": row.get("recent30_qty"),
+        "recent90_qty": row.get("recent90_qty"),
+        "cohort": row.get("cohort"),
+        "repeat_n": row.get("repeat_n"),
+        "repeat_rate_pct": row.get("repeat_rate_pct"),
+        "avg_gap_days": row.get("avg_gap_days") or None,
+        "overall_rank": row.get("overall_rank"),
+        "brand_rank": row.get("brand_rank"),
+        "top_region": row.get("top_region"),
+        "top_region_share_pct": row.get("top_region_share_pct"),
+        "bought_together": bt,
+        "badges": badges,
+        "data_updated_at": "2025-09-29",
+        "data_ref_period": "2019-09 ~ 2025-09",
+    }
+
+
 # ── iHerb Mapping API ────────────────────────────────────
 @app.get("/api/mapping")
 def get_mappings(

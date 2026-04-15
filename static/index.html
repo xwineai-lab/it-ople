@@ -2958,6 +2958,8 @@
                 const [descHtml, setDescHtml] = useState(null);
                 const [descLoading, setDescLoading] = useState(false);
                 const [catData, setCatData] = useState(null);
+                const [trust, setTrust] = useState(null);
+                const [trustLoading, setTrustLoading] = useState(false);
 
                 // Load categories on mount — use child SKUs (OPLE it_ids) for WMS products
                 useEffect(() => {
@@ -2983,6 +2985,13 @@
                             setDescLoading(false);
                         }).catch(()=>{setDescHtml('');setDescLoading(false);});
                     }
+                    if (detailTab === 'trust' && trust === null && !trustLoading) {
+                        setTrustLoading(true);
+                        fetch(`/api/trust/${p.sku}`).then(r=>r.json()).then(d=>{
+                            setTrust(d);
+                            setTrustLoading(false);
+                        }).catch(()=>{setTrust({found:false});setTrustLoading(false);});
+                    }
                 }, [detailTab]);
 
                 const F = ({label, val, w='50%'}) => React.createElement('div', {style:{width:w,minWidth:'150px',marginBottom:'14px'}},
@@ -2994,7 +3003,8 @@
                     {id:'info',label:'기본정보(General Information)'},
                     {id:'desc',label:'상세설명(Description)'},
                     {id:'sub',label:`하위상품(Sub Products)${p.ch?` · ${p.ch.length}`:''}` },
-                    {id:'img',label:'이미지(Images)'}
+                    {id:'img',label:'이미지(Images)'},
+                    {id:'trust',label:'판매 분석(Sales Insights)'}
                 ];
 
                 const tabBar = React.createElement('div', {style:{display:'flex',gap:'0',borderBottom:'2px solid #e2e8f0',marginBottom:'20px',overflowX:'auto'}},
@@ -3111,7 +3121,70 @@
                     ) : React.createElement('div', {style:{textAlign:'center',padding:'40px',color:'#94a3b8'}}, 'UPC 정보가 없어 이미지를 표시할 수 없습니다.')
                 );
 
-                const tabContent = {info:infoTab, desc:descTab, sub:subTab, img:imgTab}[detailTab];
+                // ── Trust / Sales Insights tab ──────────────────────
+                const Stat = ({label, value, sub, accent}) => React.createElement('div',
+                    {style:{flex:'1 1 160px',minWidth:'160px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:'10px',padding:'14px 16px'}},
+                    React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b',fontWeight:600,marginBottom:'6px'}}, label),
+                    React.createElement('div', {style:{fontSize:'1.35rem',fontWeight:800,color:accent||'#1e293b',lineHeight:1.1}}, value),
+                    sub ? React.createElement('div', {style:{fontSize:'0.7rem',color:'#94a3b8',marginTop:'4px'}}, sub) : null
+                );
+                const Badge = ({text, color}) => React.createElement('span',
+                    {style:{display:'inline-block',padding:'4px 10px',borderRadius:'999px',fontSize:'0.72rem',fontWeight:700,background:color||'#dbeafe',color:'#1e40af',marginRight:'6px',marginBottom:'6px'}}, text);
+
+                const BADGE_LABELS = {
+                    cumulative_qty:'누적 판매량', cumulative_buyers:'구매자 수',
+                    recent_30d:'최근 30일 판매', repeat_rate:'재구매율',
+                    avg_repurchase_gap:'재구매 주기', brand_rank_top5:'브랜드 TOP5',
+                    overall_top100:'전체 TOP100', region_top1:'지역 집중',
+                    bought_together:'함께 구매'
+                };
+
+                let trustTab;
+                if (trustLoading) {
+                    trustTab = React.createElement('div', {style:{textAlign:'center',padding:'40px',color:'#94a3b8'}}, '불러오는 중...');
+                } else if (!trust || !trust.found) {
+                    trustTab = React.createElement('div', {style:{textAlign:'center',padding:'40px',color:'#94a3b8'}},
+                        '이 상품에 대한 주문 분석 데이터가 아직 없습니다.',
+                        React.createElement('div', {style:{fontSize:'0.75rem',marginTop:'8px'}}, '(Legacy 주문 데이터 매칭 대상: 3,022 SKU)')
+                    );
+                } else {
+                    const t = trust;
+                    const fmt = n => (n==null?'-':Number(n).toLocaleString());
+                    trustTab = React.createElement('div', null,
+                        React.createElement('div', {style:{marginBottom:'14px'}},
+                            t.badges.length>0 ? t.badges.map((b,i)=>React.createElement(Badge, {key:i, text:BADGE_LABELS[b]||b, color:'#ecfdf5'})) : React.createElement('span',{style:{color:'#94a3b8',fontSize:'0.8rem'}}, '자격 충족 배지 없음')
+                        ),
+                        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'10px',marginBottom:'16px'}},
+                            React.createElement(Stat, {label:'누적 판매 수량', value:fmt(t.total_qty)+'개', accent:'#2563eb'}),
+                            React.createElement(Stat, {label:'누적 구매 고객', value:fmt(t.total_buyers)+'명'}),
+                            React.createElement(Stat, {label:'누적 주문 건수', value:fmt(t.total_orders)+'건'}),
+                            React.createElement(Stat, {label:'누적 매출 (KRW)', value:'₩'+fmt(t.total_rev_krw)})
+                        ),
+                        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:'10px',marginBottom:'16px'}},
+                            React.createElement(Stat, {label:'최근 30일 판매', value:fmt(t.recent30_qty)+'개', sub:'최근 90일: '+fmt(t.recent90_qty)+'개'}),
+                            React.createElement(Stat, {label:'재구매율', value:(t.repeat_rate_pct!=null?t.repeat_rate_pct.toFixed(1)+'%':'-'), sub:'모수 '+fmt(t.cohort)+'명 중 '+fmt(t.repeat_n)+'명'}),
+                            React.createElement(Stat, {label:'평균 재구매 주기', value:(t.avg_gap_days?t.avg_gap_days+'일':'-'), sub:'같은날 분할 제외 중앙값'}),
+                            React.createElement(Stat, {label:'판매 순위', value:'#'+fmt(t.overall_rank), sub:(t.brand||'브랜드')+' 내 #'+fmt(t.brand_rank)})
+                        ),
+                        t.top_region ? React.createElement('div', {style:{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'10px',padding:'14px 16px',marginBottom:'16px'}},
+                            React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:700,color:'#1e293b',marginBottom:'6px'}}, '지역 분포'),
+                            React.createElement('div', {style:{fontSize:'0.88rem',color:'#334155'}}, '최다 지역: ',
+                                React.createElement('b', null, t.top_region),
+                                ' (', (t.top_region_share_pct||0).toFixed(1), '%)')
+                        ) : null,
+                        t.bought_together && t.bought_together.length>0 ? React.createElement('div', {style:{background:'#fff',border:'1px solid #e2e8f0',borderRadius:'10px',padding:'14px 16px',marginBottom:'16px'}},
+                            React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:700,color:'#1e293b',marginBottom:'10px'}}, '함께 많이 산 상품 TOP3'),
+                            t.bought_together.map((b,i)=>React.createElement('div', {key:i, style:{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:i<t.bought_together.length-1?'1px dashed #e2e8f0':'none'}},
+                                React.createElement('span', {style:{fontSize:'0.82rem',color:'#334155'}}, (i+1)+'. '+b.name),
+                                React.createElement('span', {style:{fontSize:'0.78rem',color:'#64748b',fontWeight:600}}, fmt(b.qty)+'개')
+                            ))
+                        ) : null,
+                        React.createElement('div', {style:{fontSize:'0.7rem',color:'#94a3b8',textAlign:'right',marginTop:'8px'}},
+                            '데이터 기준일: '+t.data_updated_at+'  ·  집계 기간: '+t.data_ref_period)
+                    );
+                }
+
+                const tabContent = {info:infoTab, desc:descTab, sub:subTab, img:imgTab, trust:trustTab}[detailTab];
 
                 return React.createElement('div', {style:{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}},
                     React.createElement('div', {onClick:onClose,style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.4)'}}),

@@ -2109,10 +2109,14 @@ SHOPIFY_GRAPHQL_URL = f"https://{SHOPIFY_STORE}/admin/api/{SHOPIFY_API_VERSION}/
 # OAuth configuration (opleaep Dev Dashboard app)
 SHOPIFY_API_KEY = os.getenv("SHOPIFY_API_KEY", "f5add71ac6273d9eb9a43e0d155255af")
 SHOPIFY_API_SECRET = os.getenv("SHOPIFY_API_SECRET", "")
-SHOPIFY_OAUTH_SCOPES = os.getenv(
+_REQUIRED_SCOPES = {"read_publications", "write_publications"}
+_base_scopes = os.getenv(
     "SHOPIFY_OAUTH_SCOPES",
     "read_products,write_products,read_product_listings,write_product_listings,read_online_store_navigation,write_online_store_navigation,read_publications,write_publications",
 )
+_scope_set = {s.strip() for s in _base_scopes.split(",") if s.strip()}
+_scope_set.update(_REQUIRED_SCOPES)
+SHOPIFY_OAUTH_SCOPES = ",".join(sorted(_scope_set))
 SHOPIFY_APP_URL = os.getenv("SHOPIFY_APP_URL", "https://it-ople.onrender.com")
 SHOPIFY_TOKEN_FILE = Path(os.getenv("SHOPIFY_TOKEN_FILE", "/tmp/shopify_token.json"))
 

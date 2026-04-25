@@ -4016,7 +4016,7 @@ _analytics_logger = logging.getLogger("ople.analytics")
 # ═════════════════════════════════════════════════════════════════════
 
 @app.get("/api/analytics/dashboard")
-async def analytics_dashboard(db: Session = Depends(get_db)):
+async def analytics_dashboard_kpi(db: Session = Depends(get_db)):
     """대시보드 핵심 KPI — 이번달 vs 지난달."""
     now = datetime.utcnow()
     this_month = now.strftime("%Y-%m")

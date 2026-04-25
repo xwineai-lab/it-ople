@@ -18,50 +18,87 @@
   --text-light: #7f8c8d;
   --border: #e0e4e8;
   --radius: 10px;
+  --hover: #f0f4f8;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
 
 /* Layout */
 .app { display: flex; min-height: 100vh; }
-.sidebar { width: 220px; background: var(--primary); color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; }
+.sidebar { width: 220px; background: var(--primary); color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; z-index: 50; }
 .sidebar h2 { padding: 0 20px; font-size: 18px; margin-bottom: 20px; opacity: 0.9; }
 .sidebar .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 20px; cursor: pointer; transition: background 0.2s; font-size: 14px; }
 .sidebar .nav-item:hover, .sidebar .nav-item.active { background: rgba(255,255,255,0.15); }
 .sidebar .nav-item .icon { font-size: 18px; }
-.main { margin-left: 220px; flex: 1; padding: 24px; }
+.sidebar .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 12px 20px; }
+.sidebar .back-link { display: block; padding: 10px 20px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; margin-top: auto; }
+.sidebar .back-link:hover { color: white; }
+.main { margin-left: 220px; flex: 1; padding: 24px; max-width: 1400px; }
 
-/* Page header */
-.page-header { margin-bottom: 24px; }
-.page-header h1 { font-size: 24px; color: var(--primary); }
-.page-header p { color: var(--text-light); margin-top: 4px; font-size: 14px; }
+/* Page header with date filter */
+.page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.page-header .title-area h1 { font-size: 22px; color: var(--primary); }
+.page-header .title-area p { color: var(--text-light); margin-top: 4px; font-size: 13px; }
+
+/* Date Range Picker */
+.date-filter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.date-preset { padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px; background: white; font-size: 12px; cursor: pointer; transition: all 0.2s; color: var(--text); }
+.date-preset:hover { border-color: var(--secondary); color: var(--secondary); }
+.date-preset.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+.date-custom { display: flex; gap: 6px; align-items: center; }
+.date-custom input { padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+.date-custom .apply-btn { padding: 5px 12px; background: var(--secondary); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; }
 
 /* KPI Grid */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.kpi-card { background: var(--card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); }
-.kpi-card .icon { font-size: 24px; margin-bottom: 8px; }
-.kpi-card .label { font-size: 12px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
-.kpi-card .value { font-size: 24px; font-weight: 700; color: var(--primary); margin: 4px 0; }
-.kpi-card .change { font-size: 13px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.kpi-card { background: var(--card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; }
+.kpi-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.kpi-card .icon { font-size: 22px; margin-bottom: 6px; }
+.kpi-card .label { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-card .value { font-size: 22px; font-weight: 700; color: var(--primary); margin: 4px 0; }
+.kpi-card .change { font-size: 12px; }
 .kpi-card .change.up { color: var(--green); }
 .kpi-card .change.down { color: var(--accent); }
 .kpi-card.alert { border-color: var(--accent); border-width: 2px; }
 
 /* Cards */
-.card { background: var(--card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
-.card h3 { font-size: 16px; margin-bottom: 16px; color: var(--primary); }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+.card { background: var(--card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.card-header h3 { font-size: 15px; color: var(--primary); }
+.card-header .card-actions { display: flex; gap: 6px; }
+.card-header .card-actions select, .card-header .card-actions button {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; background: white; cursor: pointer;
+}
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .two-col, .three-col { grid-template-columns: 1fr; } }
 
 /* Chart */
 .chart-container { position: relative; height: 300px; }
 
 /* Tables */
-.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.data-table th { background: var(--primary); color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
-.data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-.data-table tr:hover { background: #f0f4f8; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th { background: var(--primary); color: white; padding: 8px 10px; text-align: left; font-weight: 600; position: sticky; top: 0; }
+.data-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.data-table tr:hover { background: var(--hover); }
+.data-table tr { cursor: pointer; }
 .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Heatmap */
+.heatmap-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.heatmap-table th { padding: 6px 8px; text-align: center; font-weight: 600; font-size: 11px; color: var(--text-light); }
+.heatmap-table td { padding: 6px 8px; text-align: center; border: 1px solid #f0f0f0; cursor: pointer; transition: transform 0.1s; min-width: 50px; }
+.heatmap-table td:hover { transform: scale(1.05); box-shadow: 0 0 8px rgba(0,0,0,0.15); z-index: 2; position: relative; }
+.heatmap-table .cohort-label { text-align: left; font-weight: 600; color: var(--text); background: #fafbfc; min-width: 80px; }
+.heatmap-table .cohort-size { text-align: right; color: var(--text-light); font-size: 10px; }
+
+/* RFM Matrix */
+.rfm-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.rfm-cell { padding: 10px 6px; text-align: center; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 12px; }
+.rfm-cell:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.rfm-cell .seg-name { font-weight: 600; font-size: 11px; margin-bottom: 4px; }
+.rfm-cell .seg-count { font-size: 16px; font-weight: 700; }
+.rfm-cell .seg-revenue { font-size: 10px; opacity: 0.8; margin-top: 2px; }
 
 /* Tier badges */
 .tier-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 11px; font-weight: 700; }
@@ -71,67 +108,86 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .tier-bronze { background: #CD6155; }
 .tier-general { background: #BDC3C7; color: #555; }
 
-.segment-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #EBF5FB; color: var(--secondary); font-size: 11px; }
+.segment-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #EBF5FB; color: var(--secondary); font-size: 11px; font-weight: 500; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-bar input, .filter-bar select { padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+.filter-bar input { flex: 1; min-width: 180px; }
+
+/* Pagination */
+.pagination { display: flex; justify-content: center; gap: 10px; margin-top: 12px; align-items: center; font-size: 12px; }
+.pagination button { padding: 5px 14px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; font-size: 12px; }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
 
 /* AI Query */
-.ai-input { display: flex; gap: 12px; margin-bottom: 16px; }
-.ai-input textarea { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: var(--radius); font-size: 14px; resize: none; font-family: inherit; }
+.ai-input { display: flex; gap: 10px; margin-bottom: 14px; }
+.ai-input textarea { flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: var(--radius); font-size: 13px; resize: none; font-family: inherit; }
 .ai-input textarea:focus { outline: none; border-color: var(--secondary); }
-.ai-input button { padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.ai-input button { padding: 10px 20px; background: var(--secondary); color: white; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .ai-input button:hover { background: var(--primary); }
 .ai-input button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.example-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-.example-chip { background: #EBF5FB; border: 1px solid #AED6F1; color: var(--secondary); padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.example-chip { background: #EBF5FB; border: 1px solid #AED6F1; color: var(--secondary); padding: 5px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: all 0.2s; }
 .example-chip:hover { background: var(--secondary); color: white; }
 
-.ai-result { margin-top: 20px; }
-.ai-explanation { background: #EBF5FB; padding: 16px; border-radius: var(--radius); margin-bottom: 16px; line-height: 1.6; }
-.ai-explanation h3 { margin-bottom: 8px; }
-.sql-toggle { cursor: pointer; color: var(--secondary); font-size: 13px; margin-bottom: 8px; }
-.sql-code { background: #2C3E50; color: #ECF0F1; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; overflow-x: auto; white-space: pre-wrap; display: none; margin-bottom: 16px; }
+.ai-result { margin-top: 16px; }
+.ai-explanation { background: #EBF5FB; padding: 14px; border-radius: var(--radius); margin-bottom: 12px; line-height: 1.6; font-size: 13px; }
+.sql-toggle { cursor: pointer; color: var(--secondary); font-size: 12px; margin-bottom: 6px; }
+.sql-code { background: #2C3E50; color: #ECF0F1; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; overflow-x: auto; white-space: pre-wrap; display: none; margin-bottom: 12px; }
 .sql-code.show { display: block; }
-.meta-info { color: var(--text-light); font-size: 12px; }
-
-/* Filter bar */
-.filter-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.filter-bar input, .filter-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
-.filter-bar input { flex: 1; min-width: 200px; }
-
-/* Pagination */
-.pagination { display: flex; justify-content: center; gap: 12px; margin-top: 16px; align-items: center; }
-.pagination button { padding: 6px 16px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; }
-.pagination button:disabled { opacity: 0.4; cursor: default; }
+.meta-info { color: var(--text-light); font-size: 11px; }
 
 /* Reports */
-.report-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; background: white; }
-.report-info h4 { margin-bottom: 4px; }
-.report-meta { font-size: 12px; color: var(--text-light); }
-.btn-primary { padding: 10px 20px; background: var(--secondary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.report-card { display: flex; align-items: center; justify-content: space-between; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; background: white; }
+.report-info h4 { margin-bottom: 3px; font-size: 14px; }
+.report-meta { font-size: 11px; color: var(--text-light); }
+.btn-primary { padding: 8px 16px; background: var(--secondary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
 .btn-primary:hover { background: var(--primary); }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
 .status-ok { color: var(--green); }
 .status-err { color: var(--accent); }
 
-.loading { text-align: center; padding: 40px; color: var(--text-light); }
-.empty { text-align: center; padding: 40px; color: var(--text-light); font-size: 14px; }
+.loading { text-align: center; padding: 40px; color: var(--text-light); font-size: 13px; }
+.empty { text-align: center; padding: 40px; color: var(--text-light); font-size: 13px; }
 
 /* History */
-.history-list { max-height: 300px; overflow-y: auto; }
-.history-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px; }
+.history-list { max-height: 280px; overflow-y: auto; }
+.history-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 12px; }
 .history-item:hover { background: #f9f9f9; }
-.history-item .time { margin-left: auto; color: var(--text-light); font-size: 11px; }
+.history-item .time { margin-left: auto; color: var(--text-light); font-size: 10px; }
 
 /* Customer detail panel */
-.detail-panel { position: fixed; right: 0; top: 0; width: 420px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.1); z-index: 100; overflow-y: auto; padding: 24px; }
+.detail-panel { position: fixed; right: 0; top: 0; width: 440px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.12); z-index: 100; overflow-y: auto; padding: 24px; transition: transform 0.3s; }
+.detail-panel.hidden { transform: translateX(100%); }
 .detail-panel .close-btn { position: absolute; top: 12px; right: 16px; font-size: 20px; cursor: pointer; color: var(--text-light); }
-.detail-panel h2 { margin-bottom: 16px; }
-.detail-section { margin-bottom: 20px; }
-.detail-section h4 { margin-bottom: 8px; color: var(--primary); font-size: 14px; }
+.detail-panel h2 { margin-bottom: 16px; font-size: 18px; }
+.detail-section { margin-bottom: 18px; }
+.detail-section h4 { margin-bottom: 8px; color: var(--primary); font-size: 13px; }
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.detail-item { font-size: 13px; }
+.detail-item { font-size: 12px; }
 .detail-item .dl { color: var(--text-light); }
 .detail-item .dv { font-weight: 600; }
+
+/* Drill-down modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; justify-content: center; align-items: center; }
+.modal { background: white; border-radius: var(--radius); width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto; padding: 24px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.modal-header h2 { font-size: 18px; color: var(--primary); }
+.modal-close { font-size: 22px; cursor: pointer; color: var(--text-light); background: none; border: none; }
+
+/* Tab navigation */
+.tab-nav { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+.tab-btn { padding: 8px 18px; border: none; background: none; cursor: pointer; font-size: 13px; color: var(--text-light); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--secondary); border-bottom-color: var(--secondary); font-weight: 600; }
+
+/* Scrollable table */
+.table-scroll { max-height: 400px; overflow-y: auto; }
+
+/* Tooltip */
+.tooltip { position: absolute; background: var(--text); color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; pointer-events: none; z-index: 300; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -140,41 +196,161 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <nav class="sidebar">
     <h2>OPLE Analytics</h2>
     <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> 매출 대시보드</div>
-    <div class="nav-item" onclick="showPage('customers')"><span class="icon">👥</span> 고객 분석</div>
+    <div class="nav-item" onclick="showPage('rfm')"><span class="icon">🎯</span> RFM 분석</div>
+    <div class="nav-item" onclick="showPage('cohort')"><span class="icon">📈</span> 코호트 분석</div>
+    <div class="nav-item" onclick="showPage('products')"><span class="icon">🏷️</span> 상품 분석</div>
+    <div class="nav-item" onclick="showPage('customers')"><span class="icon">👥</span> 고객 탐색</div>
     <div class="nav-item" onclick="showPage('ai')"><span class="icon">🤖</span> AI 데이터 조회</div>
     <div class="nav-item" onclick="showPage('reports')"><span class="icon">📋</span> 자동 리포트</div>
-    <div style="border-top:1px solid rgba(255,255,255,0.2);margin:16px 20px"></div>
+    <div class="nav-divider"></div>
     <div class="nav-item" onclick="triggerRecalculate()"><span class="icon">🔄</span> 데이터 재계산</div>
     <div class="nav-item" onclick="triggerSync()"><span class="icon">☁️</span> Shopify 동기화</div>
+    <div class="nav-divider"></div>
+    <a class="back-link" href="/">← 메인으로 돌아가기</a>
   </nav>
 
-  <!-- Main Content -->
   <main class="main">
-    <!-- DASHBOARD PAGE -->
+    <!-- ═══ DASHBOARD PAGE ═══ -->
     <div id="page-dashboard">
       <div class="page-header">
-        <h1>📊 매출 대시보드</h1>
-        <p>실시간 핵심 지표 모니터링</p>
+        <div class="title-area">
+          <h1>📊 매출 대시보드</h1>
+          <p>핵심 지표 모니터링 · 기간별 필터링</p>
+        </div>
+        <div class="date-filter">
+          <button class="date-preset active" data-range="thisMonth">이번 달</button>
+          <button class="date-preset" data-range="lastMonth">지난 달</button>
+          <button class="date-preset" data-range="3months">최근 3개월</button>
+          <button class="date-preset" data-range="6months">최근 6개월</button>
+          <button class="date-preset" data-range="thisYear">올해</button>
+          <button class="date-preset" data-range="all">전체</button>
+          <div class="date-custom">
+            <input type="date" id="date-from">
+            <span>~</span>
+            <input type="date" id="date-to">
+            <button class="apply-btn" onclick="applyCustomDate()">적용</button>
+          </div>
+        </div>
       </div>
       <div id="kpi-grid" class="kpi-grid"><div class="loading">데이터 로딩 중...</div></div>
       <div class="card">
-        <h3>월별 매출 추이</h3>
+        <div class="card-header">
+          <h3>월별 매출 추이</h3>
+          <div class="card-actions">
+            <select id="trend-months" onchange="loadRevenueTrend()">
+              <option value="6">6개월</option>
+              <option value="12" selected>12개월</option>
+              <option value="24">24개월</option>
+              <option value="36">36개월</option>
+            </select>
+          </div>
+        </div>
         <div class="chart-container"><canvas id="revenueChart"></canvas></div>
       </div>
       <div class="two-col">
-        <div class="card"><h3>고객 등급 분포</h3><canvas id="tierChart" height="250"></canvas></div>
-        <div class="card"><h3>RFM 세그먼트</h3><canvas id="rfmChart" height="250"></canvas></div>
+        <div class="card">
+          <div class="card-header"><h3>고객 등급 분포</h3></div>
+          <div id="tier-summary"></div>
+          <canvas id="tierChart" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>RFM 세그먼트 요약</h3></div>
+          <canvas id="rfmChart" height="220"></canvas>
+        </div>
       </div>
     </div>
 
-    <!-- CUSTOMERS PAGE -->
+    <!-- ═══ RFM ANALYSIS PAGE ═══ -->
+    <div id="page-rfm" style="display:none">
+      <div class="page-header">
+        <div class="title-area">
+          <h1>🎯 RFM 세그먼트 분석</h1>
+          <p>고객을 Recency · Frequency · Monetary 기준으로 세분화하여 전략적 인사이트를 도출합니다</p>
+        </div>
+      </div>
+      <div id="rfm-matrix-container" class="card">
+        <div class="card-header"><h3>세그먼트별 고객 분포</h3></div>
+        <div id="rfm-matrix"></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><h3>세그먼트별 매출 기여도</h3></div>
+          <div class="chart-container"><canvas id="rfmRevenueChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>세그먼트별 평균 지표</h3></div>
+          <div class="chart-container"><canvas id="rfmMetricsChart"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>세그먼트 상세</h3></div>
+        <div id="rfm-detail-table"></div>
+      </div>
+    </div>
+
+    <!-- ═══ COHORT ANALYSIS PAGE ═══ -->
+    <div id="page-cohort" style="display:none">
+      <div class="page-header">
+        <div class="title-area">
+          <h1>📈 코호트 잔존율 분석</h1>
+          <p>첫 구매 시점 기준 고객 재구매율 추적 · 셀 클릭 시 해당 고객 목록 확인</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>연도별 코호트 잔존율 히트맵</h3></div>
+        <div id="cohort-heatmap"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>코호트별 잔존율 추이</h3></div>
+        <div class="chart-container"><canvas id="cohortLineChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ═══ PRODUCT ANALYSIS PAGE ═══ -->
+    <div id="page-products" style="display:none">
+      <div class="page-header">
+        <div class="title-area">
+          <h1>🏷️ 상품 분석</h1>
+          <p>매출 랭킹 · 구매자 분석 · 기간별 필터링</p>
+        </div>
+        <div class="date-filter">
+          <button class="date-preset prod-preset active" data-range="all">전체</button>
+          <button class="date-preset prod-preset" data-range="thisYear">올해</button>
+          <button class="date-preset prod-preset" data-range="lastYear">작년</button>
+          <select id="product-period-month" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;">
+            <option value="">월 선택</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>상품 매출 랭킹</h3>
+          <div class="card-actions">
+            <select id="product-limit" onchange="loadProducts()">
+              <option value="10">TOP 10</option>
+              <option value="20" selected>TOP 20</option>
+              <option value="50">TOP 50</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-container" style="height:350px"><canvas id="productBarChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>상품 상세 테이블</h3></div>
+        <div id="product-table-wrap" class="table-scroll"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CUSTOMERS PAGE ═══ -->
     <div id="page-customers" style="display:none">
       <div class="page-header">
-        <h1>👥 고객 분석</h1>
-        <p id="customer-count">전체 고객</p>
+        <div class="title-area">
+          <h1>👥 고객 탐색</h1>
+          <p id="customer-count">전체 고객 · 등급/세그먼트별 필터링 · 클릭하여 상세 확인</p>
+        </div>
       </div>
       <div class="filter-bar">
-        <input type="text" id="cust-search" placeholder="고객 ID 또는 이메일 검색..." onkeyup="if(event.key==='Enter')loadCustomers()">
+        <input type="text" id="cust-search" placeholder="고객 ID / 이메일 / 이름 검색..." onkeyup="if(event.key==='Enter')loadCustomers()">
         <select id="cust-tier" onchange="loadCustomers()">
           <option value="">전체 등급</option>
           <option value="platinum">플래티넘</option>
@@ -188,7 +364,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
           <option value="champion">챔피언</option>
           <option value="loyal">충성고객</option>
           <option value="potential">유망고객</option>
+          <option value="new">신규</option>
+          <option value="need_attention">관심필요</option>
+          <option value="about_to_sleep">이탈직전</option>
           <option value="at_risk">이탈위험</option>
+          <option value="cant_lose">놓칠수없는</option>
           <option value="hibernating">휴면</option>
         </select>
         <select id="cust-sort" onchange="loadCustomers()">
@@ -197,15 +377,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
           <option value="recency">최근구매순</option>
           <option value="aov">AOV순</option>
         </select>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;">
+          <input type="checkbox" id="cust-churned" onchange="loadCustomers()"> 이탈만
+        </label>
       </div>
       <div id="customer-table-wrap"></div>
     </div>
 
-    <!-- AI QUERY PAGE -->
+    <!-- ═══ AI QUERY PAGE ═══ -->
     <div id="page-ai" style="display:none">
       <div class="page-header">
-        <h1>🤖 AI 데이터 조회</h1>
-        <p>자연어로 질문하면 AI가 데이터를 조회합니다</p>
+        <div class="title-area">
+          <h1>🤖 AI 데이터 조회</h1>
+          <p>자연어로 질문하면 AI가 SQL을 생성하여 데이터를 조회합니다</p>
+        </div>
       </div>
       <div class="ai-input">
         <textarea id="ai-question" rows="2" placeholder="데이터에 대해 궁금한 것을 물어보세요..."
@@ -219,49 +404,62 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <span class="example-chip" onclick="setQ('2024년 vs 2023년 매출 비교')">연도별 매출 비교</span>
         <span class="example-chip" onclick="setQ('서울 지역 고객 평균 주문금액은?')">서울 평균 AOV</span>
         <span class="example-chip" onclick="setQ('이탈위험 고객 중 LTV 상위 20명')">이탈위험 VIP</span>
+        <span class="example-chip" onclick="setQ('월별 신규 고객 수와 재구매 고객 수 비교')">신규 vs 재구매</span>
+        <span class="example-chip" onclick="setQ('지역별 매출 TOP 10')">지역별 매출</span>
       </div>
       <div id="ai-result"></div>
-      <div class="card" style="margin-top:20px">
-        <h3>이전 질문</h3>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><h3>이전 질문</h3></div>
         <div id="ai-history" class="history-list"></div>
       </div>
     </div>
 
-    <!-- REPORTS PAGE -->
+    <!-- ═══ REPORTS PAGE ═══ -->
     <div id="page-reports" style="display:none">
       <div class="page-header">
-        <h1>📋 자동 리포트</h1>
-        <p>주간/월간 분석 리포트 자동 발송 관리</p>
+        <div class="title-area">
+          <h1>📋 자동 리포트</h1>
+          <p>주간/월간 분석 리포트 자동 발송 관리</p>
+        </div>
       </div>
       <button class="btn-primary" onclick="showCreateReport()">+ 새 리포트 만들기</button>
-      <div id="reports-list" style="margin-top:16px"></div>
+      <div id="reports-list" style="margin-top:14px"></div>
     </div>
   </main>
 </div>
 
 <!-- Detail Panel -->
-<div id="detail-panel" class="detail-panel" style="display:none"></div>
+<div id="detail-panel" class="detail-panel hidden"></div>
+
+<!-- Modal -->
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()"></div>
 
 <script>
-const API_BASE = '';  // same origin
+// ═══════════════════════════════════════════════════════════
+// GLOBALS & UTILS
+// ═══════════════════════════════════════════════════════════
+const API = '';
 const TOKEN = localStorage.getItem('ople_token') || '';
+const charts = {};
+let currentDateRange = 'thisMonth';
 
 async function apiFetch(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (TOKEN) headers['Authorization'] = `Bearer ${TOKEN}`;
-  const r = await fetch(API_BASE + path, { headers, ...opts });
+  const r = await fetch(API + path, { headers, ...opts });
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json();
 }
 
-function fmt(n) { return n ? Math.round(n).toLocaleString() : '0'; }
-function fmtCurrency(n) { return n ? '₩' + Math.round(n).toLocaleString() : '₩0'; }
+function fmt(n) { return n != null ? Math.round(n).toLocaleString() : '0'; }
+function fmtCurrency(n) { return n != null ? '₩' + Math.round(n).toLocaleString() : '₩0'; }
 function fmtBig(n) {
   if (!n) return '₩0';
-  if (n >= 1e8) return (n/1e8).toFixed(1) + '억';
-  if (n >= 1e4) return Math.round(n/1e4).toLocaleString() + '만';
+  if (n >= 1e8) return '₩' + (n/1e8).toFixed(1) + '억';
+  if (n >= 1e4) return '₩' + Math.round(n/1e4).toLocaleString() + '만';
   return fmtCurrency(n);
 }
+function fmtPct(n) { return (n != null ? n.toFixed(1) : '0') + '%'; }
 function timeAgo(d) {
   if (!d) return '';
   const s = (Date.now() - new Date(d).getTime()) / 1000;
@@ -271,112 +469,545 @@ function timeAgo(d) {
 }
 
 const TIER_LABELS = { platinum: '플래티넘', gold: '골드', silver: '실버', bronze: '브론즈', general: '일반' };
-const SEG_LABELS = { champion: '챔피언', loyal: '충성', potential: '유망', new: '신규',
-  need_attention: '관심필요', about_to_sleep: '이탈직전', at_risk: '이탈위험', cant_lose: '놓칠수없는', hibernating: '휴면' };
+const TIER_COLORS = { platinum: '#1B4F72', gold: '#D4AC0D', silver: '#95A5A6', bronze: '#CD6155', general: '#BDC3C7' };
+const SEG_LABELS = {
+  champion: '챔피언', loyal: '충성', potential: '유망', new: '신규',
+  need_attention: '관심필요', about_to_sleep: '이탈직전',
+  at_risk: '이탈위험', cant_lose: '놓칠수없는', hibernating: '휴면'
+};
+const SEG_COLORS = {
+  champion: '#1B4F72', loyal: '#2E86C1', potential: '#3498DB',
+  new: '#27AE60', need_attention: '#F39C12', about_to_sleep: '#E67E22',
+  at_risk: '#E74C3C', cant_lose: '#C0392B', hibernating: '#95A5A6'
+};
 
-// ── PAGE NAVIGATION ──
-function showPage(id) {
-  ['dashboard','customers','ai','reports'].forEach(p => {
-    document.getElementById('page-' + p).style.display = p === id ? 'block' : 'none';
-  });
-  document.querySelectorAll('.nav-item').forEach((el, i) => {
-    el.classList.toggle('active', i === ['dashboard','customers','ai','reports'].indexOf(id));
-  });
-  if (id === 'dashboard') loadDashboard();
-  if (id === 'customers') loadCustomers();
-  if (id === 'ai') loadAiHistory();
-  if (id === 'reports') loadReports();
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
 }
 
-// ── DASHBOARD ──
-let dashLoaded = false;
+function getDateRange(range) {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  switch (range) {
+    case 'thisMonth': return { from: new Date(y, m, 1), to: now };
+    case 'lastMonth': return { from: new Date(y, m-1, 1), to: new Date(y, m, 0) };
+    case '3months': return { from: new Date(y, m-2, 1), to: now };
+    case '6months': return { from: new Date(y, m-5, 1), to: now };
+    case 'thisYear': return { from: new Date(y, 0, 1), to: now };
+    case 'lastYear': return { from: new Date(y-1, 0, 1), to: new Date(y-1, 11, 31) };
+    case 'all': return { from: null, to: null };
+    default: return { from: null, to: null };
+  }
+}
+
+function retentionColor(rate) {
+  if (rate == null) return '#f8f9fa';
+  const r = Math.min(rate / 100, 1);
+  const red = Math.round(255 - r * 200);
+  const green = Math.round(80 + r * 140);
+  const blue = Math.round(80 + r * 100);
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function segmentColor(seg) { return SEG_COLORS[seg] || '#95A5A6'; }
+
+// ═══════════════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const PAGES = ['dashboard','rfm','cohort','products','customers','ai','reports'];
+const pageLoaded = {};
+
+function showPage(id) {
+  PAGES.forEach(p => {
+    const el = document.getElementById('page-' + p);
+    if (el) el.style.display = p === id ? 'block' : 'none';
+  });
+  document.querySelectorAll('.sidebar .nav-item').forEach((el, i) => {
+    el.classList.toggle('active', i === PAGES.indexOf(id));
+  });
+  const loaders = {
+    dashboard: loadDashboard,
+    rfm: loadRfmPage,
+    cohort: loadCohortPage,
+    products: loadProducts,
+    customers: loadCustomers,
+    ai: loadAiHistory,
+    reports: loadReports,
+  };
+  if (loaders[id]) loaders[id]();
+}
+
+// Date presets
+document.querySelectorAll('.date-preset:not(.prod-preset)').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.date-preset:not(.prod-preset)').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentDateRange = btn.dataset.range;
+    pageLoaded.dashboard = false;
+    loadDashboard();
+  });
+});
+
+function applyCustomDate() {
+  const from = document.getElementById('date-from').value;
+  const to = document.getElementById('date-to').value;
+  if (from && to) {
+    document.querySelectorAll('.date-preset:not(.prod-preset)').forEach(b => b.classList.remove('active'));
+    currentDateRange = 'custom';
+    pageLoaded.dashboard = false;
+    loadDashboard();
+  }
+}
+
+// Product presets
+document.querySelectorAll('.prod-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.prod-preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('product-period-month').value = '';
+    loadProducts();
+  });
+});
+
+document.getElementById('product-period-month').addEventListener('change', function() {
+  if (this.value) {
+    document.querySelectorAll('.prod-preset').forEach(b => b.classList.remove('active'));
+  }
+  loadProducts();
+});
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
 async function loadDashboard() {
-  if (dashLoaded) return;
+  if (pageLoaded.dashboard) return;
   try {
-    const [dash, trend] = await Promise.all([
+    const [dash, trend, tiers] = await Promise.all([
       apiFetch('/api/analytics/dashboard'),
-      apiFetch('/api/analytics/monthly?months=12'),
+      apiFetch('/api/analytics/monthly?months=' + (document.getElementById('trend-months')?.value || 12)),
+      apiFetch('/api/analytics/customers/tiers'),
     ]);
     renderKPIs(dash);
     renderRevenueChart(trend.months || []);
-    renderTierChart(dash.tier_distribution || {});
+    renderTierSection(dash.tier_distribution || {}, tiers.tiers || []);
     renderRfmChart(dash.rfm_distribution || {});
-    dashLoaded = true;
+    pageLoaded.dashboard = true;
   } catch (e) {
-    document.getElementById('kpi-grid').innerHTML = `<div class="empty">데이터가 없습니다. 먼저 데이터를 동기화하세요.</div>`;
+    document.getElementById('kpi-grid').innerHTML = `<div class="empty">데이터가 없습니다. 먼저 Shopify 동기화 또는 데이터 재계산을 실행하세요.</div>`;
   }
+}
+
+async function loadRevenueTrend() {
+  try {
+    const months = document.getElementById('trend-months').value;
+    const trend = await apiFetch('/api/analytics/monthly?months=' + months);
+    renderRevenueChart(trend.months || []);
+  } catch(e) {}
 }
 
 function renderKPIs(d) {
   const cur = d.current_month || {};
+  const prev = d.previous_month || {};
+  function calcChange(curVal, prevVal) {
+    if (!prevVal || !curVal) return null;
+    return ((curVal - prevVal) / prevVal * 100);
+  }
   const kpis = [
-    { icon: '💰', label: '이번달 매출', value: fmtBig(cur.total_revenue), change: cur.revenue_change_pct },
-    { icon: '📦', label: '이번달 주문', value: fmt(cur.total_orders), change: cur.orders_change_pct },
-    { icon: '👥', label: '전체 고객', value: fmt(d.total_customers) },
-    { icon: '🏷️', label: '평균 AOV', value: fmtCurrency(cur.avg_order_value) },
-    { icon: '⚠️', label: '이탈위험', value: fmt(d.at_risk_customers), alert: d.at_risk_customers > 1000 },
+    { icon: '💰', label: '이번달 매출', value: fmtBig(cur.total_revenue), change: calcChange(cur.total_revenue, prev.total_revenue), action: () => showPage('products') },
+    { icon: '📦', label: '이번달 주문', value: fmt(cur.total_orders), change: calcChange(cur.total_orders, prev.total_orders) },
+    { icon: '👥', label: '전체 고객', value: fmt(d.total_customers), action: () => showPage('customers') },
+    { icon: '🏷️', label: '평균 AOV', value: fmtCurrency(cur.avg_order_value), change: calcChange(cur.avg_order_value, prev.avg_order_value) },
+    { icon: '⚠️', label: '이탈위험', value: fmt(d.at_risk_customers), alert: d.at_risk_customers > 100, action: () => { document.getElementById('cust-segment').value = 'at_risk'; showPage('customers'); } },
     { icon: '📈', label: '누적 매출', value: fmtBig(d.total_revenue) },
   ];
-  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
-    <div class="kpi-card ${k.alert ? 'alert' : ''}">
+  document.getElementById('kpi-grid').innerHTML = kpis.map((k, i) => `
+    <div class="kpi-card ${k.alert ? 'alert' : ''}" onclick="kpiClick(${i})" title="클릭하여 상세 보기">
       <div class="icon">${k.icon}</div>
       <div class="label">${k.label}</div>
       <div class="value">${k.value}</div>
-      ${k.change != null ? `<div class="change ${k.change > 0 ? 'up' : 'down'}">${k.change > 0 ? '▲' : '▼'} ${Math.abs(k.change).toFixed(1)}%</div>` : ''}
+      ${k.change != null ? `<div class="change ${k.change >= 0 ? 'up' : 'down'}">${k.change >= 0 ? '▲' : '▼'} ${Math.abs(k.change).toFixed(1)}% vs 전월</div>` : ''}
     </div>
   `).join('');
+  window._kpiActions = kpis.map(k => k.action);
+}
+
+function kpiClick(i) {
+  if (window._kpiActions && window._kpiActions[i]) window._kpiActions[i]();
 }
 
 function renderRevenueChart(months) {
-  new Chart(document.getElementById('revenueChart'), {
+  destroyChart('revenue');
+  const ctx = document.getElementById('revenueChart');
+  if (!ctx) return;
+  charts.revenue = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: months.map(m => m.month),
       datasets: [
-        { label: '매출', data: months.map(m => m.total_revenue), backgroundColor: '#2E86C1aa', borderRadius: 4, yAxisID: 'y' },
-        { label: '주문수', data: months.map(m => m.total_orders), type: 'line', borderColor: '#E74C3C', pointRadius: 3, yAxisID: 'y1' },
+        { label: '매출', data: months.map(m => m.total_revenue), backgroundColor: '#2E86C1aa', borderRadius: 4, yAxisID: 'y', order: 2 },
+        { label: '주문수', data: months.map(m => m.total_orders), type: 'line', borderColor: '#E74C3C', backgroundColor: '#E74C3C22', pointRadius: 3, fill: true, yAxisID: 'y1', order: 1 },
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.datasetIndex === 0 ? fmtBig(ctx.raw) : fmt(ctx.raw)) } } },
       scales: {
-        y: { position: 'left', ticks: { callback: v => fmtBig(v) } },
+        y: { position: 'left', ticks: { callback: v => fmtBig(v) }, grid: { color: '#f0f0f0' } },
         y1: { position: 'right', grid: { drawOnChartArea: false } },
       }
     }
   });
 }
 
-function renderTierChart(tiers) {
-  const labels = Object.keys(tiers).map(t => TIER_LABELS[t] || t);
-  new Chart(document.getElementById('tierChart'), {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{ data: Object.values(tiers), backgroundColor: ['#1B4F72','#D4AC0D','#95A5A6','#CD6155','#BDC3C7'] }]
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-  });
-}
+function renderTierSection(tierDist, tierDetail) {
+  // Summary cards
+  const summary = document.getElementById('tier-summary');
+  if (summary && tierDetail.length) {
+    summary.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tierDetail.map(t => `
+      <div style="flex:1;min-width:80px;padding:8px;border-radius:6px;text-align:center;background:${TIER_COLORS[t.tier]}15;border:1px solid ${TIER_COLORS[t.tier]}30;cursor:pointer"
+           onclick="document.getElementById('cust-tier').value='${t.tier}';showPage('customers')">
+        <div style="font-size:10px;color:${TIER_COLORS[t.tier]};font-weight:600">${TIER_LABELS[t.tier] || t.tier}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">${fmt(t.count)}</div>
+        <div style="font-size:9px;color:var(--text-light)">AOV ${fmtCurrency(t.avg_aov)}</div>
+      </div>
+    `).join('')}</div>`;
+  }
 
-function renderRfmChart(segs) {
-  const labels = Object.keys(segs).map(s => SEG_LABELS[s] || s);
-  new Chart(document.getElementById('rfmChart'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{ label: '고객수', data: Object.values(segs), backgroundColor: '#2E86C1' }]
-    },
+  // Doughnut
+  destroyChart('tier');
+  const labels = Object.keys(tierDist).map(t => TIER_LABELS[t] || t);
+  const colors = Object.keys(tierDist).map(t => TIER_COLORS[t] || '#BDC3C7');
+  charts.tier = new Chart(document.getElementById('tierChart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: Object.values(tierDist), backgroundColor: colors }] },
     options: {
-      responsive: true, indexAxis: 'y',
-      plugins: { legend: { display: false } },
-      scales: { x: { ticks: { callback: v => fmt(v) } } }
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt(ctx.raw)}명 (${fmtPct(ctx.raw / Object.values(tierDist).reduce((a,b)=>a+b,0) * 100)})` } }
+      },
+      onClick: (e, els) => {
+        if (els.length) {
+          const tier = Object.keys(tierDist)[els[0].index];
+          document.getElementById('cust-tier').value = tier;
+          showPage('customers');
+        }
+      }
     }
   });
 }
 
-// ── CUSTOMERS ──
+function renderRfmChart(segs) {
+  destroyChart('rfm');
+  const entries = Object.entries(segs).sort((a, b) => b[1] - a[1]);
+  const labels = entries.map(([s]) => SEG_LABELS[s] || s);
+  const colors = entries.map(([s]) => SEG_COLORS[s] || '#95A5A6');
+  charts.rfm = new Chart(document.getElementById('rfmChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: '고객수', data: entries.map(([, v]) => v), backgroundColor: colors }] },
+    options: {
+      responsive: true, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt(ctx.raw)}명` } } },
+      scales: { x: { ticks: { callback: v => fmt(v) }, grid: { color: '#f0f0f0' } } },
+      onClick: (e, els) => {
+        if (els.length) {
+          const seg = entries[els[0].index][0];
+          document.getElementById('cust-segment').value = seg;
+          showPage('customers');
+        }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// RFM ANALYSIS
+// ═══════════════════════════════════════════════════════════
+async function loadRfmPage() {
+  if (pageLoaded.rfm) return;
+  try {
+    const data = await apiFetch('/api/analytics/rfm');
+    const segments = data.current || [];
+    renderRfmMatrix(segments);
+    renderRfmRevenueChart(segments);
+    renderRfmMetricsChart(segments);
+    renderRfmDetailTable(segments);
+    pageLoaded.rfm = true;
+  } catch(e) {
+    document.getElementById('rfm-matrix').innerHTML = '<div class="empty">RFM 데이터가 없습니다. 데이터 재계산을 실행하세요.</div>';
+  }
+}
+
+function renderRfmMatrix(segments) {
+  const segMap = {};
+  segments.forEach(s => { segMap[s.segment] = s; });
+  // RFM grid layout
+  const layout = [
+    ['champion', 'loyal', 'potential', 'new', 'need_attention'],
+    ['cant_lose', 'at_risk', 'about_to_sleep', 'hibernating', null],
+  ];
+  const totalCust = segments.reduce((a, s) => a + s.count, 0) || 1;
+  let html = '<div class="rfm-grid">';
+  layout.flat().forEach(seg => {
+    if (!seg) { html += '<div></div>'; return; }
+    const s = segMap[seg] || { count: 0, revenue: 0 };
+    const pct = (s.count / totalCust * 100).toFixed(1);
+    const color = segmentColor(seg);
+    html += `
+      <div class="rfm-cell" style="background:${color}18;border:2px solid ${color}40"
+           onclick="drillDownSegment('${seg}')" title="클릭하여 고객 목록 보기">
+        <div class="seg-name" style="color:${color}">${SEG_LABELS[seg] || seg}</div>
+        <div class="seg-count" style="color:${color}">${fmt(s.count)}</div>
+        <div class="seg-revenue">${pct}% · ${fmtBig(s.revenue)}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  document.getElementById('rfm-matrix').innerHTML = html;
+}
+
+function renderRfmRevenueChart(segments) {
+  destroyChart('rfmRevenue');
+  const sorted = [...segments].sort((a, b) => b.revenue - a.revenue);
+  charts.rfmRevenue = new Chart(document.getElementById('rfmRevenueChart'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(s => SEG_LABELS[s.segment] || s.segment),
+      datasets: [{ label: '매출', data: sorted.map(s => s.revenue), backgroundColor: sorted.map(s => segmentColor(s.segment) + 'cc') }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtBig(ctx.raw) } } },
+      scales: { y: { ticks: { callback: v => fmtBig(v) }, grid: { color: '#f0f0f0' } } },
+      onClick: (e, els) => { if (els.length) drillDownSegment(sorted[els[0].index].segment); }
+    }
+  });
+}
+
+function renderRfmMetricsChart(segments) {
+  destroyChart('rfmMetrics');
+  const sorted = [...segments].sort((a, b) => b.avg_aov - a.avg_aov);
+  charts.rfmMetrics = new Chart(document.getElementById('rfmMetricsChart'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(s => SEG_LABELS[s.segment] || s.segment),
+      datasets: [
+        { label: '평균 AOV', data: sorted.map(s => s.avg_aov), backgroundColor: '#2E86C1aa' },
+        { label: '평균 주문수', data: sorted.map(s => s.avg_orders), backgroundColor: '#27AE60aa', yAxisID: 'y1' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+      scales: {
+        y: { position: 'left', ticks: { callback: v => fmtCurrency(v) }, grid: { color: '#f0f0f0' } },
+        y1: { position: 'right', grid: { drawOnChartArea: false } },
+      }
+    }
+  });
+}
+
+function renderRfmDetailTable(segments) {
+  const sorted = [...segments].sort((a, b) => b.revenue - a.revenue);
+  const totalRev = sorted.reduce((a, s) => a + s.revenue, 0) || 1;
+  document.getElementById('rfm-detail-table').innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>세그먼트</th><th class="num">고객수</th><th class="num">매출 비중</th><th class="num">총 매출</th><th class="num">평균 AOV</th><th class="num">평균 주문수</th></tr></thead>
+      <tbody>${sorted.map(s => `
+        <tr onclick="drillDownSegment('${s.segment}')">
+          <td><span class="segment-badge" style="background:${segmentColor(s.segment)}18;color:${segmentColor(s.segment)}">${SEG_LABELS[s.segment] || s.segment}</span></td>
+          <td class="num">${fmt(s.count)}</td>
+          <td class="num">${fmtPct(s.revenue / totalRev * 100)}</td>
+          <td class="num">${fmtBig(s.revenue)}</td>
+          <td class="num">${fmtCurrency(s.avg_aov)}</td>
+          <td class="num">${s.avg_orders?.toFixed(1) || '-'}</td>
+        </tr>
+      `).join('')}</tbody>
+    </table>
+  `;
+}
+
+function drillDownSegment(segment) {
+  document.getElementById('cust-segment').value = segment;
+  showPage('customers');
+}
+
+// ═══════════════════════════════════════════════════════════
+// COHORT ANALYSIS
+// ═══════════════════════════════════════════════════════════
+async function loadCohortPage() {
+  if (pageLoaded.cohort) return;
+  try {
+    const data = await apiFetch('/api/analytics/cohort');
+    renderCohortHeatmap(data.cohorts || {});
+    renderCohortLineChart(data.cohorts || {});
+    pageLoaded.cohort = true;
+  } catch(e) {
+    document.getElementById('cohort-heatmap').innerHTML = '<div class="empty">코호트 데이터가 없습니다. 데이터 재계산을 실행하세요.</div>';
+  }
+}
+
+function renderCohortHeatmap(cohorts) {
+  const years = Object.keys(cohorts).sort();
+  if (!years.length) {
+    document.getElementById('cohort-heatmap').innerHTML = '<div class="empty">데이터 없음</div>';
+    return;
+  }
+  const allPeriods = new Set();
+  years.forEach(y => Object.keys(cohorts[y].retention || {}).forEach(p => allPeriods.add(p)));
+  const periods = [...allPeriods].sort();
+
+  let html = '<table class="heatmap-table"><thead><tr><th>코호트</th><th>크기</th>';
+  periods.forEach(p => { html += `<th>${p}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  years.forEach(cy => {
+    const c = cohorts[cy];
+    html += `<tr><td class="cohort-label">${cy}</td><td class="cohort-size">${fmt(c.cohort_size)}</td>`;
+    periods.forEach(py => {
+      const ret = c.retention?.[py];
+      if (ret) {
+        const rate = ret.rate;
+        const color = retentionColor(rate);
+        const textColor = rate > 50 ? 'white' : '#333';
+        html += `<td style="background:${color};color:${textColor};font-weight:${rate > 30 ? '600' : '400'}"
+                     title="${cy}코호트 → ${py}: ${ret.active}명 (${fmtPct(rate)})">${fmtPct(rate)}</td>`;
+      } else {
+        html += '<td style="background:#f8f9fa;color:#ccc">-</td>';
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('cohort-heatmap').innerHTML = html;
+}
+
+function renderCohortLineChart(cohorts) {
+  destroyChart('cohortLine');
+  const years = Object.keys(cohorts).sort();
+  if (!years.length) return;
+  const allPeriods = new Set();
+  years.forEach(y => Object.keys(cohorts[y].retention || {}).forEach(p => allPeriods.add(p)));
+  const periods = [...allPeriods].sort();
+
+  const colors = ['#1B4F72', '#2E86C1', '#3498DB', '#27AE60', '#F39C12', '#E74C3C', '#9B59B6', '#E67E22'];
+  const datasets = years.map((y, i) => ({
+    label: y + '년 코호트',
+    data: periods.map(p => cohorts[y].retention?.[p]?.rate ?? null),
+    borderColor: colors[i % colors.length],
+    backgroundColor: colors[i % colors.length] + '22',
+    tension: 0.3,
+    pointRadius: 4,
+    spanGaps: true,
+  }));
+
+  charts.cohortLine = new Chart(document.getElementById('cohortLineChart'), {
+    type: 'line',
+    data: { labels: periods, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtPct(ctx.raw)}` } } },
+      scales: {
+        y: { ticks: { callback: v => fmtPct(v) }, grid: { color: '#f0f0f0' }, min: 0 },
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// PRODUCT ANALYSIS
+// ═══════════════════════════════════════════════════════════
+async function loadProducts() {
+  if (!document.getElementById('page-products')?.style.display || document.getElementById('page-products').style.display === 'none') {
+    // Generate month options if not done
+    const monthSel = document.getElementById('product-period-month');
+    if (monthSel && monthSel.options.length <= 1) {
+      const now = new Date();
+      for (let i = 0; i < 24; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0');
+        monthSel.add(new Option(val, val));
+      }
+    }
+  }
+
+  let period = '';
+  const monthVal = document.getElementById('product-period-month')?.value;
+  if (monthVal) {
+    period = monthVal;
+  } else {
+    const activePreset = document.querySelector('.prod-preset.active');
+    if (activePreset) {
+      const range = activePreset.dataset.range;
+      if (range === 'thisYear') period = new Date().getFullYear().toString();
+      else if (range === 'lastYear') period = (new Date().getFullYear() - 1).toString();
+    }
+  }
+
+  const limit = document.getElementById('product-limit')?.value || 20;
+  try {
+    const data = await apiFetch(`/api/analytics/products/top?limit=${limit}${period ? '&period=' + period : ''}`);
+    renderProductChart(data.products || []);
+    renderProductTable(data.products || []);
+  } catch(e) {
+    document.getElementById('product-table-wrap').innerHTML = '<div class="empty">상품 데이터가 없습니다.</div>';
+  }
+}
+
+function renderProductChart(products) {
+  destroyChart('productBar');
+  const top10 = products.slice(0, 10);
+  charts.productBar = new Chart(document.getElementById('productBarChart'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(p => p.it_id?.length > 15 ? p.it_id.slice(0,15) + '…' : p.it_id),
+      datasets: [
+        { label: '매출', data: top10.map(p => p.revenue), backgroundColor: '#2E86C1aa', borderRadius: 4, yAxisID: 'y' },
+        { label: '구매자수', data: top10.map(p => p.buyer_count), type: 'line', borderColor: '#E74C3C', pointRadius: 4, yAxisID: 'y1' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ctx.datasetIndex === 0 ? '매출: ' + fmtBig(ctx.raw) : '구매자: ' + fmt(ctx.raw) + '명' } } },
+      scales: {
+        y: { position: 'left', ticks: { callback: v => fmtBig(v) }, grid: { color: '#f0f0f0' } },
+        y1: { position: 'right', grid: { drawOnChartArea: false } },
+      }
+    }
+  });
+}
+
+function renderProductTable(products) {
+  if (!products.length) {
+    document.getElementById('product-table-wrap').innerHTML = '<div class="empty">상품 데이터가 없습니다.</div>';
+    return;
+  }
+  const maxRev = Math.max(...products.map(p => p.revenue));
+  document.getElementById('product-table-wrap').innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>순위</th><th>상품 ID</th><th class="num">매출</th><th>비중</th><th class="num">판매수량</th><th class="num">구매자수</th><th class="num">인당 구매액</th></tr></thead>
+      <tbody>${products.map(p => {
+        const barWidth = (p.revenue / maxRev * 100).toFixed(0);
+        const perBuyer = p.buyer_count ? Math.round(p.revenue / p.buyer_count) : 0;
+        return `<tr>
+          <td style="font-weight:700;color:${p.rank <= 3 ? 'var(--accent)' : 'var(--text)'}">
+            ${p.rank <= 3 ? ['🥇','🥈','🥉'][p.rank-1] : p.rank}
+          </td>
+          <td>${p.it_id}</td>
+          <td class="num">${fmtBig(p.revenue)}</td>
+          <td><div style="background:#2E86C1;height:12px;width:${barWidth}%;border-radius:3px;min-width:2px"></div></td>
+          <td class="num">${fmt(p.total_qty)}</td>
+          <td class="num">${fmt(p.buyer_count)}</td>
+          <td class="num">${fmtCurrency(perBuyer)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CUSTOMERS
+// ═══════════════════════════════════════════════════════════
 let custPage = 1;
 async function loadCustomers() {
   const params = new URLSearchParams({ page: custPage, page_size: 50 });
@@ -384,39 +1015,46 @@ async function loadCustomers() {
   const seg = document.getElementById('cust-segment')?.value;
   const search = document.getElementById('cust-search')?.value;
   const sort = document.getElementById('cust-sort')?.value;
+  const churned = document.getElementById('cust-churned')?.checked;
   if (tier) params.set('tier', tier);
   if (seg) params.set('segment', seg);
   if (search) params.set('search', search);
   if (sort) params.set('sort_by', sort);
+  if (churned) params.set('churned', 'true');
 
   try {
     const d = await apiFetch(`/api/analytics/customers?${params}`);
-    document.getElementById('customer-count').textContent = `전체 ${fmt(d.total)}명`;
+    const filterDesc = [];
+    if (tier) filterDesc.push(TIER_LABELS[tier]);
+    if (seg) filterDesc.push(SEG_LABELS[seg]);
+    document.getElementById('customer-count').textContent = `${filterDesc.length ? filterDesc.join(' · ') + ' · ' : ''}전체 ${fmt(d.total)}명`;
     const wrap = document.getElementById('customer-table-wrap');
-    if (!d.items?.length) { wrap.innerHTML = '<div class="empty">고객 데이터가 없습니다.</div>'; return; }
+    if (!d.items?.length) { wrap.innerHTML = '<div class="empty">해당 조건의 고객이 없습니다.</div>'; return; }
     wrap.innerHTML = `
       <table class="data-table">
-        <thead><tr><th>회원ID</th><th>등급</th><th>세그먼트</th><th>주문수</th><th>누적매출</th><th>AOV</th><th>마지막구매</th></tr></thead>
+        <thead><tr><th>회원ID</th><th>이름</th><th>등급</th><th>세그먼트</th><th class="num">주문수</th><th class="num">누적매출</th><th class="num">AOV</th><th class="num">LTV</th><th>마지막구매</th></tr></thead>
         <tbody>${d.items.map(c => `
-          <tr onclick="showCustomerDetail('${c.mb_id}')" style="cursor:pointer">
+          <tr onclick="showCustomerDetail('${c.mb_id}')">
             <td>${c.mb_id}</td>
+            <td>${c.name || '-'}</td>
             <td><span class="tier-badge tier-${c.tier}">${TIER_LABELS[c.tier] || c.tier}</span></td>
-            <td><span class="segment-badge">${SEG_LABELS[c.rfm_segment] || c.rfm_segment || '-'}</span></td>
+            <td><span class="segment-badge" style="background:${segmentColor(c.rfm_segment)}18;color:${segmentColor(c.rfm_segment)}">${SEG_LABELS[c.rfm_segment] || c.rfm_segment || '-'}</span></td>
             <td class="num">${fmt(c.total_orders)}</td>
             <td class="num">${fmtBig(c.total_revenue)}</td>
             <td class="num">${fmtCurrency(c.avg_order_value)}</td>
-            <td>${c.last_order?.slice(0, 10) || '-'}</td>
+            <td class="num">${fmtBig(c.ltv)}</td>
+            <td>${c.last_order_date?.slice(0, 10) || '-'}</td>
           </tr>
         `).join('')}</tbody>
       </table>
       <div class="pagination">
-        <button onclick="custPage--;loadCustomers()" ${custPage <= 1 ? 'disabled' : ''}>이전</button>
-        <span>${custPage} / ${Math.ceil(d.total / 50)}</span>
-        <button onclick="custPage++;loadCustomers()" ${custPage >= Math.ceil(d.total / 50) ? 'disabled' : ''}>다음</button>
+        <button onclick="custPage--;loadCustomers()" ${custPage <= 1 ? 'disabled' : ''}>← 이전</button>
+        <span>${custPage} / ${Math.ceil(d.total / 50)} (${fmt(d.total)}명)</span>
+        <button onclick="custPage++;loadCustomers()" ${custPage >= Math.ceil(d.total / 50) ? 'disabled' : ''}>다음 →</button>
       </div>
     `;
   } catch (e) {
-    document.getElementById('customer-table-wrap').innerHTML = '<div class="empty">로딩 실패</div>';
+    document.getElementById('customer-table-wrap').innerHTML = '<div class="empty">고객 데이터 로딩 실패</div>';
   }
 }
 
@@ -425,41 +1063,62 @@ async function showCustomerDetail(mb_id) {
     const d = await apiFetch(`/api/analytics/customers/${mb_id}`);
     const c = d.customer;
     const panel = document.getElementById('detail-panel');
-    panel.style.display = 'block';
+    panel.classList.remove('hidden');
     panel.innerHTML = `
-      <span class="close-btn" onclick="document.getElementById('detail-panel').style.display='none'">✕</span>
-      <h2>${c.mb_id}</h2>
+      <span class="close-btn" onclick="document.getElementById('detail-panel').classList.add('hidden')">✕</span>
+      <h2>${c.name || c.mb_id}</h2>
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:14px">${c.email || ''} · ${c.mb_id}</div>
       <div class="detail-section">
+        <h4>고객 프로필</h4>
         <div class="detail-grid">
           <div class="detail-item"><div class="dl">등급</div><div class="dv"><span class="tier-badge tier-${c.tier}">${TIER_LABELS[c.tier]}</span></div></div>
-          <div class="detail-item"><div class="dl">세그먼트</div><div class="dv">${SEG_LABELS[c.rfm_segment] || '-'}</div></div>
+          <div class="detail-item"><div class="dl">세그먼트</div><div class="dv"><span class="segment-badge" style="background:${segmentColor(c.rfm_segment)}18;color:${segmentColor(c.rfm_segment)}">${SEG_LABELS[c.rfm_segment] || '-'}</span></div></div>
           <div class="detail-item"><div class="dl">LTV</div><div class="dv">${fmtBig(c.ltv)}</div></div>
           <div class="detail-item"><div class="dl">총 주문</div><div class="dv">${fmt(c.total_orders)}건</div></div>
           <div class="detail-item"><div class="dl">평균 AOV</div><div class="dv">${fmtCurrency(c.avg_order_value)}</div></div>
           <div class="detail-item"><div class="dl">RFM</div><div class="dv">R${c.rfm_scores?.r || '-'} F${c.rfm_scores?.f || '-'} M${c.rfm_scores?.m || '-'}</div></div>
-          <div class="detail-item"><div class="dl">첫 구매</div><div class="dv">${c.first_order?.slice(0,10) || '-'}</div></div>
-          <div class="detail-item"><div class="dl">마지막 구매</div><div class="dv">${c.last_order?.slice(0,10) || '-'}</div></div>
+          <div class="detail-item"><div class="dl">첫 구매</div><div class="dv">${c.first_order_date?.slice(0,10) || '-'}</div></div>
+          <div class="detail-item"><div class="dl">마지막 구매</div><div class="dv">${c.last_order_date?.slice(0,10) || '-'}</div></div>
+          <div class="detail-item"><div class="dl">이탈 여부</div><div class="dv" style="color:${c.is_churned ? 'var(--accent)' : 'var(--green)'}">${c.is_churned ? '⚠️ 이탈' : '✅ 활성'}</div></div>
+          <div class="detail-item"><div class="dl">포인트</div><div class="dv">${fmt(c.points_balance)}P</div></div>
         </div>
       </div>
       <div class="detail-section">
+        <h4>월별 구매 추이</h4>
+        <div style="height:120px"><canvas id="custMonthlyChart"></canvas></div>
+      </div>
+      <div class="detail-section">
         <h4>최근 주문</h4>
-        <table class="data-table"><thead><tr><th>날짜</th><th>금액</th><th>상태</th></tr></thead>
+        <table class="data-table"><thead><tr><th>날짜</th><th>주문번호</th><th class="num">금액</th><th>상태</th></tr></thead>
         <tbody>${(d.recent_orders || []).map(o => `
-          <tr><td>${o.date?.slice(0,10) || '-'}</td><td class="num">${fmtCurrency(o.amount)}</td><td>${o.status}</td></tr>
+          <tr><td>${o.date?.slice(0,10) || '-'}</td><td>${o.order_id || '-'}</td><td class="num">${fmtCurrency(o.amount)}</td><td>${o.status}</td></tr>
         `).join('')}</tbody></table>
       </div>
       <div class="detail-section">
         <h4>자주 구매한 상품</h4>
-        <table class="data-table"><thead><tr><th>상품ID</th><th>수량</th><th>매출</th></tr></thead>
+        <table class="data-table"><thead><tr><th>상품ID</th><th class="num">수량</th><th class="num">매출</th></tr></thead>
         <tbody>${(d.top_products || []).map(p => `
           <tr><td>${p.it_id}</td><td class="num">${fmt(p.quantity)}</td><td class="num">${fmtBig(p.revenue)}</td></tr>
         `).join('')}</tbody></table>
       </div>
     `;
+    // Mini monthly chart
+    if (d.monthly_trend?.length) {
+      new Chart(document.getElementById('custMonthlyChart'), {
+        type: 'bar',
+        data: {
+          labels: d.monthly_trend.map(m => m.month),
+          datasets: [{ data: d.monthly_trend.map(m => m.revenue), backgroundColor: '#2E86C1aa', borderRadius: 3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtBig(v) } } } }
+      });
+    }
   } catch(e) { alert('고객 정보 로드 실패'); }
 }
 
-// ── AI QUERY ──
+// ═══════════════════════════════════════════════════════════
+// AI QUERY
+// ═══════════════════════════════════════════════════════════
 function setQ(q) { document.getElementById('ai-question').value = q; }
 
 async function askAI() {
@@ -474,16 +1133,36 @@ async function askAI() {
     });
     let tableHtml = '';
     if (d.rows?.length) {
-      tableHtml = `<table class="data-table"><thead><tr>${d.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-        <tbody>${d.rows.slice(0, 50).map(r => `<tr>${d.columns.map(c => `<td class="num">${typeof r[c] === 'number' && r[c] > 1000 ? fmt(r[c]) : r[c] ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      tableHtml = `<div class="table-scroll"><table class="data-table"><thead><tr>${d.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${d.rows.slice(0, 50).map(r => `<tr>${d.columns.map(c => `<td class="num">${typeof r[c] === 'number' && r[c] > 1000 ? fmt(r[c]) : r[c] ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+    // Auto-render chart if possible
+    let chartHtml = '';
+    if (d.chart_type && d.chart_type !== 'table' && d.rows?.length) {
+      chartHtml = `<div style="height:250px;margin:12px 0"><canvas id="aiChart"></canvas></div>`;
     }
     document.getElementById('ai-result').innerHTML = `
       <div class="ai-explanation"><h3>💡 ${d.explanation}</h3></div>
       <div class="meta-info">${d.latency_ms}ms · ${d.total_rows}행</div>
       <div class="sql-toggle" onclick="this.nextElementSibling.classList.toggle('show')">▶ SQL 보기</div>
       <div class="sql-code">${d.sql}</div>
+      ${chartHtml}
       ${tableHtml}
     `;
+    // Render chart
+    if (d.chart_type && d.chart_type !== 'table' && d.rows?.length) {
+      const cols = d.columns;
+      const labelCol = cols[0];
+      const valCol = cols.find(c => c !== labelCol && d.rows.some(r => typeof r[c] === 'number')) || cols[1];
+      new Chart(document.getElementById('aiChart'), {
+        type: d.chart_type === 'pie' ? 'doughnut' : (d.chart_type || 'bar'),
+        data: {
+          labels: d.rows.map(r => r[labelCol]),
+          datasets: [{ label: valCol, data: d.rows.map(r => r[valCol]), backgroundColor: '#2E86C1aa', borderColor: '#2E86C1', borderRadius: 3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: d.chart_type === 'pie' } } }
+      });
+    }
     loadAiHistory();
   } catch(e) {
     document.getElementById('ai-result').innerHTML = `<div class="ai-explanation" style="background:#FDEDEC">⚠️ ${e.message}</div>`;
@@ -504,7 +1183,9 @@ async function loadAiHistory() {
   } catch(e) {}
 }
 
-// ── REPORTS ──
+// ═══════════════════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════════════════
 async function loadReports() {
   try {
     const d = await apiFetch('/api/analytics/reports');
@@ -514,7 +1195,7 @@ async function loadReports() {
       <div class="report-card">
         <div class="report-info">
           <h4>${r.name}</h4>
-          <div class="report-meta">${r.type} · ${r.schedule} · ${r.is_active ? '활성' : '비활성'}</div>
+          <div class="report-meta">${r.type} · ${r.schedule} · ${r.is_active ? '✅ 활성' : '⏸ 비활성'}</div>
           ${r.last_run ? `<div class="report-meta">마지막: ${r.last_run.slice(0,16)} (${r.last_status})</div>` : ''}
         </div>
         <button class="btn-primary btn-sm" onclick="runReport(${r.id})">즉시 실행</button>
@@ -539,13 +1220,15 @@ function showCreateReport() {
   }).then(() => loadReports()).catch(e => alert(e.message));
 }
 
-// ── SYNC / RECALCULATE ──
+// ═══════════════════════════════════════════════════════════
+// SYNC / RECALCULATE
+// ═══════════════════════════════════════════════════════════
 async function triggerRecalculate() {
   if (!confirm('전체 분석을 재계산하시겠습니까? (수 분 소요)')) return;
   try {
     const d = await apiFetch('/api/analytics/recalculate', { method: 'POST' });
-    alert('재계산 시작: ' + d.pipeline);
-    dashLoaded = false;
+    alert('재계산 시작됨: ' + (d.pipeline || 'processing'));
+    Object.keys(pageLoaded).forEach(k => pageLoaded[k] = false);
   } catch(e) { alert('실패: ' + e.message); }
 }
 
@@ -554,11 +1237,30 @@ async function triggerSync() {
   if (!since) return;
   try {
     await apiFetch(`/api/analytics/sync/shopify?since=${since}`, { method: 'POST' });
-    alert('Shopify 동기화 시작');
+    alert('Shopify 동기화 시작됨');
   } catch(e) { alert('실패: ' + e.message); }
 }
 
-// Init
+// Modal
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  document.getElementById('modal-overlay').innerHTML = '';
+}
+
+// Init — generate month options for product filter
+(function initProductMonths() {
+  const sel = document.getElementById('product-period-month');
+  if (sel) {
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0');
+      sel.add(new Option(val, val));
+    }
+  }
+})();
+
+// Load dashboard on init
 loadDashboard();
 </script>
 </body>

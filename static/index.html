@@ -5780,21 +5780,27 @@
         const SalesDashboardView = ({setActiveTab}) => {
             const [dash, setDash] = useState(null);
             const [monthly, setMonthly] = useState([]);
+            const [weekly, setWeekly] = useState([]);
+            const [yearly, setYearly] = useState([]);
             const [tierData, setTierData] = useState([]);
             const [rfmData, setRfmData] = useState(null);
-            const [trendMonths, setTrendMonths] = useState(12);
-            const [yearFilter, setYearFilter] = useState('all');
+            const [period, setPeriod] = useState('monthly');
+            const [trendCount, setTrendCount] = useState(12);
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
                 Promise.all([
                     fetchJson('dashboard.json'),
                     fetchJson('monthly.json'),
+                    fetchJson('weekly.json'),
+                    fetchJson('yearly.json'),
                     fetchJson('tier_distribution.json'),
                     fetchJson('rfm_segments.json'),
-                ]).then(([d, m, t, r]) => {
+                ]).then(([d, m, w, y, t, r]) => {
                     setDash(d);
                     setMonthly(m || []);
+                    setWeekly(w || []);
+                    setYearly(y || []);
                     setTierData(t?.tiers || []);
                     setRfmData(r);
                     setLoading(false);
@@ -5804,13 +5810,18 @@
             if (loading) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub370\uc774\ud130 \ub85c\ub529 \uc911...');
             if (!dash) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.');
 
-            const trend = trendMonths === 999 ? monthly : monthly.slice(-trendMonths);
-            const filteredMonthly = yearFilter === 'all' ? monthly : monthly.filter(m => m.month.startsWith(yearFilter));
+            const periodConfig = {
+                weekly: {data:weekly, labelKey:'week', title:'\uc8fc\ubcc4 \ub9e4\ucd9c \ucd94\uc774', countLabel:'\uc8fc', counts:[12,24,52,999]},
+                monthly: {data:monthly, labelKey:'month', title:'\uc6d4\ubcc4 \ub9e4\ucd9c \ucd94\uc774', countLabel:'\uac1c\uc6d4', counts:[12,24,36,999]},
+                yearly: {data:yearly, labelKey:'year', title:'\uc5f0\ub3c4\ubcc4 \ub9e4\ucd9c \ucd94\uc774', countLabel:'\ub144', counts:[999]},
+            };
+            const pc = periodConfig[period];
+            const trendData = trendCount === 999 ? pc.data : pc.data.slice(-trendCount);
 
             const recent = dash.recent_month || {};
             const summary = dash.summary || {};
             const yoy = dash.yoy_growth || {};
-            const yearly = dash.yearly || {};
+            const yearlyDash = dash.yearly || {};
 
             const kpis = [
                 { label: '\ucd5c\uadfc\uc6d4 \ub9e4\ucd9c', value: fmtBig(recent.revenue), change: recent.mom_revenue_change, sub: recent.month },
@@ -5823,6 +5834,12 @@
 
             const segEntries = rfmData ? Object.entries(rfmData.segments).sort((a,b) => b[1].count - a[1].count) : [];
 
+            const periodTabs = [
+                {key:'weekly', label:'\uc8fc\ubcc4'},
+                {key:'monthly', label:'\uc6d4\ubcc4'},
+                {key:'yearly', label:'\uc5f0\ub3c4\ubcc4'},
+            ];
+
             return React.createElement(React.Fragment, null,
                 React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:'12px',marginBottom:'20px'}},
                     kpis.map((k, i) => React.createElement('div', {key:i, className:'kpi-card', style:{padding:'16px',cursor:k.onClick?'pointer':'default'}, onClick:k.onClick},
@@ -5834,36 +5851,40 @@
                 ),
 
                 React.createElement(SalesCard, {title:'\uc5f0\ub3c4\ubcc4 \uc131\uc7a5 \ucd94\uc774'},
-                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}},
-                        ['2022','2023','2024','2025'].map(y => {
-                            const yd = yearly[y] || {};
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:10,marginBottom:14}},
+                        ['2022','2023','2024','2025','2026'].map(y => {
+                            const yd = yearlyDash[y] || yearly.find(yr=>yr.year===y) || {};
+                            const rev = yd.revenue || yd.total_revenue;
+                            const ord = yd.orders || yd.total_orders;
                             const growth = yoy[y === '2023' ? '2023_vs_2022' : y === '2024' ? '2024_vs_2023' : y === '2025' ? '2025_vs_2024' : null];
                             return React.createElement('div', {key:y, style:{padding:'12px',borderRadius:8,background:'#f8fafc',border:'1px solid #e5e7eb',textAlign:'center'}},
                                 React.createElement('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'#1e293b',marginBottom:4}}, y + '\ub144'),
-                                React.createElement('div', {style:{fontSize:'1.1rem',fontWeight:700,color:'#3b82f6'}}, fmtBig(yd.revenue)),
-                                React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b',marginTop:2}}, fmtN(yd.orders) + '\uac74'),
+                                React.createElement('div', {style:{fontSize:'1.05rem',fontWeight:700,color:'#3b82f6'}}, fmtBig(rev)),
+                                React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b',marginTop:2}}, fmtN(ord) + '\uac74'),
                                 growth != null && React.createElement('div', {style:{fontSize:'0.7rem',color:growth>=0?'#16a34a':'#dc2626',marginTop:4}}, (growth>=0?'\u25B2':'\u25BC') + ' ' + Math.abs(growth).toFixed(1) + '% YoY')
                             );
                         })
                     )
                 ),
 
-                React.createElement(SalesCard, {title:'\uc6d4\ubcc4 \ub9e4\ucd9c \ucd94\uc774', actions:
-                    React.createElement('select', {value:trendMonths, onChange:e=>setTrendMonths(+e.target.value), style:{padding:'4px 8px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem'}},
-                        React.createElement('option', {value:12}, '12\uac1c\uc6d4'),
-                        React.createElement('option', {value:24}, '24\uac1c\uc6d4'),
-                        React.createElement('option', {value:36}, '36\uac1c\uc6d4'),
-                        React.createElement('option', {value:999}, '\uc804\uccb4')
+                React.createElement(SalesCard, {title: pc.title, actions:
+                    React.createElement('div', {style:{display:'flex',gap:8,alignItems:'center'}},
+                        React.createElement('div', {style:{display:'flex',background:'#f1f5f9',borderRadius:8,padding:2}},
+                            periodTabs.map(t => React.createElement('button', {key:t.key, onClick:()=>{setPeriod(t.key); if(t.key==='yearly') setTrendCount(999); else setTrendCount(12);}, style:{padding:'5px 14px',borderRadius:6,border:'none',fontSize:'0.75rem',fontWeight:600,cursor:'pointer',background:period===t.key?'#fff':'transparent',color:period===t.key?'#3b82f6':'#64748b',boxShadow:period===t.key?'0 1px 3px rgba(0,0,0,0.1)':'none',transition:'all 0.2s'}}, t.label))
+                        ),
+                        period !== 'yearly' && React.createElement('select', {value:trendCount, onChange:e=>setTrendCount(+e.target.value), style:{padding:'4px 8px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem'}},
+                            pc.counts.map(c => React.createElement('option', {key:c, value:c}, c === 999 ? '\uc804\uccb4' : c + pc.countLabel))
+                        )
                     )
                 },
                     React.createElement(ChartCanvas, {height:320, config:{
                         type:'bar',
-                        data:{labels:trend.map(m=>m.month),datasets:[
-                            {label:'\ub9e4\ucd9c',data:trend.map(m=>m.total_revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y',order:2},
-                            {label:'\uc8fc\ubb38\uc218',data:trend.map(m=>m.total_orders),type:'line',borderColor:'#ef4444',pointRadius:2,yAxisID:'y1',order:1,tension:0.2},
+                        data:{labels:trendData.map(m=>m[pc.labelKey]),datasets:[
+                            {label:'\ub9e4\ucd9c',data:trendData.map(m=>m.total_revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y',order:2},
+                            {label:'\uc8fc\ubb38\uc218',data:trendData.map(m=>m.total_orders),type:'line',borderColor:'#ef4444',pointRadius:period==='weekly'?1:2,yAxisID:'y1',order:1,tension:0.2},
                         ]},
                         options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{position:'left',ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}
-                    }, deps:[trend]})
+                    }, deps:[trendData, period]})
                 ),
 
                 React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
@@ -5891,15 +5912,15 @@
                     )
                 ),
 
-                React.createElement(SalesCard, {title:'\uc6d4\ubcc4 \uace0\uac1d\uc218 \ucd94\uc774'},
+                React.createElement(SalesCard, {title:period === 'weekly' ? '\uc8fc\ubcc4 \uace0\uac1d\uc218 \ucd94\uc774' : period === 'yearly' ? '\uc5f0\ub3c4\ubcc4 \uace0\uac1d\uc218 \ucd94\uc774' : '\uc6d4\ubcc4 \uace0\uac1d\uc218 \ucd94\uc774'},
                     React.createElement(ChartCanvas, {height:250, config:{
                         type:'line',
-                        data:{labels:trend.map(m=>m.month),datasets:[
-                            {label:'\ud65c\ub3d9 \uace0\uac1d',data:trend.map(m=>m.total_customers),borderColor:'#8b5cf6',backgroundColor:'#8b5cf622',fill:true,tension:0.3,pointRadius:2},
-                            {label:'\ud3c9\uade0 AOV',data:trend.map(m=>m.avg_order_value),borderColor:'#f59e0b',tension:0.3,pointRadius:2,yAxisID:'y1'},
+                        data:{labels:trendData.map(m=>m[pc.labelKey]),datasets:[
+                            {label:'\ud65c\ub3d9 \uace0\uac1d',data:trendData.map(m=>m.total_customers),borderColor:'#8b5cf6',backgroundColor:'#8b5cf622',fill:true,tension:0.3,pointRadius:period==='weekly'?1:2},
+                            {label:'\ud3c9\uade0 AOV',data:trendData.map(m=>m.avg_order_value),borderColor:'#f59e0b',tension:0.3,pointRadius:period==='weekly'?1:2,yAxisID:'y1'},
                         ]},
                         options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{position:'left',grid:{color:'#f0f0f0'}},y1:{position:'right',ticks:{callback:v=>fmtWon(v)},grid:{drawOnChartArea:false}}}}
-                    }, deps:[trend]})
+                    }, deps:[trendData, period]})
                 )
             );
         };

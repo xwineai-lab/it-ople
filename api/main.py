@@ -4026,7 +4026,7 @@ def _load_static_json(name: str):
 @app.get("/api/analytics/static/{name}")
 async def analytics_static_json(name: str):
     """Serve pre-computed analytics JSON files."""
-    allowed = {"dashboard", "monthly", "rfm_segments", "tier_distribution",
+    allowed = {"dashboard", "monthly", "weekly", "yearly", "rfm_segments", "tier_distribution",
                "customers_top", "cohort", "products_top"}
     if name not in allowed:
         raise HTTPException(status_code=404, detail="Not found")

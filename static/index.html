@@ -14,6 +14,9 @@
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
     <!-- React & ReactDOM from CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -999,10 +1002,37 @@
                         <SvgIcon path="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /> SKIN
                     </button>
 
-                    <div className="sidebar-section">매출통계</div>
-                    <a className="sidebar-link" href="/analytics" style={{textDecoration:'none'}}>
-                        <SvgIcon path="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /> 매출 대시보드
-                    </a>
+                    {(() => {
+                        const analyticsTabs = ['salesDashboard','salesRfm','salesCohort','salesProducts','salesCustomers','salesAi'];
+                        const isAnalyticsActive = analyticsTabs.includes(activeTab);
+                        const [analyticsOpen, setAnalyticsOpen] = React.useState(isAnalyticsActive);
+                        React.useEffect(() => { if (isAnalyticsActive) setAnalyticsOpen(true); }, [isAnalyticsActive]);
+                        return (<>
+                            <div className="sidebar-section">분석</div>
+                            <button className={`sidebar-link ${activeTab==='salesDashboard'?'active':''}`} onClick={()=>{setAnalyticsOpen(!analyticsOpen);if(!isAnalyticsActive)setActiveTab('salesDashboard');}}>
+                                <SvgIcon path="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                <span style={{flex:1}}>매출 대시보드</span>
+                                <svg width="12" height="12" viewBox="0 0 12 12" style={{transform:analyticsOpen?'rotate(180deg)':'rotate(0)',transition:'transform 0.2s'}}><path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" fill="none"/></svg>
+                            </button>
+                            {analyticsOpen && (<>
+                                <button className={`sidebar-link ${activeTab==='salesRfm'?'active':''}`} onClick={()=>setActiveTab('salesRfm')} style={{paddingLeft:'44px',fontSize:'0.8rem'}}>
+                                    <SvgIcon path="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /> RFM 분석
+                                </button>
+                                <button className={`sidebar-link ${activeTab==='salesCohort'?'active':''}`} onClick={()=>setActiveTab('salesCohort')} style={{paddingLeft:'44px',fontSize:'0.8rem'}}>
+                                    <SvgIcon path="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /> 코호트 분석
+                                </button>
+                                <button className={`sidebar-link ${activeTab==='salesProducts'?'active':''}`} onClick={()=>setActiveTab('salesProducts')} style={{paddingLeft:'44px',fontSize:'0.8rem'}}>
+                                    <SvgIcon path="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /> 상품 분석
+                                </button>
+                                <button className={`sidebar-link ${activeTab==='salesCustomers'?'active':''}`} onClick={()=>setActiveTab('salesCustomers')} style={{paddingLeft:'44px',fontSize:'0.8rem'}}>
+                                    <SvgIcon path="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /> 고객 탐색
+                                </button>
+                                <button className={`sidebar-link ${activeTab==='salesAi'?'active':''}`} onClick={()=>setActiveTab('salesAi')} style={{paddingLeft:'44px',fontSize:'0.8rem'}}>
+                                    <SvgIcon path="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /> AI 데이터 조회
+                                </button>
+                            </>)}
+                        </>);
+                    })()}
 
                     <div className="sidebar-section">상품 데이터</div>
                     <button className={`sidebar-link ${activeTab==='opleData'?'active':''}`} onClick={()=>setActiveTab('opleData')}>
@@ -5711,6 +5741,442 @@
             );
         };
 
+        // ============= SALES ANALYTICS =============
+        const useChart = (canvasRef, config, deps = []) => {
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (!canvasRef.current) return;
+                if (chartRef.current) chartRef.current.destroy();
+                chartRef.current = new Chart(canvasRef.current, config);
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, deps);
+        };
+
+        const TIER_LABELS = { platinum: '플래티넘', gold: '골드', silver: '실버', bronze: '브론즈', general: '일반' };
+        const TIER_COLORS = { platinum: '#1B4F72', gold: '#D4AC0D', silver: '#95A5A6', bronze: '#CD6155', general: '#BDC3C7' };
+        const SEG_LABELS = { champion: '챔피언', loyal: '충성', potential: '유망', 'new': '신규', need_attention: '관심필요', about_to_sleep: '이탈직전', at_risk: '이탈위험', cant_lose: '놓칠수없는', hibernating: '휴면' };
+        const SEG_COLORS = { champion: '#1B4F72', loyal: '#2E86C1', potential: '#3498DB', 'new': '#27AE60', need_attention: '#F39C12', about_to_sleep: '#E67E22', at_risk: '#E74C3C', cant_lose: '#C0392B', hibernating: '#95A5A6' };
+
+        const fmtN = n => n != null ? Math.round(n).toLocaleString() : '0';
+        const fmtWon = n => n != null ? '\u20A9' + Math.round(n).toLocaleString() : '\u20A90';
+        const fmtBig = n => { if(!n) return '\u20A90'; if(n>=1e8) return '\u20A9'+(n/1e8).toFixed(1)+'억'; if(n>=1e4) return '\u20A9'+Math.round(n/1e4).toLocaleString()+'만'; return fmtWon(n); };
+        const fmtPct = n => (n!=null?n.toFixed(1):'0')+'%';
+
+        const SalesCard = ({title, children, actions, style}) => (
+            <div className="card" style={{padding:'20px',marginBottom:'16px',...style}}>
+                {(title || actions) && <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}}>
+                    {title && <h3 style={{fontSize:'0.9rem',fontWeight:700,color:'#1e293b'}}>{title}</h3>}
+                    {actions && <div style={{display:'flex',gap:'6px'}}>{actions}</div>}
+                </div>}
+                {children}
+            </div>
+        );
+
+        const ChartCanvas = ({id, height = 300, config, deps = []}) => {
+            const ref = useRef(null);
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (!ref.current || !config) return;
+                if (chartRef.current) chartRef.current.destroy();
+                chartRef.current = new Chart(ref.current, config);
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, deps);
+            return <div style={{position:'relative',height}}><canvas ref={ref}></canvas></div>;
+        };
+
+        // --- Sales Dashboard View ---
+        const SalesDashboardView = ({setActiveTab}) => {
+            const [dash, setDash] = useState(null);
+            const [trend, setTrend] = useState([]);
+            const [tiers, setTiers] = useState([]);
+            const [trendMonths, setTrendMonths] = useState(12);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                Promise.all([
+                    fetch('/api/analytics/dashboard').then(r=>r.json()).catch(()=>null),
+                    fetch('/api/analytics/monthly?months='+trendMonths).then(r=>r.json()).catch(()=>({months:[]})),
+                    fetch('/api/analytics/customers/tiers').then(r=>r.json()).catch(()=>({tiers:[]})),
+                ]).then(([d,t,ti]) => { setDash(d); setTrend(t.months||[]); setTiers(ti.tiers||[]); setLoading(false); });
+            }, [trendMonths]);
+
+            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>데이터 로딩 중...</div>;
+            if (!dash) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>데이터가 없습니다. 먼저 데이터 재계산을 실행하세요.</div>;
+
+            const cur = dash.current_month || {};
+            const prev = dash.previous_month || {};
+            const chg = (a,b) => (a && b) ? ((a-b)/b*100) : null;
+
+            const kpis = [
+                { label: '이번달 매출', value: fmtBig(cur.total_revenue), change: chg(cur.total_revenue, prev.total_revenue) },
+                { label: '이번달 주문', value: fmtN(cur.total_orders), change: chg(cur.total_orders, prev.total_orders) },
+                { label: '전체 고객', value: fmtN(dash.total_customers), onClick: ()=>setActiveTab('salesCustomers') },
+                { label: '평균 AOV', value: fmtWon(cur.avg_order_value), change: chg(cur.avg_order_value, prev.avg_order_value) },
+                { label: '이탈위험', value: fmtN(dash.at_risk_customers), alert: dash.at_risk_customers > 100 },
+                { label: '누적 매출', value: fmtBig(dash.total_revenue) },
+            ];
+
+            const tierDist = dash.tier_distribution || {};
+            const rfmDist = dash.rfm_distribution || {};
+
+            return (<>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:'14px',marginBottom:'20px'}}>
+                    {kpis.map((k,i) => (
+                        <div key={i} className="kpi-card" style={{padding:'16px',cursor:k.onClick?'pointer':'default',borderColor:k.alert?'#E74C3C':undefined,borderWidth:k.alert?2:undefined}} onClick={k.onClick}>
+                            <div style={{fontSize:'0.7rem',color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:600}}>{k.label}</div>
+                            <div style={{fontSize:'1.4rem',fontWeight:700,color:'#1e293b',margin:'4px 0'}}>{k.value}</div>
+                            {k.change != null && <div style={{fontSize:'0.75rem',color:k.change>=0?'#16a34a':'#dc2626'}}>{k.change>=0?'▲':'▼'} {Math.abs(k.change).toFixed(1)}% vs 전월</div>}
+                        </div>
+                    ))}
+                </div>
+
+                <SalesCard title="월별 매출 추이" actions={
+                    <select value={trendMonths} onChange={e=>setTrendMonths(+e.target.value)} style={{padding:'4px 8px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem'}}>
+                        <option value={6}>6개월</option><option value={12}>12개월</option><option value={24}>24개월</option><option value={36}>36개월</option>
+                    </select>
+                }>
+                    <ChartCanvas height={300} config={{
+                        type:'bar',
+                        data:{labels:trend.map(m=>m.month),datasets:[
+                            {label:'매출',data:trend.map(m=>m.total_revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y',order:2},
+                            {label:'주문수',data:trend.map(m=>m.total_orders),type:'line',borderColor:'#ef4444',pointRadius:3,yAxisID:'y1',order:1},
+                        ]},
+                        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{position:'left',ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}
+                    }} deps={[trend]} />
+                </SalesCard>
+
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
+                    <SalesCard title="고객 등급 분포">
+                        {tiers.length > 0 && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
+                            {tiers.map(t => (
+                                <div key={t.tier} style={{flex:1,minWidth:70,padding:8,borderRadius:6,textAlign:'center',background:'#f8fafc',border:'1px solid #e5e7eb',cursor:'pointer'}} onClick={()=>setActiveTab('salesCustomers')}>
+                                    <div style={{fontSize:'0.65rem',color:TIER_COLORS[t.tier],fontWeight:600}}>{TIER_LABELS[t.tier]||t.tier}</div>
+                                    <div style={{fontSize:'1rem',fontWeight:700,color:'#1e293b'}}>{fmtN(t.count)}</div>
+                                    <div style={{fontSize:'0.6rem',color:'#94a3b8'}}>AOV {fmtWon(t.avg_aov)}</div>
+                                </div>
+                            ))}
+                        </div>}
+                        <ChartCanvas height={200} config={{
+                            type:'doughnut',
+                            data:{labels:Object.keys(tierDist).map(t=>TIER_LABELS[t]||t),datasets:[{data:Object.values(tierDist),backgroundColor:Object.keys(tierDist).map(t=>TIER_COLORS[t]||'#BDC3C7')}]},
+                            options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}}}
+                        }} deps={[tierDist]} />
+                    </SalesCard>
+                    <SalesCard title="RFM 세그먼트 요약">
+                        <ChartCanvas height={280} config={{
+                            type:'bar',
+                            data:{labels:Object.entries(rfmDist).sort((a,b)=>b[1]-a[1]).map(([s])=>SEG_LABELS[s]||s),datasets:[{label:'고객수',data:Object.entries(rfmDist).sort((a,b)=>b[1]-a[1]).map(([,v])=>v),backgroundColor:Object.entries(rfmDist).sort((a,b)=>b[1]-a[1]).map(([s])=>SEG_COLORS[s]||'#95A5A6')}]},
+                            options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmtN(v)},grid:{color:'#f0f0f0'}}},onClick:(e,els)=>{if(els.length)setActiveTab('salesRfm');}}
+                        }} deps={[rfmDist]} />
+                    </SalesCard>
+                </div>
+            </>);
+        };
+
+        // --- RFM View ---
+        const SalesRfmView = ({setActiveTab}) => {
+            const [segments, setSegments] = useState([]);
+            const [loading, setLoading] = useState(true);
+            useEffect(() => {
+                fetch('/api/analytics/rfm').then(r=>r.json()).then(d => { setSegments(d.current||[]); setLoading(false); }).catch(()=>setLoading(false));
+            }, []);
+            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div>;
+            if (!segments.length) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>RFM 데이터가 없습니다.</div>;
+
+            const totalCust = segments.reduce((a,s)=>a+s.count,0)||1;
+            const totalRev = segments.reduce((a,s)=>a+s.revenue,0)||1;
+            const sorted = [...segments].sort((a,b)=>b.revenue-a.revenue);
+            const layout = [['champion','loyal','potential','new','need_attention'],['cant_lose','at_risk','about_to_sleep','hibernating',null]];
+            const segMap = {}; segments.forEach(s=>{segMap[s.segment]=s;});
+
+            return (<>
+                <SalesCard title="세그먼트별 고객 분포">
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:4}}>
+                        {layout.flat().map((seg,i) => {
+                            if(!seg) return <div key={i}/>;
+                            const s = segMap[seg]||{count:0,revenue:0};
+                            const pct = (s.count/totalCust*100).toFixed(1);
+                            const c = SEG_COLORS[seg]||'#95A5A6';
+                            return <div key={seg} style={{padding:'10px 6px',textAlign:'center',borderRadius:6,cursor:'pointer',background:c+'15',border:'2px solid '+c+'40',transition:'all 0.2s'}} onClick={()=>setActiveTab('salesCustomers')}>
+                                <div style={{fontWeight:600,fontSize:'0.7rem',color:c}}>{SEG_LABELS[seg]}</div>
+                                <div style={{fontSize:'1.1rem',fontWeight:700,color:c}}>{fmtN(s.count)}</div>
+                                <div style={{fontSize:'0.6rem',opacity:0.8}}>{pct}% / {fmtBig(s.revenue)}</div>
+                            </div>;
+                        })}
+                    </div>
+                </SalesCard>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+                    <SalesCard title="세그먼트별 매출 기여도">
+                        <ChartCanvas height={280} config={{type:'bar',data:{labels:sorted.map(s=>SEG_LABELS[s.segment]||s.segment),datasets:[{label:'매출',data:sorted.map(s=>s.revenue),backgroundColor:sorted.map(s=>(SEG_COLORS[s.segment]||'#95A5A6')+'cc')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}}}}}} deps={[sorted]} />
+                    </SalesCard>
+                    <SalesCard title="세그먼트별 평균 지표">
+                        <ChartCanvas height={280} config={{type:'bar',data:{labels:sorted.map(s=>SEG_LABELS[s.segment]||s.segment),datasets:[{label:'평균 AOV',data:sorted.map(s=>s.avg_aov),backgroundColor:'#3b82f6aa'},{label:'평균 주문수',data:sorted.map(s=>s.avg_orders),backgroundColor:'#22c55eaa',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{y:{position:'left',ticks:{callback:v=>fmtWon(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}}} deps={[sorted]} />
+                    </SalesCard>
+                </div>
+                <SalesCard title="세그먼트 상세">
+                    <div style={{overflowX:'auto'}}>
+                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}}>
+                            <thead><tr style={{background:'#f8fafc'}}><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>세그먼트</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>고객수</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>매출 비중</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>총 매출</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>평균 AOV</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>평균 주문수</th></tr></thead>
+                            <tbody>{sorted.map(s => <tr key={s.segment} style={{borderBottom:'1px solid #f0f0f0',cursor:'pointer'}} onClick={()=>setActiveTab('salesCustomers')}>
+                                <td style={{padding:'8px 10px'}}><span style={{display:'inline-block',padding:'2px 8px',borderRadius:4,background:(SEG_COLORS[s.segment]||'#95A5A6')+'18',color:SEG_COLORS[s.segment],fontSize:'0.7rem',fontWeight:600}}>{SEG_LABELS[s.segment]||s.segment}</span></td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(s.count)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtPct(s.revenue/totalRev*100)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(s.revenue)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtWon(s.avg_aov)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{s.avg_orders?.toFixed(1)||'-'}</td>
+                            </tr>)}</tbody>
+                        </table>
+                    </div>
+                </SalesCard>
+            </>);
+        };
+
+        // --- Cohort View ---
+        const SalesCohortView = () => {
+            const [cohorts, setCohorts] = useState({});
+            const [loading, setLoading] = useState(true);
+            useEffect(() => { fetch('/api/analytics/cohort').then(r=>r.json()).then(d=>{setCohorts(d.cohorts||{});setLoading(false);}).catch(()=>setLoading(false)); }, []);
+            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div>;
+            const years = Object.keys(cohorts).sort();
+            if (!years.length) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>코호트 데이터가 없습니다.</div>;
+            const allPeriods = new Set(); years.forEach(y=>Object.keys(cohorts[y].retention||{}).forEach(p=>allPeriods.add(p)));
+            const periods = [...allPeriods].sort();
+            const retColor = r => { if(r==null) return '#f8f9fa'; const v=Math.min(r/100,1); return `rgb(${Math.round(255-v*200)},${Math.round(80+v*140)},${Math.round(80+v*100)})`; };
+            const colors = ['#1B4F72','#2E86C1','#3498DB','#27AE60','#F39C12','#E74C3C','#9B59B6','#E67E22'];
+
+            return (<>
+                <SalesCard title="연도별 코호트 잔존율 히트맵">
+                    <div style={{overflowX:'auto'}}>
+                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.72rem'}}>
+                            <thead><tr><th style={{padding:'6px 8px',textAlign:'center',fontWeight:600,color:'#64748b'}}>코호트</th><th style={{padding:'6px 8px',textAlign:'right',fontWeight:600,color:'#64748b'}}>크기</th>{periods.map(p=><th key={p} style={{padding:'6px 8px',textAlign:'center',fontWeight:600,color:'#64748b'}}>{p}</th>)}</tr></thead>
+                            <tbody>{years.map(cy => {
+                                const c = cohorts[cy];
+                                return <tr key={cy}><td style={{padding:'6px 8px',fontWeight:600,background:'#fafbfc'}}>{cy}</td><td style={{padding:'6px 8px',textAlign:'right',color:'#94a3b8',fontSize:'0.68rem'}}>{fmtN(c.cohort_size)}</td>
+                                    {periods.map(py => { const ret=c.retention?.[py]; if(!ret) return <td key={py} style={{padding:'6px 8px',textAlign:'center',background:'#f8f9fa',color:'#ccc'}}>-</td>;
+                                        return <td key={py} style={{padding:'6px 8px',textAlign:'center',background:retColor(ret.rate),color:ret.rate>50?'white':'#333',fontWeight:ret.rate>30?600:400}} title={`${cy} → ${py}: ${ret.active}명 (${fmtPct(ret.rate)})`}>{fmtPct(ret.rate)}</td>;
+                                    })}
+                                </tr>;
+                            })}</tbody>
+                        </table>
+                    </div>
+                </SalesCard>
+                <SalesCard title="코호트별 잔존율 추이">
+                    <ChartCanvas height={300} config={{type:'line',data:{labels:periods,datasets:years.map((y,i)=>({label:y+'년',data:periods.map(p=>cohorts[y].retention?.[p]?.rate??null),borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length]+'22',tension:0.3,pointRadius:4,spanGaps:true}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{y:{ticks:{callback:v=>fmtPct(v)},grid:{color:'#f0f0f0'},min:0}}}}} deps={[cohorts]} />
+                </SalesCard>
+            </>);
+        };
+
+        // --- Products View ---
+        const SalesProductsView = () => {
+            const [products, setProducts] = useState([]);
+            const [limit, setLimit] = useState(20);
+            const [period, setPeriod] = useState('');
+            const [loading, setLoading] = useState(true);
+            useEffect(() => {
+                setLoading(true);
+                fetch(`/api/analytics/products/top?limit=${limit}${period?'&period='+period:''}`).then(r=>r.json()).then(d=>{setProducts(d.products||[]);setLoading(false);}).catch(()=>setLoading(false));
+            }, [limit, period]);
+            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div>;
+
+            const months = [];
+            const now = new Date();
+            for(let i=0;i<24;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
+            const maxRev = Math.max(...products.map(p=>p.revenue),1);
+
+            return (<>
+                <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+                    <select value={period} onChange={e=>setPeriod(e.target.value)} style={{padding:'6px 10px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
+                        <option value="">전체 기간</option>
+                        <option value={String(now.getFullYear())}>올해</option>
+                        <option value={String(now.getFullYear()-1)}>작년</option>
+                        {months.map(m=><option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <select value={limit} onChange={e=>setLimit(+e.target.value)} style={{padding:'6px 10px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
+                        <option value={10}>TOP 10</option><option value={20}>TOP 20</option><option value={50}>TOP 50</option>
+                    </select>
+                </div>
+                <SalesCard title="상품 매출 랭킹">
+                    <ChartCanvas height={350} config={{type:'bar',data:{labels:products.slice(0,10).map(p=>p.it_id?.length>15?p.it_id.slice(0,15)+'...':p.it_id),datasets:[{label:'매출',data:products.slice(0,10).map(p=>p.revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y'},{label:'구매자수',data:products.slice(0,10).map(p=>p.buyer_count),type:'line',borderColor:'#ef4444',pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{position:'left',ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}}} deps={[products]} />
+                </SalesCard>
+                <SalesCard title="상품 상세">
+                    <div style={{maxHeight:400,overflowY:'auto'}}>
+                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}}>
+                            <thead><tr style={{background:'#f8fafc'}}><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>순위</th><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>상품 ID</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>매출</th><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>비중</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>판매수량</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>구매자수</th></tr></thead>
+                            <tbody>{products.map(p => <tr key={p.rank} style={{borderBottom:'1px solid #f0f0f0'}}>
+                                <td style={{padding:'8px 10px',fontWeight:700,color:p.rank<=3?'#ef4444':'#1e293b'}}>{p.rank}</td>
+                                <td style={{padding:'8px 10px'}}>{p.it_id}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(p.revenue)}</td>
+                                <td style={{padding:'8px 10px'}}><div style={{background:'#3b82f6',height:10,width:(p.revenue/maxRev*100)+'%',borderRadius:3,minWidth:2}}/></td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(p.total_qty)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(p.buyer_count)}</td>
+                            </tr>)}</tbody>
+                        </table>
+                    </div>
+                </SalesCard>
+            </>);
+        };
+
+        // --- Customers View ---
+        const SalesCustomersView = () => {
+            const [items, setItems] = useState([]);
+            const [total, setTotal] = useState(0);
+            const [page, setPage] = useState(1);
+            const [tier, setTier] = useState('');
+            const [segment, setSegment] = useState('');
+            const [search, setSearch] = useState('');
+            const [sortBy, setSortBy] = useState('ltv');
+            const [detail, setDetail] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            const load = () => {
+                setLoading(true);
+                const p = new URLSearchParams({page,page_size:50});
+                if(tier) p.set('tier',tier); if(segment) p.set('segment',segment); if(search) p.set('search',search); p.set('sort_by',sortBy);
+                fetch('/api/analytics/customers?'+p).then(r=>r.json()).then(d=>{setItems(d.items||[]);setTotal(d.total||0);setLoading(false);}).catch(()=>setLoading(false));
+            };
+            useEffect(load, [page,tier,segment,sortBy]);
+
+            const showDetail = mb_id => {
+                fetch('/api/analytics/customers/'+mb_id).then(r=>r.json()).then(d=>setDetail(d)).catch(()=>{});
+            };
+
+            return (<>
+                <div style={{display:'flex',gap:10,marginBottom:14,flexWrap:'wrap',alignItems:'center'}}>
+                    <input value={search} onChange={e=>setSearch(e.target.value)} onKeyUp={e=>{if(e.key==='Enter')load();}} placeholder="고객 ID / 이메일 / 이름 검색..." style={{flex:1,minWidth:180,padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}} />
+                    <select value={tier} onChange={e=>{setTier(e.target.value);setPage(1);}} style={{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
+                        <option value="">전체 등급</option>{Object.entries(TIER_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+                    </select>
+                    <select value={segment} onChange={e=>{setSegment(e.target.value);setPage(1);}} style={{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
+                        <option value="">전체 세그먼트</option>{Object.entries(SEG_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+                    </select>
+                    <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
+                        <option value="ltv">LTV순</option><option value="orders">주문수순</option><option value="recency">최근구매순</option><option value="aov">AOV순</option>
+                    </select>
+                </div>
+                <div style={{fontSize:'0.78rem',color:'#64748b',marginBottom:10}}>{tier&&(TIER_LABELS[tier]+' / ')}{segment&&(SEG_LABELS[segment]+' / ')}전체 {fmtN(total)}명</div>
+                {loading ? <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div> :
+                <SalesCard>
+                    <div style={{overflowX:'auto'}}>
+                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}}>
+                            <thead><tr style={{background:'#f8fafc'}}>{['회원ID','이름','등급','세그먼트','주문수','누적매출','AOV','LTV','마지막구매'].map(h=><th key={h} style={{padding:'8px 10px',textAlign:['주문수','누적매출','AOV','LTV'].includes(h)?'right':'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>{h}</th>)}</tr></thead>
+                            <tbody>{items.map(c => <tr key={c.mb_id} style={{borderBottom:'1px solid #f0f0f0',cursor:'pointer'}} onClick={()=>showDetail(c.mb_id)}>
+                                <td style={{padding:'8px 10px'}}>{c.mb_id}</td>
+                                <td style={{padding:'8px 10px'}}>{c.name||'-'}</td>
+                                <td style={{padding:'8px 10px'}}><span style={{display:'inline-block',padding:'2px 8px',borderRadius:4,background:TIER_COLORS[c.tier],color:c.tier==='general'?'#555':'white',fontSize:'0.68rem',fontWeight:700}}>{TIER_LABELS[c.tier]||c.tier}</span></td>
+                                <td style={{padding:'8px 10px'}}><span style={{display:'inline-block',padding:'2px 8px',borderRadius:4,background:(SEG_COLORS[c.rfm_segment]||'#95A5A6')+'18',color:SEG_COLORS[c.rfm_segment]||'#95A5A6',fontSize:'0.68rem',fontWeight:500}}>{SEG_LABELS[c.rfm_segment]||c.rfm_segment||'-'}</span></td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(c.total_orders)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(c.total_revenue)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtWon(c.avg_order_value)}</td>
+                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(c.ltv)}</td>
+                                <td style={{padding:'8px 10px'}}>{c.last_order_date?.slice(0,10)||'-'}</td>
+                            </tr>)}</tbody>
+                        </table>
+                    </div>
+                    <div style={{display:'flex',justifyContent:'center',gap:10,marginTop:12,alignItems:'center',fontSize:'0.78rem'}}>
+                        <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} style={{padding:'5px 14px',border:'1px solid #e5e7eb',borderRadius:6,background:'white',cursor:page<=1?'default':'pointer',opacity:page<=1?0.4:1}}>이전</button>
+                        <span>{page} / {Math.ceil(total/50)||1}</span>
+                        <button onClick={()=>setPage(p=>p+1)} disabled={page>=Math.ceil(total/50)} style={{padding:'5px 14px',border:'1px solid #e5e7eb',borderRadius:6,background:'white',cursor:page>=Math.ceil(total/50)?'default':'pointer',opacity:page>=Math.ceil(total/50)?0.4:1}}>다음</button>
+                    </div>
+                </SalesCard>}
+
+                {detail && <div style={{position:'fixed',right:0,top:0,width:440,height:'100vh',background:'white',boxShadow:'-4px 0 20px rgba(0,0,0,0.12)',zIndex:100,overflowY:'auto',padding:24}}>
+                    <span style={{position:'absolute',top:12,right:16,fontSize:20,cursor:'pointer',color:'#94a3b8'}} onClick={()=>setDetail(null)}>✕</span>
+                    <h2 style={{fontSize:'1.1rem',fontWeight:700,marginBottom:4}}>{detail.customer?.name||detail.customer?.mb_id}</h2>
+                    <div style={{fontSize:'0.75rem',color:'#94a3b8',marginBottom:14}}>{detail.customer?.email||''} / {detail.customer?.mb_id}</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+                        {[['등급',<span style={{padding:'2px 8px',borderRadius:4,background:TIER_COLORS[detail.customer?.tier],color:detail.customer?.tier==='general'?'#555':'white',fontSize:'0.68rem',fontWeight:700}}>{TIER_LABELS[detail.customer?.tier]}</span>],
+                          ['세그먼트',SEG_LABELS[detail.customer?.rfm_segment]||'-'],['LTV',fmtBig(detail.customer?.ltv)],['총 주문',fmtN(detail.customer?.total_orders)+'건'],
+                          ['평균 AOV',fmtWon(detail.customer?.avg_order_value)],['RFM',`R${detail.customer?.rfm_scores?.r||'-'} F${detail.customer?.rfm_scores?.f||'-'} M${detail.customer?.rfm_scores?.m||'-'}`],
+                          ['첫 구매',detail.customer?.first_order_date?.slice(0,10)||'-'],['마지막 구매',detail.customer?.last_order_date?.slice(0,10)||'-']
+                        ].map(([l,v],i)=><div key={i} style={{fontSize:'0.75rem'}}><div style={{color:'#94a3b8'}}>{l}</div><div style={{fontWeight:600}}>{v}</div></div>)}
+                    </div>
+                    <h4 style={{fontSize:'0.8rem',fontWeight:600,color:'#1e293b',marginBottom:8}}>최근 주문</h4>
+                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.72rem',marginBottom:16}}>
+                        <thead><tr><th style={{padding:'6px 8px',textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>날짜</th><th style={{padding:'6px 8px',textAlign:'right',borderBottom:'1px solid #e5e7eb'}}>금액</th><th style={{padding:'6px 8px',textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>상태</th></tr></thead>
+                        <tbody>{(detail.recent_orders||[]).map((o,i)=><tr key={i} style={{borderBottom:'1px solid #f5f5f5'}}><td style={{padding:'6px 8px'}}>{o.date?.slice(0,10)||'-'}</td><td style={{padding:'6px 8px',textAlign:'right'}}>{fmtWon(o.amount)}</td><td style={{padding:'6px 8px'}}>{o.status}</td></tr>)}</tbody>
+                    </table>
+                    <h4 style={{fontSize:'0.8rem',fontWeight:600,color:'#1e293b',marginBottom:8}}>자주 구매한 상품</h4>
+                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.72rem'}}>
+                        <thead><tr><th style={{padding:'6px 8px',textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>상품ID</th><th style={{padding:'6px 8px',textAlign:'right',borderBottom:'1px solid #e5e7eb'}}>수량</th><th style={{padding:'6px 8px',textAlign:'right',borderBottom:'1px solid #e5e7eb'}}>매출</th></tr></thead>
+                        <tbody>{(detail.top_products||[]).map((p,i)=><tr key={i} style={{borderBottom:'1px solid #f5f5f5'}}><td style={{padding:'6px 8px'}}>{p.it_id}</td><td style={{padding:'6px 8px',textAlign:'right'}}>{fmtN(p.quantity)}</td><td style={{padding:'6px 8px',textAlign:'right'}}>{fmtBig(p.revenue)}</td></tr>)}</tbody>
+                    </table>
+                </div>}
+            </>);
+        };
+
+        // --- AI Query View ---
+        const SalesAiView = () => {
+            const [question, setQuestion] = useState('');
+            const [result, setResult] = useState(null);
+            const [history, setHistory] = useState([]);
+            const [asking, setAsking] = useState(false);
+
+            useEffect(() => { fetch('/api/ai/query/history?limit=10').then(r=>r.json()).then(d=>setHistory(d.history||[])).catch(()=>{}); }, []);
+
+            const ask = () => {
+                if(!question.trim()||asking) return;
+                setAsking(true);
+                fetch('/api/ai/query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})})
+                .then(r=>r.json()).then(d=>{setResult(d);setAsking(false);fetch('/api/ai/query/history?limit=10').then(r=>r.json()).then(h=>setHistory(h.history||[]));})
+                .catch(e=>{setResult({error:e.message});setAsking(false);});
+            };
+
+            const chips = ['이번달 매출은 얼마야?','플래티넘 고객 중 최근 3개월 미구매자는?','가장 많이 팔린 상품 TOP 10은?','2024년 vs 2023년 매출 비교','이탈위험 고객 중 LTV 상위 20명','월별 신규 고객 수와 재구매 고객 수 비교'];
+
+            return (<>
+                <div style={{display:'flex',gap:10,marginBottom:14}}>
+                    <textarea value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask();}}} rows={2} placeholder="데이터에 대해 궁금한 것을 물어보세요..." style={{flex:1,padding:10,border:'2px solid #e5e7eb',borderRadius:8,fontSize:'0.85rem',resize:'none',fontFamily:'inherit'}} />
+                    <button onClick={ask} disabled={asking} style={{padding:'10px 20px',background:'#3b82f6',color:'white',border:'none',borderRadius:8,fontSize:'0.85rem',fontWeight:600,cursor:asking?'not-allowed':'pointer',opacity:asking?0.5:1,whiteSpace:'nowrap'}}>{asking?'분석 중...':'질문하기'}</button>
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:16}}>
+                    {chips.map(c=><span key={c} onClick={()=>setQuestion(c)} style={{background:'#f0f7ff',border:'1px solid #bfdbfe',color:'#3b82f6',padding:'5px 12px',borderRadius:20,fontSize:'0.72rem',cursor:'pointer'}}>{c}</span>)}
+                </div>
+
+                {result && !result.error && <SalesCard>
+                    <div style={{background:'#f0f7ff',padding:14,borderRadius:8,marginBottom:12,lineHeight:1.6,fontSize:'0.85rem'}}><strong>{result.explanation}</strong></div>
+                    <div style={{fontSize:'0.72rem',color:'#94a3b8',marginBottom:8}}>{result.latency_ms}ms / {result.total_rows}행</div>
+                    {result.rows?.length > 0 && <div style={{maxHeight:400,overflowY:'auto'}}>
+                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.75rem'}}>
+                            <thead><tr style={{background:'#f8fafc'}}>{result.columns.map(c=><th key={c} style={{padding:'6px 8px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>{c}</th>)}</tr></thead>
+                            <tbody>{result.rows.slice(0,50).map((r,i)=><tr key={i} style={{borderBottom:'1px solid #f0f0f0'}}>{result.columns.map(c=><td key={c} style={{padding:'6px 8px'}}>{typeof r[c]==='number'&&r[c]>1000?fmtN(r[c]):r[c]??'-'}</td>)}</tr>)}</tbody>
+                        </table>
+                    </div>}
+                </SalesCard>}
+                {result?.error && <div style={{background:'#fef2f2',padding:14,borderRadius:8,color:'#dc2626',fontSize:'0.85rem'}}>{result.error}</div>}
+
+                <SalesCard title="이전 질문">
+                    <div style={{maxHeight:280,overflowY:'auto'}}>
+                        {history.map(h=><div key={h.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid #f0f0f0',cursor:'pointer',fontSize:'0.78rem'}} onClick={()=>setQuestion(h.question)}>
+                            <span style={{color:h.success?'#22c55e':'#ef4444'}}>{h.success?'OK':'ERR'}</span>
+                            <span style={{flex:1}}>{h.question}</span>
+                            <span style={{color:'#94a3b8',fontSize:'0.68rem'}}>{h.latency_ms}ms</span>
+                        </div>)}
+                        {!history.length && <div style={{padding:20,textAlign:'center',color:'#94a3b8',fontSize:'0.78rem'}}>아직 질문 이력이 없습니다.</div>}
+                    </div>
+                </SalesCard>
+            </>);
+        };
+
+        // --- Main Analytics Container ---
+        const SalesAnalyticsPage = ({view, setActiveTab}) => {
+            const titles = {salesDashboard:'매출 대시보드',salesRfm:'RFM 분석',salesCohort:'코호트 분석',salesProducts:'상품 분석',salesCustomers:'고객 탐색',salesAi:'AI 데이터 조회'};
+            return (<>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
+                    <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>{titles[view]||'분석'}</h1>
+                    <div style={{display:'flex',gap:6}}>
+                        <button onClick={()=>{if(confirm('전체 분석을 재계산하시겠습니까?'))fetch('/api/analytics/recalculate',{method:'POST'}).then(r=>r.json()).then(d=>alert('재계산 시작: '+(d.pipeline||'processing'))).catch(e=>alert('실패: '+e.message));}} style={{padding:'6px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem',background:'white',cursor:'pointer'}}>데이터 재계산</button>
+                        <button onClick={()=>{const since=prompt('동기화 시작일 (YYYY-MM-DD):',new Date(Date.now()-30*86400000).toISOString().slice(0,10));if(since)fetch('/api/analytics/sync/shopify?since='+since,{method:'POST'}).then(()=>alert('Shopify 동기화 시작')).catch(e=>alert('실패: '+e.message));}} style={{padding:'6px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem',background:'white',cursor:'pointer'}}>Shopify 동기화</button>
+                    </div>
+                </div>
+                {view === 'salesDashboard' && <SalesDashboardView setActiveTab={setActiveTab} />}
+                {view === 'salesRfm' && <SalesRfmView setActiveTab={setActiveTab} />}
+                {view === 'salesCohort' && <SalesCohortView />}
+                {view === 'salesProducts' && <SalesProductsView />}
+                {view === 'salesCustomers' && <SalesCustomersView />}
+                {view === 'salesAi' && <SalesAiView />}
+            </>);
+        };
+
         // ============= MAIN APP =============
         const Main = ({ currentUser, onLogout }) => {
             const [activeTab, setActiveTab] = useState('dashboard');
@@ -5719,7 +6185,7 @@
                 <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5'}}>
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={onLogout} />
                     <main style={{flex:1,padding:'28px 32px',maxWidth:'calc(100vw - 240px)'}}>
-                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && activeTab !== 'projectShopify' && activeTab !== 'shopifySkin' && activeTab !== 'opleData' && (
+                        {activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'navCompare' && activeTab !== 'tagStrategy' && activeTab !== 'projectShopify' && activeTab !== 'shopifySkin' && activeTab !== 'opleData' && !activeTab.startsWith('sales') && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
                             <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>
                                 {activeTab === 'products' && 'OPLE 제품'}
@@ -5743,6 +6209,7 @@
                         {activeTab === 'projectShopify' && <ProjectManager />}
                         {activeTab === 'shopifySkin' && <ShopifySkinPage />}
                         {activeTab === 'opleData' && <OpleProductDataPage />}
+                        {activeTab.startsWith('sales') && <SalesAnalyticsPage view={activeTab} setActiveTab={setActiveTab} />}
                     </main>
                 </div>
             );

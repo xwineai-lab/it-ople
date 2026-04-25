@@ -5742,24 +5742,14 @@
         };
 
         // ============= SALES ANALYTICS =============
-        const useChart = (canvasRef, config, deps = []) => {
-            const chartRef = useRef(null);
-            useEffect(() => {
-                if (!canvasRef.current) return;
-                if (chartRef.current) chartRef.current.destroy();
-                chartRef.current = new Chart(canvasRef.current, config);
-                return () => { if (chartRef.current) chartRef.current.destroy(); };
-            }, deps);
-        };
-
-        const TIER_LABELS = { platinum: '플래티넘', gold: '골드', silver: '실버', bronze: '브론즈', general: '일반' };
-        const TIER_COLORS = { platinum: '#1B4F72', gold: '#D4AC0D', silver: '#95A5A6', bronze: '#CD6155', general: '#BDC3C7' };
-        const SEG_LABELS = { champion: '챔피언', loyal: '충성', potential: '유망', 'new': '신규', need_attention: '관심필요', about_to_sleep: '이탈직전', at_risk: '이탈위험', cant_lose: '놓칠수없는', hibernating: '휴면' };
-        const SEG_COLORS = { champion: '#1B4F72', loyal: '#2E86C1', potential: '#3498DB', 'new': '#27AE60', need_attention: '#F39C12', about_to_sleep: '#E67E22', at_risk: '#E74C3C', cant_lose: '#C0392B', hibernating: '#95A5A6' };
+        const TIER_LABELS = { VVIP: 'VVIP', VIP: 'VIP', Gold: 'Gold', Silver: 'Silver', Bronze: 'Bronze', Basic: 'Basic' };
+        const TIER_COLORS = { VVIP: '#1B4F72', VIP: '#2E86C1', Gold: '#D4AC0D', Silver: '#95A5A6', Bronze: '#CD6155', Basic: '#BDC3C7' };
+        const SEG_COLORS_MAP = { 'Champions': '#1B4F72', 'Loyal Customers': '#2E86C1', 'Potential Loyalists': '#3498DB', 'New Customers': '#27AE60', 'Promising': '#2ECC71', 'Need Attention': '#F39C12', 'About to Sleep': '#E67E22', 'At Risk': '#E74C3C', "Can't Lose Them": '#C0392B', 'Lost': '#95A5A6' };
+        const SEG_LABELS_KR = { 'Champions': '챔피언', 'Loyal Customers': '충성고객', 'Potential Loyalists': '유망고객', 'New Customers': '신규고객', 'Promising': '유망신규', 'Need Attention': '관심필요', 'About to Sleep': '이탈직전', 'At Risk': '이탈위험', "Can't Lose Them": '놓칠수없는', 'Lost': '이탈고객' };
 
         const fmtN = n => n != null ? Math.round(n).toLocaleString() : '0';
         const fmtWon = n => n != null ? '\u20A9' + Math.round(n).toLocaleString() : '\u20A90';
-        const fmtBig = n => { if(!n) return '\u20A90'; if(n>=1e8) return '\u20A9'+(n/1e8).toFixed(1)+'억'; if(n>=1e4) return '\u20A9'+Math.round(n/1e4).toLocaleString()+'만'; return fmtWon(n); };
+        const fmtBig = n => { if(!n) return '\u20A90'; if(n>=1e8) return '\u20A9'+(n/1e8).toFixed(1)+'\uc5b5'; if(n>=1e4) return '\u20A9'+Math.round(n/1e4).toLocaleString()+'\ub9cc'; return fmtWon(n); };
         const fmtPct = n => (n!=null?n.toFixed(1):'0')+'%';
 
         const SalesCard = ({title, children, actions, style}) => (
@@ -5781,400 +5771,535 @@
                 chartRef.current = new Chart(ref.current, config);
                 return () => { if (chartRef.current) chartRef.current.destroy(); };
             }, deps);
-            return <div style={{position:'relative',height}}><canvas ref={ref}></canvas></div>;
+            return React.createElement('div', {style:{position:'relative',height}}, React.createElement('canvas', {ref}));
         };
+
+        const fetchJson = (path) => fetch('/data/analytics/' + path).then(r => r.json()).catch(() => null);
 
         // --- Sales Dashboard View ---
         const SalesDashboardView = ({setActiveTab}) => {
             const [dash, setDash] = useState(null);
-            const [trend, setTrend] = useState([]);
-            const [tiers, setTiers] = useState([]);
+            const [monthly, setMonthly] = useState([]);
+            const [tierData, setTierData] = useState([]);
+            const [rfmData, setRfmData] = useState(null);
             const [trendMonths, setTrendMonths] = useState(12);
+            const [yearFilter, setYearFilter] = useState('all');
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
                 Promise.all([
-                    fetch('/api/analytics/dashboard').then(r=>r.json()).catch(()=>null),
-                    fetch('/api/analytics/monthly?months='+trendMonths).then(r=>r.json()).catch(()=>({months:[]})),
-                    fetch('/api/analytics/customers/tiers').then(r=>r.json()).catch(()=>({tiers:[]})),
-                ]).then(([d,t,ti]) => { setDash(d); setTrend(t.months||[]); setTiers(ti.tiers||[]); setLoading(false); });
-            }, [trendMonths]);
+                    fetchJson('dashboard.json'),
+                    fetchJson('monthly.json'),
+                    fetchJson('tier_distribution.json'),
+                    fetchJson('rfm_segments.json'),
+                ]).then(([d, m, t, r]) => {
+                    setDash(d);
+                    setMonthly(m || []);
+                    setTierData(t?.tiers || []);
+                    setRfmData(r);
+                    setLoading(false);
+                });
+            }, []);
 
-            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>데이터 로딩 중...</div>;
-            if (!dash) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>데이터가 없습니다. 먼저 데이터 재계산을 실행하세요.</div>;
+            if (loading) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub370\uc774\ud130 \ub85c\ub529 \uc911...');
+            if (!dash) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.');
 
-            const cur = dash.current_month || {};
-            const prev = dash.previous_month || {};
-            const chg = (a,b) => (a && b) ? ((a-b)/b*100) : null;
+            const trend = trendMonths === 999 ? monthly : monthly.slice(-trendMonths);
+            const filteredMonthly = yearFilter === 'all' ? monthly : monthly.filter(m => m.month.startsWith(yearFilter));
+
+            const recent = dash.recent_month || {};
+            const summary = dash.summary || {};
+            const yoy = dash.yoy_growth || {};
+            const yearly = dash.yearly || {};
 
             const kpis = [
-                { label: '이번달 매출', value: fmtBig(cur.total_revenue), change: chg(cur.total_revenue, prev.total_revenue) },
-                { label: '이번달 주문', value: fmtN(cur.total_orders), change: chg(cur.total_orders, prev.total_orders) },
-                { label: '전체 고객', value: fmtN(dash.total_customers), onClick: ()=>setActiveTab('salesCustomers') },
-                { label: '평균 AOV', value: fmtWon(cur.avg_order_value), change: chg(cur.avg_order_value, prev.avg_order_value) },
-                { label: '이탈위험', value: fmtN(dash.at_risk_customers), alert: dash.at_risk_customers > 100 },
-                { label: '누적 매출', value: fmtBig(dash.total_revenue) },
+                { label: '\ucd5c\uadfc\uc6d4 \ub9e4\ucd9c', value: fmtBig(recent.revenue), change: recent.mom_revenue_change, sub: recent.month },
+                { label: '\ucd5c\uadfc\uc6d4 \uc8fc\ubb38', value: fmtN(recent.orders), change: recent.mom_orders_change },
+                { label: '\ud65c\ub3d9 \uace0\uac1d', value: fmtN(summary.total_customers), onClick: () => setActiveTab('salesCustomers') },
+                { label: '\ud3c9\uade0 AOV', value: fmtWon(summary.avg_order_value) },
+                { label: '\ub204\uc801 \ub9e4\ucd9c', value: fmtBig(summary.total_revenue), sub: summary.period },
+                { label: '\ub204\uc801 \uc8fc\ubb38', value: fmtN(summary.total_orders) },
             ];
 
-            const tierDist = dash.tier_distribution || {};
-            const rfmDist = dash.rfm_distribution || {};
+            const segEntries = rfmData ? Object.entries(rfmData.segments).sort((a,b) => b[1].count - a[1].count) : [];
 
-            return (<>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:'14px',marginBottom:'20px'}}>
-                    {kpis.map((k,i) => (
-                        <div key={i} className="kpi-card" style={{padding:'16px',cursor:k.onClick?'pointer':'default',borderColor:k.alert?'#E74C3C':undefined,borderWidth:k.alert?2:undefined}} onClick={k.onClick}>
-                            <div style={{fontSize:'0.7rem',color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:600}}>{k.label}</div>
-                            <div style={{fontSize:'1.4rem',fontWeight:700,color:'#1e293b',margin:'4px 0'}}>{k.value}</div>
-                            {k.change != null && <div style={{fontSize:'0.75rem',color:k.change>=0?'#16a34a':'#dc2626'}}>{k.change>=0?'▲':'▼'} {Math.abs(k.change).toFixed(1)}% vs 전월</div>}
-                        </div>
-                    ))}
-                </div>
+            return React.createElement(React.Fragment, null,
+                React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:'12px',marginBottom:'20px'}},
+                    kpis.map((k, i) => React.createElement('div', {key:i, className:'kpi-card', style:{padding:'16px',cursor:k.onClick?'pointer':'default'}, onClick:k.onClick},
+                        React.createElement('div', {style:{fontSize:'0.7rem',color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:600}}, k.label),
+                        React.createElement('div', {style:{fontSize:'1.3rem',fontWeight:700,color:'#1e293b',margin:'4px 0'}}, k.value),
+                        k.change != null && React.createElement('div', {style:{fontSize:'0.75rem',color:k.change>=0?'#16a34a':'#dc2626'}}, (k.change>=0?'\u25B2':'\u25BC') + ' ' + Math.abs(k.change).toFixed(1) + '% vs \uc804\uc6d4'),
+                        k.sub && React.createElement('div', {style:{fontSize:'0.65rem',color:'#94a3b8',marginTop:2}}, k.sub)
+                    ))
+                ),
 
-                <SalesCard title="월별 매출 추이" actions={
-                    <select value={trendMonths} onChange={e=>setTrendMonths(+e.target.value)} style={{padding:'4px 8px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem'}}>
-                        <option value={6}>6개월</option><option value={12}>12개월</option><option value={24}>24개월</option><option value={36}>36개월</option>
-                    </select>
-                }>
-                    <ChartCanvas height={300} config={{
+                React.createElement(SalesCard, {title:'\uc5f0\ub3c4\ubcc4 \uc131\uc7a5 \ucd94\uc774'},
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}},
+                        ['2022','2023','2024','2025'].map(y => {
+                            const yd = yearly[y] || {};
+                            const growth = yoy[y === '2023' ? '2023_vs_2022' : y === '2024' ? '2024_vs_2023' : y === '2025' ? '2025_vs_2024' : null];
+                            return React.createElement('div', {key:y, style:{padding:'12px',borderRadius:8,background:'#f8fafc',border:'1px solid #e5e7eb',textAlign:'center'}},
+                                React.createElement('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'#1e293b',marginBottom:4}}, y + '\ub144'),
+                                React.createElement('div', {style:{fontSize:'1.1rem',fontWeight:700,color:'#3b82f6'}}, fmtBig(yd.revenue)),
+                                React.createElement('div', {style:{fontSize:'0.72rem',color:'#64748b',marginTop:2}}, fmtN(yd.orders) + '\uac74'),
+                                growth != null && React.createElement('div', {style:{fontSize:'0.7rem',color:growth>=0?'#16a34a':'#dc2626',marginTop:4}}, (growth>=0?'\u25B2':'\u25BC') + ' ' + Math.abs(growth).toFixed(1) + '% YoY')
+                            );
+                        })
+                    )
+                ),
+
+                React.createElement(SalesCard, {title:'\uc6d4\ubcc4 \ub9e4\ucd9c \ucd94\uc774', actions:
+                    React.createElement('select', {value:trendMonths, onChange:e=>setTrendMonths(+e.target.value), style:{padding:'4px 8px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem'}},
+                        React.createElement('option', {value:12}, '12\uac1c\uc6d4'),
+                        React.createElement('option', {value:24}, '24\uac1c\uc6d4'),
+                        React.createElement('option', {value:36}, '36\uac1c\uc6d4'),
+                        React.createElement('option', {value:999}, '\uc804\uccb4')
+                    )
+                },
+                    React.createElement(ChartCanvas, {height:320, config:{
                         type:'bar',
                         data:{labels:trend.map(m=>m.month),datasets:[
-                            {label:'매출',data:trend.map(m=>m.total_revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y',order:2},
-                            {label:'주문수',data:trend.map(m=>m.total_orders),type:'line',borderColor:'#ef4444',pointRadius:3,yAxisID:'y1',order:1},
+                            {label:'\ub9e4\ucd9c',data:trend.map(m=>m.total_revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y',order:2},
+                            {label:'\uc8fc\ubb38\uc218',data:trend.map(m=>m.total_orders),type:'line',borderColor:'#ef4444',pointRadius:2,yAxisID:'y1',order:1,tension:0.2},
                         ]},
                         options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{position:'left',ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}
-                    }} deps={[trend]} />
-                </SalesCard>
+                    }, deps:[trend]})
+                ),
 
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
-                    <SalesCard title="고객 등급 분포">
-                        {tiers.length > 0 && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
-                            {tiers.map(t => (
-                                <div key={t.tier} style={{flex:1,minWidth:70,padding:8,borderRadius:6,textAlign:'center',background:'#f8fafc',border:'1px solid #e5e7eb',cursor:'pointer'}} onClick={()=>setActiveTab('salesCustomers')}>
-                                    <div style={{fontSize:'0.65rem',color:TIER_COLORS[t.tier],fontWeight:600}}>{TIER_LABELS[t.tier]||t.tier}</div>
-                                    <div style={{fontSize:'1rem',fontWeight:700,color:'#1e293b'}}>{fmtN(t.count)}</div>
-                                    <div style={{fontSize:'0.6rem',color:'#94a3b8'}}>AOV {fmtWon(t.avg_aov)}</div>
-                                </div>
-                            ))}
-                        </div>}
-                        <ChartCanvas height={200} config={{
+                React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}},
+                    React.createElement(SalesCard, {title:'\uace0\uac1d \ub4f1\uae09 \ubd84\ud3ec'},
+                        tierData.length > 0 && React.createElement('div', {style:{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}},
+                            tierData.map(t => React.createElement('div', {key:t.name, style:{flex:1,minWidth:70,padding:8,borderRadius:6,textAlign:'center',background:'#f8fafc',border:'1px solid #e5e7eb',cursor:'pointer'}, onClick:()=>setActiveTab('salesCustomers')},
+                                React.createElement('div', {style:{fontSize:'0.65rem',color:TIER_COLORS[t.name]||'#333',fontWeight:600}}, t.name),
+                                React.createElement('div', {style:{fontSize:'1rem',fontWeight:700,color:'#1e293b'}}, fmtN(t.count)),
+                                React.createElement('div', {style:{fontSize:'0.6rem',color:'#94a3b8'}}, t.pct + '%')
+                            ))
+                        ),
+                        React.createElement(ChartCanvas, {height:220, config:{
                             type:'doughnut',
-                            data:{labels:Object.keys(tierDist).map(t=>TIER_LABELS[t]||t),datasets:[{data:Object.values(tierDist),backgroundColor:Object.keys(tierDist).map(t=>TIER_COLORS[t]||'#BDC3C7')}]},
-                            options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}}}
-                        }} deps={[tierDist]} />
-                    </SalesCard>
-                    <SalesCard title="RFM 세그먼트 요약">
-                        <ChartCanvas height={280} config={{
+                            data:{labels:tierData.map(t=>t.name),datasets:[{data:tierData.map(t=>t.count),backgroundColor:tierData.map(t=>TIER_COLORS[t.name]||'#BDC3C7')}]},
+                            options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:10}}},tooltip:{callbacks:{label:ctx=>{const t=tierData[ctx.dataIndex]; return t.name+': '+fmtN(t.count)+' ('+t.pct+'%) / '+fmtBig(t.revenue);}}}}}
+                        }, deps:[tierData]})
+                    ),
+
+                    React.createElement(SalesCard, {title:'RFM \uc138\uadf8\uba3c\ud2b8 \uc694\uc57d'},
+                        segEntries.length > 0 ? React.createElement(ChartCanvas, {height:280, config:{
                             type:'bar',
-                            data:{labels:Object.entries(rfmDist).sort((a,b)=>b[1]-a[1]).map(([s])=>SEG_LABELS[s]||s),datasets:[{label:'고객수',data:Object.entries(rfmDist).sort((a,b)=>b[1]-a[1]).map(([,v])=>v),backgroundColor:Object.entries(rfmDist).sort((a,b)=>b[1]-a[1]).map(([s])=>SEG_COLORS[s]||'#95A5A6')}]},
-                            options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmtN(v)},grid:{color:'#f0f0f0'}}},onClick:(e,els)=>{if(els.length)setActiveTab('salesRfm');}}
-                        }} deps={[rfmDist]} />
-                    </SalesCard>
-                </div>
-            </>);
+                            data:{labels:segEntries.map(([s])=>SEG_LABELS_KR[s]||s),datasets:[{label:'\uace0\uac1d\uc218',data:segEntries.map(([,v])=>v.count),backgroundColor:segEntries.map(([s])=>SEG_COLORS_MAP[s]||'#95A5A6')}]},
+                            options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const e=segEntries[ctx.dataIndex]; return fmtN(e[1].count)+'\uba85 ('+e[1].pct+'%) / '+fmtBig(e[1].total_revenue);}}}},scales:{x:{ticks:{callback:v=>fmtN(v)},grid:{color:'#f0f0f0'}}},onClick:(e,els)=>{if(els.length)setActiveTab('salesRfm');}}
+                        }, deps:[segEntries]}) : React.createElement('div', {style:{padding:20,textAlign:'center',color:'#94a3b8'}}, 'RFM \ub370\uc774\ud130 \uc5c6\uc74c')
+                    )
+                ),
+
+                React.createElement(SalesCard, {title:'\uc6d4\ubcc4 \uace0\uac1d\uc218 \ucd94\uc774'},
+                    React.createElement(ChartCanvas, {height:250, config:{
+                        type:'line',
+                        data:{labels:trend.map(m=>m.month),datasets:[
+                            {label:'\ud65c\ub3d9 \uace0\uac1d',data:trend.map(m=>m.total_customers),borderColor:'#8b5cf6',backgroundColor:'#8b5cf622',fill:true,tension:0.3,pointRadius:2},
+                            {label:'\ud3c9\uade0 AOV',data:trend.map(m=>m.avg_order_value),borderColor:'#f59e0b',tension:0.3,pointRadius:2,yAxisID:'y1'},
+                        ]},
+                        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{position:'left',grid:{color:'#f0f0f0'}},y1:{position:'right',ticks:{callback:v=>fmtWon(v)},grid:{drawOnChartArea:false}}}}
+                    }, deps:[trend]})
+                )
+            );
         };
 
         // --- RFM View ---
         const SalesRfmView = ({setActiveTab}) => {
-            const [segments, setSegments] = useState([]);
+            const [rfmData, setRfmData] = useState(null);
+            const [selectedSeg, setSelectedSeg] = useState(null);
             const [loading, setLoading] = useState(true);
-            useEffect(() => {
-                fetch('/api/analytics/rfm').then(r=>r.json()).then(d => { setSegments(d.current||[]); setLoading(false); }).catch(()=>setLoading(false));
-            }, []);
-            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div>;
-            if (!segments.length) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>RFM 데이터가 없습니다.</div>;
+            useEffect(() => { fetchJson('rfm_segments.json').then(d => { setRfmData(d); setLoading(false); }); }, []);
 
-            const totalCust = segments.reduce((a,s)=>a+s.count,0)||1;
-            const totalRev = segments.reduce((a,s)=>a+s.revenue,0)||1;
-            const sorted = [...segments].sort((a,b)=>b.revenue-a.revenue);
-            const layout = [['champion','loyal','potential','new','need_attention'],['cant_lose','at_risk','about_to_sleep','hibernating',null]];
-            const segMap = {}; segments.forEach(s=>{segMap[s.segment]=s;});
+            if (loading) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub85c\ub529 \uc911...');
+            if (!rfmData || !rfmData.segments) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, 'RFM \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.');
 
-            return (<>
-                <SalesCard title="세그먼트별 고객 분포">
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:4}}>
-                        {layout.flat().map((seg,i) => {
-                            if(!seg) return <div key={i}/>;
-                            const s = segMap[seg]||{count:0,revenue:0};
-                            const pct = (s.count/totalCust*100).toFixed(1);
-                            const c = SEG_COLORS[seg]||'#95A5A6';
-                            return <div key={seg} style={{padding:'10px 6px',textAlign:'center',borderRadius:6,cursor:'pointer',background:c+'15',border:'2px solid '+c+'40',transition:'all 0.2s'}} onClick={()=>setActiveTab('salesCustomers')}>
-                                <div style={{fontWeight:600,fontSize:'0.7rem',color:c}}>{SEG_LABELS[seg]}</div>
-                                <div style={{fontSize:'1.1rem',fontWeight:700,color:c}}>{fmtN(s.count)}</div>
-                                <div style={{fontSize:'0.6rem',opacity:0.8}}>{pct}% / {fmtBig(s.revenue)}</div>
-                            </div>;
-                        })}
-                    </div>
-                </SalesCard>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-                    <SalesCard title="세그먼트별 매출 기여도">
-                        <ChartCanvas height={280} config={{type:'bar',data:{labels:sorted.map(s=>SEG_LABELS[s.segment]||s.segment),datasets:[{label:'매출',data:sorted.map(s=>s.revenue),backgroundColor:sorted.map(s=>(SEG_COLORS[s.segment]||'#95A5A6')+'cc')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}}}}}} deps={[sorted]} />
-                    </SalesCard>
-                    <SalesCard title="세그먼트별 평균 지표">
-                        <ChartCanvas height={280} config={{type:'bar',data:{labels:sorted.map(s=>SEG_LABELS[s.segment]||s.segment),datasets:[{label:'평균 AOV',data:sorted.map(s=>s.avg_aov),backgroundColor:'#3b82f6aa'},{label:'평균 주문수',data:sorted.map(s=>s.avg_orders),backgroundColor:'#22c55eaa',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{y:{position:'left',ticks:{callback:v=>fmtWon(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}}} deps={[sorted]} />
-                    </SalesCard>
-                </div>
-                <SalesCard title="세그먼트 상세">
-                    <div style={{overflowX:'auto'}}>
-                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}}>
-                            <thead><tr style={{background:'#f8fafc'}}><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>세그먼트</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>고객수</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>매출 비중</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>총 매출</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>평균 AOV</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>평균 주문수</th></tr></thead>
-                            <tbody>{sorted.map(s => <tr key={s.segment} style={{borderBottom:'1px solid #f0f0f0',cursor:'pointer'}} onClick={()=>setActiveTab('salesCustomers')}>
-                                <td style={{padding:'8px 10px'}}><span style={{display:'inline-block',padding:'2px 8px',borderRadius:4,background:(SEG_COLORS[s.segment]||'#95A5A6')+'18',color:SEG_COLORS[s.segment],fontSize:'0.7rem',fontWeight:600}}>{SEG_LABELS[s.segment]||s.segment}</span></td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(s.count)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtPct(s.revenue/totalRev*100)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(s.revenue)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtWon(s.avg_aov)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{s.avg_orders?.toFixed(1)||'-'}</td>
-                            </tr>)}</tbody>
-                        </table>
-                    </div>
-                </SalesCard>
-            </>);
+            const segments = rfmData.segments;
+            const segEntries = Object.entries(segments).sort((a,b) => b[1].count - a[1].count);
+            const totalCust = rfmData.total_customers || 1;
+            const totalRev = segEntries.reduce((a,[,v]) => a + v.total_revenue, 0) || 1;
+
+            const matrixR = [5,4,3,2,1];
+            const matrixF = [1,2,3,4,5];
+
+            return React.createElement(React.Fragment, null,
+                React.createElement(SalesCard, {title:'\uc138\uadf8\uba3c\ud2b8\ubcc4 \uace0\uac1d \ubd84\ud3ec (' + fmtN(totalCust) + '\uba85)'},
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:8}},
+                        segEntries.map(([seg, data]) => {
+                            const c = SEG_COLORS_MAP[seg] || '#95A5A6';
+                            const isSelected = selectedSeg === seg;
+                            return React.createElement('div', {key:seg, style:{padding:'12px 10px',textAlign:'center',borderRadius:8,cursor:'pointer',background:isSelected?c+'22':c+'0a',border:'2px solid '+(isSelected?c:c+'30'),transition:'all 0.2s'}, onClick:()=>setSelectedSeg(isSelected?null:seg)},
+                                React.createElement('div', {style:{fontWeight:600,fontSize:'0.72rem',color:c}}, SEG_LABELS_KR[seg] || seg),
+                                React.createElement('div', {style:{fontSize:'1.2rem',fontWeight:700,color:c}}, fmtN(data.count)),
+                                React.createElement('div', {style:{fontSize:'0.65rem',color:'#64748b',marginTop:2}}, data.pct + '% / ' + fmtBig(data.total_revenue))
+                            );
+                        })
+                    )
+                ),
+
+                selectedSeg && segments[selectedSeg] && React.createElement(SalesCard, {title:'\'' + (SEG_LABELS_KR[selectedSeg]||selectedSeg) + '\' \uc138\uadf8\uba3c\ud2b8 \uc0c1\uc138'},
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}},
+                        [
+                            ['\uace0\uac1d\uc218', fmtN(segments[selectedSeg].count)],
+                            ['\ud3c9\uade0 \ub9e4\ucd9c', fmtBig(segments[selectedSeg].avg_revenue)],
+                            ['\ud3c9\uade0 \uc8fc\ubb38', fmtN(segments[selectedSeg].avg_orders) + '\uac74'],
+                            ['\ub9e4\ucd9c \uae30\uc5ec', fmtPct(segments[selectedSeg].total_revenue / totalRev * 100)]
+                        ].map(([l,v],i) => React.createElement('div', {key:i, style:{padding:10,borderRadius:6,background:'#f8fafc',textAlign:'center'}},
+                            React.createElement('div', {style:{fontSize:'0.68rem',color:'#94a3b8'}}, l),
+                            React.createElement('div', {style:{fontSize:'1rem',fontWeight:700,color:'#1e293b',marginTop:2}}, v)
+                        ))
+                    ),
+                    segments[selectedSeg].sample_customers && segments[selectedSeg].sample_customers.length > 0 && React.createElement(React.Fragment, null,
+                        React.createElement('div', {style:{fontSize:'0.78rem',fontWeight:600,color:'#64748b',marginBottom:8}}, '\uc0d8\ud50c \uace0\uac1d'),
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.75rem'}},
+                            React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc'}},
+                                React.createElement('th', {style:{padding:'6px 8px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, '\ud68c\uc6d0ID'),
+                                React.createElement('th', {style:{padding:'6px 8px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, '\uc8fc\ubb38\uc218'),
+                                React.createElement('th', {style:{padding:'6px 8px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, '\ub9e4\ucd9c'),
+                                React.createElement('th', {style:{padding:'6px 8px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, '\ub9c8\uc9c0\ub9c9\uad6c\ub9e4'),
+                                React.createElement('th', {style:{padding:'6px 8px',textAlign:'center',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, 'RFM')
+                            )),
+                            React.createElement('tbody', null, segments[selectedSeg].sample_customers.map((c,i) =>
+                                React.createElement('tr', {key:i, style:{borderBottom:'1px solid #f0f0f0'}},
+                                    React.createElement('td', {style:{padding:'6px 8px'}}, c.mb_id),
+                                    React.createElement('td', {style:{padding:'6px 8px',textAlign:'right'}}, fmtN(c.orders)),
+                                    React.createElement('td', {style:{padding:'6px 8px',textAlign:'right'}}, fmtBig(c.revenue)),
+                                    React.createElement('td', {style:{padding:'6px 8px'}}, c.last_order),
+                                    React.createElement('td', {style:{padding:'6px 8px',textAlign:'center',fontFamily:'monospace',fontSize:'0.7rem'}}, c.rfm)
+                                )
+                            ))
+                        )
+                    )
+                ),
+
+                React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}},
+                    React.createElement(SalesCard, {title:'\uc138\uadf8\uba3c\ud2b8\ubcc4 \ub9e4\ucd9c \uae30\uc5ec\ub3c4'},
+                        React.createElement(ChartCanvas, {height:300, config:{type:'bar',data:{labels:segEntries.map(([s])=>SEG_LABELS_KR[s]||s),datasets:[{label:'\ub9e4\ucd9c',data:segEntries.map(([,v])=>v.total_revenue),backgroundColor:segEntries.map(([s])=>(SEG_COLORS_MAP[s]||'#95A5A6')+'cc')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtBig(segEntries[ctx.dataIndex][1].total_revenue)+' ('+fmtPct(segEntries[ctx.dataIndex][1].total_revenue/totalRev*100)+')'}}},scales:{y:{ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}}}}}, deps:[segEntries]})
+                    ),
+                    React.createElement(SalesCard, {title:'\uc138\uadf8\uba3c\ud2b8\ubcc4 \ud3c9\uade0 \uc9c0\ud45c'},
+                        React.createElement(ChartCanvas, {height:300, config:{type:'bar',data:{labels:segEntries.map(([s])=>SEG_LABELS_KR[s]||s),datasets:[{label:'\ud3c9\uade0 \ub9e4\ucd9c',data:segEntries.map(([,v])=>v.avg_revenue),backgroundColor:'#3b82f6aa'},{label:'\ud3c9\uade0 \uc8fc\ubb38\uc218',data:segEntries.map(([,v])=>v.avg_orders),backgroundColor:'#22c55eaa',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{y:{position:'left',ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}}, deps:[segEntries]})
+                    )
+                ),
+
+                React.createElement(SalesCard, {title:'RFM \ub9e4\ud2b8\ub9ad\uc2a4 (R x F)'},
+                    React.createElement('div', {style:{overflowX:'auto'}},
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.72rem'}},
+                            React.createElement('thead', null, React.createElement('tr', null,
+                                React.createElement('th', {style:{padding:'6px',textAlign:'center',fontWeight:600,color:'#64748b'}}, 'R \\ F'),
+                                matrixF.map(f => React.createElement('th', {key:f, style:{padding:'6px',textAlign:'center',fontWeight:600,color:'#64748b'}}, 'F'+f))
+                            )),
+                            React.createElement('tbody', null, matrixR.map(r =>
+                                React.createElement('tr', {key:r},
+                                    React.createElement('td', {style:{padding:'6px',fontWeight:600,textAlign:'center',background:'#fafbfc'}}, 'R'+r),
+                                    matrixF.map(f => {
+                                        const key = r+'-'+f;
+                                        const val = rfmData.matrix?.[key] || 0;
+                                        const maxVal = Math.max(...Object.values(rfmData.matrix || {}), 1);
+                                        const intensity = val / maxVal;
+                                        const bg = val > 0 ? 'rgba(59,130,246,' + (0.1 + intensity * 0.7) + ')' : '#f8f9fa';
+                                        return React.createElement('td', {key:f, style:{padding:'6px',textAlign:'center',background:bg,color:intensity>0.5?'white':'#333',fontWeight:val>0?600:400}}, val > 0 ? fmtN(val) : '-');
+                                    })
+                                )
+                            ))
+                        )
+                    )
+                ),
+
+                React.createElement(SalesCard, {title:'\uc138\uadf8\uba3c\ud2b8 \uc0c1\uc138 \ud14c\uc774\ube14'},
+                    React.createElement('div', {style:{overflowX:'auto'}},
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}},
+                            React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc'}},
+                                ['\uc138\uadf8\uba3c\ud2b8','\uace0\uac1d\uc218','\ube44\uc911','\ucd1d \ub9e4\ucd9c','\ub9e4\ucd9c \uae30\uc5ec','\ud3c9\uade0 \ub9e4\ucd9c','\ud3c9\uade0 \uc8fc\ubb38'].map(h =>
+                                    React.createElement('th', {key:h, style:{padding:'8px 10px',textAlign:h==='\uc138\uadf8\uba3c\ud2b8'?'left':'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, h)
+                                )
+                            )),
+                            React.createElement('tbody', null, segEntries.map(([seg, data]) =>
+                                React.createElement('tr', {key:seg, style:{borderBottom:'1px solid #f0f0f0',cursor:'pointer'}, onClick:()=>setSelectedSeg(selectedSeg===seg?null:seg)},
+                                    React.createElement('td', {style:{padding:'8px 10px'}}, React.createElement('span', {style:{display:'inline-block',padding:'2px 8px',borderRadius:4,background:(SEG_COLORS_MAP[seg]||'#95A5A6')+'18',color:SEG_COLORS_MAP[seg],fontSize:'0.7rem',fontWeight:600}}, SEG_LABELS_KR[seg]||seg)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtN(data.count)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, data.pct + '%'),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtBig(data.total_revenue)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtPct(data.total_revenue / totalRev * 100)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtBig(data.avg_revenue)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtN(data.avg_orders))
+                                )
+                            ))
+                        )
+                    )
+                )
+            );
         };
 
         // --- Cohort View ---
         const SalesCohortView = () => {
-            const [cohorts, setCohorts] = useState({});
+            const [cohortData, setCohortData] = useState(null);
             const [loading, setLoading] = useState(true);
-            useEffect(() => { fetch('/api/analytics/cohort').then(r=>r.json()).then(d=>{setCohorts(d.cohorts||{});setLoading(false);}).catch(()=>setLoading(false)); }, []);
-            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div>;
-            const years = Object.keys(cohorts).sort();
-            if (!years.length) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>코호트 데이터가 없습니다.</div>;
-            const allPeriods = new Set(); years.forEach(y=>Object.keys(cohorts[y].retention||{}).forEach(p=>allPeriods.add(p)));
-            const periods = [...allPeriods].sort();
-            const retColor = r => { if(r==null) return '#f8f9fa'; const v=Math.min(r/100,1); return `rgb(${Math.round(255-v*200)},${Math.round(80+v*140)},${Math.round(80+v*100)})`; };
-            const colors = ['#1B4F72','#2E86C1','#3498DB','#27AE60','#F39C12','#E74C3C','#9B59B6','#E67E22'];
+            useEffect(() => { fetchJson('cohort.json').then(d => { setCohortData(d); setLoading(false); }); }, []);
 
-            return (<>
-                <SalesCard title="연도별 코호트 잔존율 히트맵">
-                    <div style={{overflowX:'auto'}}>
-                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.72rem'}}>
-                            <thead><tr><th style={{padding:'6px 8px',textAlign:'center',fontWeight:600,color:'#64748b'}}>코호트</th><th style={{padding:'6px 8px',textAlign:'right',fontWeight:600,color:'#64748b'}}>크기</th>{periods.map(p=><th key={p} style={{padding:'6px 8px',textAlign:'center',fontWeight:600,color:'#64748b'}}>{p}</th>)}</tr></thead>
-                            <tbody>{years.map(cy => {
-                                const c = cohorts[cy];
-                                return <tr key={cy}><td style={{padding:'6px 8px',fontWeight:600,background:'#fafbfc'}}>{cy}</td><td style={{padding:'6px 8px',textAlign:'right',color:'#94a3b8',fontSize:'0.68rem'}}>{fmtN(c.cohort_size)}</td>
-                                    {periods.map(py => { const ret=c.retention?.[py]; if(!ret) return <td key={py} style={{padding:'6px 8px',textAlign:'center',background:'#f8f9fa',color:'#ccc'}}>-</td>;
-                                        return <td key={py} style={{padding:'6px 8px',textAlign:'center',background:retColor(ret.rate),color:ret.rate>50?'white':'#333',fontWeight:ret.rate>30?600:400}} title={`${cy} → ${py}: ${ret.active}명 (${fmtPct(ret.rate)})`}>{fmtPct(ret.rate)}</td>;
-                                    })}
-                                </tr>;
-                            })}</tbody>
-                        </table>
-                    </div>
-                </SalesCard>
-                <SalesCard title="코호트별 잔존율 추이">
-                    <ChartCanvas height={300} config={{type:'line',data:{labels:periods,datasets:years.map((y,i)=>({label:y+'년',data:periods.map(p=>cohorts[y].retention?.[p]?.rate??null),borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length]+'22',tension:0.3,pointRadius:4,spanGaps:true}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{y:{ticks:{callback:v=>fmtPct(v)},grid:{color:'#f0f0f0'},min:0}}}}} deps={[cohorts]} />
-                </SalesCard>
-            </>);
+            if (loading) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub85c\ub529 \uc911...');
+            if (!cohortData || !cohortData.cohorts || !cohortData.cohorts.length) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ucf54\ud638\ud2b8 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.');
+
+            const cohorts = cohortData.cohorts;
+            const periods = cohortData.periods || [];
+            const retColor = r => { if(r==null||r===0) return '#f8f9fa'; const v=Math.min(r/100,1); return 'rgba(59,130,246,'+(0.1+v*0.8)+')'; };
+            const colors = ['#1B4F72','#2E86C1','#3498DB','#27AE60','#F39C12','#E74C3C','#9B59B6','#E67E22','#16A085','#8E44AD','#D35400','#2C3E50','#1ABC9C','#C0392B','#7F8C8D','#2980B9','#F1C40F'];
+
+            return React.createElement(React.Fragment, null,
+                React.createElement(SalesCard, {title:'\ucf54\ud638\ud2b8\ubcc4 \uc794\uc874\uc728 \ud788\ud2b8\ub9f5'},
+                    React.createElement('div', {style:{overflowX:'auto'}},
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.7rem'}},
+                            React.createElement('thead', null, React.createElement('tr', null,
+                                React.createElement('th', {style:{padding:'5px 6px',textAlign:'left',fontWeight:600,color:'#64748b',position:'sticky',left:0,background:'white',zIndex:1}}, '\ucf54\ud638\ud2b8'),
+                                React.createElement('th', {style:{padding:'5px 6px',textAlign:'right',fontWeight:600,color:'#64748b'}}, '\ud06c\uae30'),
+                                periods.map(p => React.createElement('th', {key:p, style:{padding:'5px 6px',textAlign:'center',fontWeight:600,color:'#64748b',fontSize:'0.65rem'}}, p))
+                            )),
+                            React.createElement('tbody', null, cohorts.map((c,ci) =>
+                                React.createElement('tr', {key:ci},
+                                    React.createElement('td', {style:{padding:'5px 6px',fontWeight:600,background:'#fafbfc',position:'sticky',left:0,zIndex:1,fontSize:'0.68rem'}}, c.cohort),
+                                    React.createElement('td', {style:{padding:'5px 6px',textAlign:'right',color:'#94a3b8',fontSize:'0.65rem'}}, fmtN(c.initial_count)),
+                                    c.retention.map((r,ri) => React.createElement('td', {key:ri, style:{padding:'5px 6px',textAlign:'center',background:retColor(r.rate),color:r.rate>40?'white':'#333',fontWeight:r.rate>20?600:400,fontSize:'0.65rem'}, title:c.cohort+' \u2192 '+r.period+': '+fmtN(r.count)+'\uba85'}, r.rate > 0 ? r.rate.toFixed(1)+'%' : '-'))
+                                )
+                            ))
+                        )
+                    )
+                ),
+                React.createElement(SalesCard, {title:'\ucf54\ud638\ud2b8\ubcc4 \uc794\uc874\uc728 \ucd94\uc774 (\uc0c1\uc704 8\uac1c)'},
+                    React.createElement(ChartCanvas, {height:350, config:{
+                        type:'line',
+                        data:{labels:periods,datasets:cohorts.slice(0,8).map((c,i)=>({label:c.cohort,data:c.retention.map(r=>r.rate>0?r.rate:null),borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length]+'22',tension:0.3,pointRadius:3,spanGaps:true}))},
+                        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'},min:0}}}
+                    }, deps:[cohorts]})
+                )
+            );
         };
 
         // --- Products View ---
         const SalesProductsView = () => {
-            const [products, setProducts] = useState([]);
+            const [allProducts, setAllProducts] = useState([]);
             const [limit, setLimit] = useState(20);
-            const [period, setPeriod] = useState('');
             const [loading, setLoading] = useState(true);
-            useEffect(() => {
-                setLoading(true);
-                fetch(`/api/analytics/products/top?limit=${limit}${period?'&period='+period:''}`).then(r=>r.json()).then(d=>{setProducts(d.products||[]);setLoading(false);}).catch(()=>setLoading(false));
-            }, [limit, period]);
-            if (loading) return <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div>;
+            useEffect(() => { fetchJson('products_top.json').then(d => { setAllProducts(d || []); setLoading(false); }); }, []);
 
-            const months = [];
-            const now = new Date();
-            for(let i=0;i<24;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
-            const maxRev = Math.max(...products.map(p=>p.revenue),1);
+            if (loading) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub85c\ub529 \uc911...');
 
-            return (<>
-                <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
-                    <select value={period} onChange={e=>setPeriod(e.target.value)} style={{padding:'6px 10px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
-                        <option value="">전체 기간</option>
-                        <option value={String(now.getFullYear())}>올해</option>
-                        <option value={String(now.getFullYear()-1)}>작년</option>
-                        {months.map(m=><option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <select value={limit} onChange={e=>setLimit(+e.target.value)} style={{padding:'6px 10px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
-                        <option value={10}>TOP 10</option><option value={20}>TOP 20</option><option value={50}>TOP 50</option>
-                    </select>
-                </div>
-                <SalesCard title="상품 매출 랭킹">
-                    <ChartCanvas height={350} config={{type:'bar',data:{labels:products.slice(0,10).map(p=>p.it_id?.length>15?p.it_id.slice(0,15)+'...':p.it_id),datasets:[{label:'매출',data:products.slice(0,10).map(p=>p.revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y'},{label:'구매자수',data:products.slice(0,10).map(p=>p.buyer_count),type:'line',borderColor:'#ef4444',pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{position:'left',ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}}} deps={[products]} />
-                </SalesCard>
-                <SalesCard title="상품 상세">
-                    <div style={{maxHeight:400,overflowY:'auto'}}>
-                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}}>
-                            <thead><tr style={{background:'#f8fafc'}}><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>순위</th><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>상품 ID</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>매출</th><th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>비중</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>판매수량</th><th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>구매자수</th></tr></thead>
-                            <tbody>{products.map(p => <tr key={p.rank} style={{borderBottom:'1px solid #f0f0f0'}}>
-                                <td style={{padding:'8px 10px',fontWeight:700,color:p.rank<=3?'#ef4444':'#1e293b'}}>{p.rank}</td>
-                                <td style={{padding:'8px 10px'}}>{p.it_id}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(p.revenue)}</td>
-                                <td style={{padding:'8px 10px'}}><div style={{background:'#3b82f6',height:10,width:(p.revenue/maxRev*100)+'%',borderRadius:3,minWidth:2}}/></td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(p.total_qty)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(p.buyer_count)}</td>
-                            </tr>)}</tbody>
-                        </table>
-                    </div>
-                </SalesCard>
-            </>);
+            const products = allProducts.slice(0, limit);
+            const maxRev = Math.max(...products.map(p=>p.total_revenue||0), 1);
+            const totalRev = allProducts.reduce((a,p)=>a+(p.total_revenue||0),0);
+            const totalQty = allProducts.reduce((a,p)=>a+(p.total_qty||0),0);
+
+            return React.createElement(React.Fragment, null,
+                React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}},
+                    [
+                        ['\ucd1d \uc0c1\ud488\uc218', fmtN(allProducts.length) + '\uac1c'],
+                        ['\ucd1d \ub9e4\ucd9c\uc561', fmtBig(totalRev)],
+                        ['\ucd1d \ud310\ub9e4\uc218\ub7c9', fmtN(totalQty) + '\uac1c']
+                    ].map(([l,v],i) => React.createElement('div', {key:i, className:'kpi-card', style:{padding:14,textAlign:'center'}},
+                        React.createElement('div', {style:{fontSize:'0.7rem',color:'#6b7280',fontWeight:600}}, l),
+                        React.createElement('div', {style:{fontSize:'1.2rem',fontWeight:700,color:'#1e293b',marginTop:4}}, v)
+                    ))
+                ),
+
+                React.createElement('div', {style:{display:'flex',gap:8,marginBottom:16,alignItems:'center'}},
+                    React.createElement('select', {value:limit, onChange:e=>setLimit(+e.target.value), style:{padding:'6px 10px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}},
+                        React.createElement('option', {value:10}, 'TOP 10'),
+                        React.createElement('option', {value:20}, 'TOP 20'),
+                        React.createElement('option', {value:50}, 'TOP 50'),
+                        React.createElement('option', {value:100}, 'TOP 100')
+                    )
+                ),
+
+                React.createElement(SalesCard, {title:'\uc0c1\ud488 \ub9e4\ucd9c \ub7ad\ud0b9'},
+                    React.createElement(ChartCanvas, {height:350, config:{type:'bar',data:{labels:products.slice(0,15).map((p,i)=>'#'+(i+1)+' '+p.it_id?.slice(0,10)),datasets:[{label:'\ub9e4\ucd9c',data:products.slice(0,15).map(p=>p.total_revenue),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y'},{label:'\ud310\ub9e4\uc218\ub7c9',data:products.slice(0,15).map(p=>p.total_qty),type:'line',borderColor:'#ef4444',pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{position:'left',ticks:{callback:v=>fmtBig(v)},grid:{color:'#f0f0f0'}},y1:{position:'right',grid:{drawOnChartArea:false}}}}}, deps:[products]})
+                ),
+
+                React.createElement(SalesCard, {title:'\uc0c1\ud488 \uc0c1\uc138'},
+                    React.createElement('div', {style:{maxHeight:500,overflowY:'auto'}},
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}},
+                            React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc'}},
+                                ['\uc21c\uc704','\uc0c1\ud488 ID','\ub9e4\ucd9c','\ube44\uc911','\ud310\ub9e4\uc218\ub7c9','\uc8fc\ubb38\uac74\uc218'].map(h =>
+                                    React.createElement('th', {key:h, style:{padding:'8px 10px',textAlign:h==='\uc21c\uc704'||h==='\uc0c1\ud488 ID'?'left':'right',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, h)
+                                )
+                            )),
+                            React.createElement('tbody', null, products.map((p,i) =>
+                                React.createElement('tr', {key:i, style:{borderBottom:'1px solid #f0f0f0'}},
+                                    React.createElement('td', {style:{padding:'8px 10px',fontWeight:700,color:i<3?'#ef4444':'#1e293b'}}, i+1),
+                                    React.createElement('td', {style:{padding:'8px 10px',fontFamily:'monospace',fontSize:'0.72rem'}}, p.it_id),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtBig(p.total_revenue)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}},
+                                        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4,justifyContent:'flex-end'}},
+                                            React.createElement('div', {style:{background:'#3b82f6',height:8,width:Math.max((p.total_revenue/maxRev*80),2)+'px',borderRadius:3}}),
+                                            React.createElement('span', {style:{fontSize:'0.68rem',color:'#94a3b8'}}, ((p.total_revenue/totalRev)*100).toFixed(1)+'%')
+                                        )
+                                    ),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtN(p.total_qty)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtN(p.order_count))
+                                )
+                            ))
+                        )
+                    )
+                )
+            );
         };
 
         // --- Customers View ---
         const SalesCustomersView = () => {
-            const [items, setItems] = useState([]);
-            const [total, setTotal] = useState(0);
-            const [page, setPage] = useState(1);
-            const [tier, setTier] = useState('');
-            const [segment, setSegment] = useState('');
+            const [allCustomers, setAllCustomers] = useState([]);
+            const [tierFilter, setTierFilter] = useState('');
+            const [segFilter, setSegFilter] = useState('');
             const [search, setSearch] = useState('');
-            const [sortBy, setSortBy] = useState('ltv');
+            const [sortBy, setSortBy] = useState('revenue');
+            const [page, setPage] = useState(1);
             const [detail, setDetail] = useState(null);
             const [loading, setLoading] = useState(true);
+            const pageSize = 50;
 
-            const load = () => {
-                setLoading(true);
-                const p = new URLSearchParams({page,page_size:50});
-                if(tier) p.set('tier',tier); if(segment) p.set('segment',segment); if(search) p.set('search',search); p.set('sort_by',sortBy);
-                fetch('/api/analytics/customers?'+p).then(r=>r.json()).then(d=>{setItems(d.items||[]);setTotal(d.total||0);setLoading(false);}).catch(()=>setLoading(false));
-            };
-            useEffect(load, [page,tier,segment,sortBy]);
+            useEffect(() => { fetchJson('customers_top.json').then(d => { setAllCustomers(d || []); setLoading(false); }); }, []);
 
-            const showDetail = mb_id => {
-                fetch('/api/analytics/customers/'+mb_id).then(r=>r.json()).then(d=>setDetail(d)).catch(()=>{});
-            };
+            let filtered = allCustomers;
+            if (tierFilter) filtered = filtered.filter(c => c.tier === tierFilter);
+            if (segFilter) filtered = filtered.filter(c => c.segment === segFilter);
+            if (search) { const s = search.toLowerCase(); filtered = filtered.filter(c => c.mb_id?.toLowerCase().includes(s)); }
 
-            return (<>
-                <div style={{display:'flex',gap:10,marginBottom:14,flexWrap:'wrap',alignItems:'center'}}>
-                    <input value={search} onChange={e=>setSearch(e.target.value)} onKeyUp={e=>{if(e.key==='Enter')load();}} placeholder="고객 ID / 이메일 / 이름 검색..." style={{flex:1,minWidth:180,padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}} />
-                    <select value={tier} onChange={e=>{setTier(e.target.value);setPage(1);}} style={{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
-                        <option value="">전체 등급</option>{Object.entries(TIER_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
-                    </select>
-                    <select value={segment} onChange={e=>{setSegment(e.target.value);setPage(1);}} style={{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
-                        <option value="">전체 세그먼트</option>{Object.entries(SEG_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
-                    </select>
-                    <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}>
-                        <option value="ltv">LTV순</option><option value="orders">주문수순</option><option value="recency">최근구매순</option><option value="aov">AOV순</option>
-                    </select>
-                </div>
-                <div style={{fontSize:'0.78rem',color:'#64748b',marginBottom:10}}>{tier&&(TIER_LABELS[tier]+' / ')}{segment&&(SEG_LABELS[segment]+' / ')}전체 {fmtN(total)}명</div>
-                {loading ? <div style={{padding:40,textAlign:'center',color:'#94a3b8'}}>로딩 중...</div> :
-                <SalesCard>
-                    <div style={{overflowX:'auto'}}>
-                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}}>
-                            <thead><tr style={{background:'#f8fafc'}}>{['회원ID','이름','등급','세그먼트','주문수','누적매출','AOV','LTV','마지막구매'].map(h=><th key={h} style={{padding:'8px 10px',textAlign:['주문수','누적매출','AOV','LTV'].includes(h)?'right':'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>{h}</th>)}</tr></thead>
-                            <tbody>{items.map(c => <tr key={c.mb_id} style={{borderBottom:'1px solid #f0f0f0',cursor:'pointer'}} onClick={()=>showDetail(c.mb_id)}>
-                                <td style={{padding:'8px 10px'}}>{c.mb_id}</td>
-                                <td style={{padding:'8px 10px'}}>{c.name||'-'}</td>
-                                <td style={{padding:'8px 10px'}}><span style={{display:'inline-block',padding:'2px 8px',borderRadius:4,background:TIER_COLORS[c.tier],color:c.tier==='general'?'#555':'white',fontSize:'0.68rem',fontWeight:700}}>{TIER_LABELS[c.tier]||c.tier}</span></td>
-                                <td style={{padding:'8px 10px'}}><span style={{display:'inline-block',padding:'2px 8px',borderRadius:4,background:(SEG_COLORS[c.rfm_segment]||'#95A5A6')+'18',color:SEG_COLORS[c.rfm_segment]||'#95A5A6',fontSize:'0.68rem',fontWeight:500}}>{SEG_LABELS[c.rfm_segment]||c.rfm_segment||'-'}</span></td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtN(c.total_orders)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(c.total_revenue)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtWon(c.avg_order_value)}</td>
-                                <td style={{padding:'8px 10px',textAlign:'right'}}>{fmtBig(c.ltv)}</td>
-                                <td style={{padding:'8px 10px'}}>{c.last_order_date?.slice(0,10)||'-'}</td>
-                            </tr>)}</tbody>
-                        </table>
-                    </div>
-                    <div style={{display:'flex',justifyContent:'center',gap:10,marginTop:12,alignItems:'center',fontSize:'0.78rem'}}>
-                        <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} style={{padding:'5px 14px',border:'1px solid #e5e7eb',borderRadius:6,background:'white',cursor:page<=1?'default':'pointer',opacity:page<=1?0.4:1}}>이전</button>
-                        <span>{page} / {Math.ceil(total/50)||1}</span>
-                        <button onClick={()=>setPage(p=>p+1)} disabled={page>=Math.ceil(total/50)} style={{padding:'5px 14px',border:'1px solid #e5e7eb',borderRadius:6,background:'white',cursor:page>=Math.ceil(total/50)?'default':'pointer',opacity:page>=Math.ceil(total/50)?0.4:1}}>다음</button>
-                    </div>
-                </SalesCard>}
+            if (sortBy === 'revenue') filtered.sort((a,b) => b.total_revenue - a.total_revenue);
+            else if (sortBy === 'orders') filtered.sort((a,b) => b.total_orders - a.total_orders);
+            else if (sortBy === 'recency') filtered.sort((a,b) => (b.last_order_date||'').localeCompare(a.last_order_date||''));
 
-                {detail && <div style={{position:'fixed',right:0,top:0,width:440,height:'100vh',background:'white',boxShadow:'-4px 0 20px rgba(0,0,0,0.12)',zIndex:100,overflowY:'auto',padding:24}}>
-                    <span style={{position:'absolute',top:12,right:16,fontSize:20,cursor:'pointer',color:'#94a3b8'}} onClick={()=>setDetail(null)}>✕</span>
-                    <h2 style={{fontSize:'1.1rem',fontWeight:700,marginBottom:4}}>{detail.customer?.name||detail.customer?.mb_id}</h2>
-                    <div style={{fontSize:'0.75rem',color:'#94a3b8',marginBottom:14}}>{detail.customer?.email||''} / {detail.customer?.mb_id}</div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-                        {[['등급',<span style={{padding:'2px 8px',borderRadius:4,background:TIER_COLORS[detail.customer?.tier],color:detail.customer?.tier==='general'?'#555':'white',fontSize:'0.68rem',fontWeight:700}}>{TIER_LABELS[detail.customer?.tier]}</span>],
-                          ['세그먼트',SEG_LABELS[detail.customer?.rfm_segment]||'-'],['LTV',fmtBig(detail.customer?.ltv)],['총 주문',fmtN(detail.customer?.total_orders)+'건'],
-                          ['평균 AOV',fmtWon(detail.customer?.avg_order_value)],['RFM',`R${detail.customer?.rfm_scores?.r||'-'} F${detail.customer?.rfm_scores?.f||'-'} M${detail.customer?.rfm_scores?.m||'-'}`],
-                          ['첫 구매',detail.customer?.first_order_date?.slice(0,10)||'-'],['마지막 구매',detail.customer?.last_order_date?.slice(0,10)||'-']
-                        ].map(([l,v],i)=><div key={i} style={{fontSize:'0.75rem'}}><div style={{color:'#94a3b8'}}>{l}</div><div style={{fontWeight:600}}>{v}</div></div>)}
-                    </div>
-                    <h4 style={{fontSize:'0.8rem',fontWeight:600,color:'#1e293b',marginBottom:8}}>최근 주문</h4>
-                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.72rem',marginBottom:16}}>
-                        <thead><tr><th style={{padding:'6px 8px',textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>날짜</th><th style={{padding:'6px 8px',textAlign:'right',borderBottom:'1px solid #e5e7eb'}}>금액</th><th style={{padding:'6px 8px',textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>상태</th></tr></thead>
-                        <tbody>{(detail.recent_orders||[]).map((o,i)=><tr key={i} style={{borderBottom:'1px solid #f5f5f5'}}><td style={{padding:'6px 8px'}}>{o.date?.slice(0,10)||'-'}</td><td style={{padding:'6px 8px',textAlign:'right'}}>{fmtWon(o.amount)}</td><td style={{padding:'6px 8px'}}>{o.status}</td></tr>)}</tbody>
-                    </table>
-                    <h4 style={{fontSize:'0.8rem',fontWeight:600,color:'#1e293b',marginBottom:8}}>자주 구매한 상품</h4>
-                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.72rem'}}>
-                        <thead><tr><th style={{padding:'6px 8px',textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>상품ID</th><th style={{padding:'6px 8px',textAlign:'right',borderBottom:'1px solid #e5e7eb'}}>수량</th><th style={{padding:'6px 8px',textAlign:'right',borderBottom:'1px solid #e5e7eb'}}>매출</th></tr></thead>
-                        <tbody>{(detail.top_products||[]).map((p,i)=><tr key={i} style={{borderBottom:'1px solid #f5f5f5'}}><td style={{padding:'6px 8px'}}>{p.it_id}</td><td style={{padding:'6px 8px',textAlign:'right'}}>{fmtN(p.quantity)}</td><td style={{padding:'6px 8px',textAlign:'right'}}>{fmtBig(p.revenue)}</td></tr>)}</tbody>
-                    </table>
-                </div>}
-            </>);
+            const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+            const items = filtered.slice((page-1)*pageSize, page*pageSize);
+            const segOptions = [...new Set(allCustomers.map(c=>c.segment).filter(Boolean))];
+            const tierOptions = [...new Set(allCustomers.map(c=>c.tier).filter(Boolean))];
+
+            if (loading) return React.createElement('div', {style:{padding:40,textAlign:'center',color:'#94a3b8'}}, '\ub85c\ub529 \uc911...');
+
+            return React.createElement(React.Fragment, null,
+                React.createElement('div', {style:{display:'flex',gap:10,marginBottom:14,flexWrap:'wrap',alignItems:'center'}},
+                    React.createElement('input', {value:search, onChange:e=>{setSearch(e.target.value);setPage(1);}, placeholder:'\uace0\uac1d ID \uac80\uc0c9...', style:{flex:1,minWidth:180,padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}}),
+                    React.createElement('select', {value:tierFilter, onChange:e=>{setTierFilter(e.target.value);setPage(1);}, style:{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}},
+                        React.createElement('option', {value:''}, '\uc804\uccb4 \ub4f1\uae09'),
+                        tierOptions.map(t => React.createElement('option', {key:t, value:t}, t))
+                    ),
+                    React.createElement('select', {value:segFilter, onChange:e=>{setSegFilter(e.target.value);setPage(1);}, style:{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}},
+                        React.createElement('option', {value:''}, '\uc804\uccb4 \uc138\uadf8\uba3c\ud2b8'),
+                        segOptions.map(s => React.createElement('option', {key:s, value:s}, SEG_LABELS_KR[s]||s))
+                    ),
+                    React.createElement('select', {value:sortBy, onChange:e=>setSortBy(e.target.value), style:{padding:'7px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.78rem'}},
+                        React.createElement('option', {value:'revenue'}, '\ub9e4\ucd9c\uc21c'),
+                        React.createElement('option', {value:'orders'}, '\uc8fc\ubb38\uc218\uc21c'),
+                        React.createElement('option', {value:'recency'}, '\ucd5c\uadfc\uad6c\ub9e4\uc21c')
+                    )
+                ),
+                React.createElement('div', {style:{fontSize:'0.78rem',color:'#64748b',marginBottom:10}}, '\uac80\uc0c9 \uacb0\uacfc: ' + fmtN(filtered.length) + '\uba85 (TOP 200 \uace0\uac1d \ub370\uc774\ud130)'),
+
+                React.createElement(SalesCard, null,
+                    React.createElement('div', {style:{overflowX:'auto'}},
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}},
+                            React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc'}},
+                                ['\ud68c\uc6d0ID','\ub4f1\uae09','\uc138\uadf8\uba3c\ud2b8','\uc8fc\ubb38\uc218','\ub204\uc801\ub9e4\ucd9c','\uccab\uad6c\ub9e4','\ub9c8\uc9c0\ub9c9\uad6c\ub9e4','RFM'].map(h =>
+                                    React.createElement('th', {key:h, style:{padding:'8px 10px',textAlign:['\uc8fc\ubb38\uc218','\ub204\uc801\ub9e4\ucd9c'].includes(h)?'right':'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, h)
+                                )
+                            )),
+                            React.createElement('tbody', null, items.map(c =>
+                                React.createElement('tr', {key:c.mb_id, style:{borderBottom:'1px solid #f0f0f0',cursor:'pointer'}, onClick:()=>setDetail(detail?.mb_id===c.mb_id?null:c)},
+                                    React.createElement('td', {style:{padding:'8px 10px',fontWeight:500}}, c.mb_id),
+                                    React.createElement('td', {style:{padding:'8px 10px'}}, React.createElement('span', {style:{display:'inline-block',padding:'2px 8px',borderRadius:4,background:(TIER_COLORS[c.tier]||'#BDC3C7')+'22',color:TIER_COLORS[c.tier]||'#555',fontSize:'0.68rem',fontWeight:700}}, c.tier)),
+                                    React.createElement('td', {style:{padding:'8px 10px'}}, React.createElement('span', {style:{display:'inline-block',padding:'2px 8px',borderRadius:4,background:(SEG_COLORS_MAP[c.segment]||'#95A5A6')+'18',color:SEG_COLORS_MAP[c.segment]||'#95A5A6',fontSize:'0.68rem',fontWeight:500}}, SEG_LABELS_KR[c.segment]||c.segment||'-')),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtN(c.total_orders)),
+                                    React.createElement('td', {style:{padding:'8px 10px',textAlign:'right'}}, fmtBig(c.total_revenue)),
+                                    React.createElement('td', {style:{padding:'8px 10px'}}, c.first_order_date||'-'),
+                                    React.createElement('td', {style:{padding:'8px 10px'}}, c.last_order_date||'-'),
+                                    React.createElement('td', {style:{padding:'8px 10px',fontFamily:'monospace',fontSize:'0.7rem'}}, c.rfm||'-')
+                                )
+                            ))
+                        )
+                    ),
+                    React.createElement('div', {style:{display:'flex',justifyContent:'center',gap:10,marginTop:12,alignItems:'center',fontSize:'0.78rem'}},
+                        React.createElement('button', {onClick:()=>setPage(p=>Math.max(1,p-1)), disabled:page<=1, style:{padding:'5px 14px',border:'1px solid #e5e7eb',borderRadius:6,background:'white',cursor:page<=1?'default':'pointer',opacity:page<=1?0.4:1}}, '\uc774\uc804'),
+                        React.createElement('span', null, page + ' / ' + totalPages),
+                        React.createElement('button', {onClick:()=>setPage(p=>Math.min(totalPages,p+1)), disabled:page>=totalPages, style:{padding:'5px 14px',border:'1px solid #e5e7eb',borderRadius:6,background:'white',cursor:page>=totalPages?'default':'pointer',opacity:page>=totalPages?0.4:1}}, '\ub2e4\uc74c')
+                    )
+                ),
+
+                detail && React.createElement('div', {style:{position:'fixed',right:0,top:0,width:400,height:'100vh',background:'white',boxShadow:'-4px 0 20px rgba(0,0,0,0.12)',zIndex:100,overflowY:'auto',padding:24}},
+                    React.createElement('span', {style:{position:'absolute',top:12,right:16,fontSize:20,cursor:'pointer',color:'#94a3b8'}, onClick:()=>setDetail(null)}, '\u2715'),
+                    React.createElement('h2', {style:{fontSize:'1.1rem',fontWeight:700,marginBottom:12}}, detail.mb_id),
+                    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}},
+                        [
+                            ['\ub4f1\uae09', detail.tier],
+                            ['\uc138\uadf8\uba3c\ud2b8', SEG_LABELS_KR[detail.segment]||detail.segment],
+                            ['\ub204\uc801\ub9e4\ucd9c', fmtBig(detail.total_revenue)],
+                            ['\ucd1d \uc8fc\ubb38', fmtN(detail.total_orders)+'\uac74'],
+                            ['RFM', detail.rfm||'-'],
+                            ['\uccab \uad6c\ub9e4', detail.first_order_date||'-'],
+                            ['\ub9c8\uc9c0\ub9c9 \uad6c\ub9e4', detail.last_order_date||'-'],
+                            ['\ud3c9\uade0 AOV', fmtWon(detail.total_orders ? detail.total_revenue / detail.total_orders : 0)]
+                        ].map(([l,v],i) => React.createElement('div', {key:i, style:{fontSize:'0.78rem'}},
+                            React.createElement('div', {style:{color:'#94a3b8',fontSize:'0.68rem'}}, l),
+                            React.createElement('div', {style:{fontWeight:600,marginTop:2}}, v)
+                        ))
+                    )
+                )
+            );
         };
 
         // --- AI Query View ---
         const SalesAiView = () => {
             const [question, setQuestion] = useState('');
             const [result, setResult] = useState(null);
-            const [history, setHistory] = useState([]);
             const [asking, setAsking] = useState(false);
-
-            useEffect(() => { fetch('/api/ai/query/history?limit=10').then(r=>r.json()).then(d=>setHistory(d.history||[])).catch(()=>{}); }, []);
 
             const ask = () => {
                 if(!question.trim()||asking) return;
                 setAsking(true);
                 fetch('/api/ai/query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})})
-                .then(r=>r.json()).then(d=>{setResult(d);setAsking(false);fetch('/api/ai/query/history?limit=10').then(r=>r.json()).then(h=>setHistory(h.history||[]));})
+                .then(r=>r.json()).then(d=>{setResult(d);setAsking(false);})
                 .catch(e=>{setResult({error:e.message});setAsking(false);});
             };
 
-            const chips = ['이번달 매출은 얼마야?','플래티넘 고객 중 최근 3개월 미구매자는?','가장 많이 팔린 상품 TOP 10은?','2024년 vs 2023년 매출 비교','이탈위험 고객 중 LTV 상위 20명','월별 신규 고객 수와 재구매 고객 수 비교'];
+            const chips = ['\uc774\ubc88\ub2ec \ub9e4\ucd9c\uc740 \uc5bc\ub9c8\uc57c?','\uac00\uc7a5 \ub9ce\uc774 \ud314\ub9b0 \uc0c1\ud488 TOP 10\uc740?','2024\ub144 vs 2023\ub144 \ub9e4\ucd9c \ube44\uad50','\uc774\ud0c8\uc704\ud5d8 \uace0\uac1d \uc911 LTV \uc0c1\uc704 20\uba85','\uc6d4\ubcc4 \uc2e0\uaddc \uace0\uac1d \uc218\uc640 \uc7ac\uad6c\ub9e4 \uace0\uac1d \uc218 \ube44\uad50'];
 
-            return (<>
-                <div style={{display:'flex',gap:10,marginBottom:14}}>
-                    <textarea value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask();}}} rows={2} placeholder="데이터에 대해 궁금한 것을 물어보세요..." style={{flex:1,padding:10,border:'2px solid #e5e7eb',borderRadius:8,fontSize:'0.85rem',resize:'none',fontFamily:'inherit'}} />
-                    <button onClick={ask} disabled={asking} style={{padding:'10px 20px',background:'#3b82f6',color:'white',border:'none',borderRadius:8,fontSize:'0.85rem',fontWeight:600,cursor:asking?'not-allowed':'pointer',opacity:asking?0.5:1,whiteSpace:'nowrap'}}>{asking?'분석 중...':'질문하기'}</button>
-                </div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:16}}>
-                    {chips.map(c=><span key={c} onClick={()=>setQuestion(c)} style={{background:'#f0f7ff',border:'1px solid #bfdbfe',color:'#3b82f6',padding:'5px 12px',borderRadius:20,fontSize:'0.72rem',cursor:'pointer'}}>{c}</span>)}
-                </div>
+            return React.createElement(React.Fragment, null,
+                React.createElement('div', {style:{display:'flex',gap:10,marginBottom:14}},
+                    React.createElement('textarea', {value:question, onChange:e=>setQuestion(e.target.value), onKeyDown:e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask();}}, rows:2, placeholder:'\ub370\uc774\ud130\uc5d0 \ub300\ud574 \uad81\uae08\ud55c \uac83\uc744 \ubb3c\uc5b4\ubcf4\uc138\uc694...', style:{flex:1,padding:10,border:'2px solid #e5e7eb',borderRadius:8,fontSize:'0.85rem',resize:'none',fontFamily:'inherit'}}),
+                    React.createElement('button', {onClick:ask, disabled:asking, style:{padding:'10px 20px',background:'#3b82f6',color:'white',border:'none',borderRadius:8,fontSize:'0.85rem',fontWeight:600,cursor:asking?'not-allowed':'pointer',opacity:asking?0.5:1,whiteSpace:'nowrap'}}, asking?'\ubd84\uc11d \uc911...':'\uc9c8\ubb38\ud558\uae30')
+                ),
+                React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:6,marginBottom:16}},
+                    chips.map(c => React.createElement('span', {key:c, onClick:()=>setQuestion(c), style:{background:'#f0f7ff',border:'1px solid #bfdbfe',color:'#3b82f6',padding:'5px 12px',borderRadius:20,fontSize:'0.72rem',cursor:'pointer'}}, c))
+                ),
 
-                {result && !result.error && <SalesCard>
-                    <div style={{background:'#f0f7ff',padding:14,borderRadius:8,marginBottom:12,lineHeight:1.6,fontSize:'0.85rem'}}><strong>{result.explanation}</strong></div>
-                    <div style={{fontSize:'0.72rem',color:'#94a3b8',marginBottom:8}}>{result.latency_ms}ms / {result.total_rows}행</div>
-                    {result.rows?.length > 0 && <div style={{maxHeight:400,overflowY:'auto'}}>
-                        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.75rem'}}>
-                            <thead><tr style={{background:'#f8fafc'}}>{result.columns.map(c=><th key={c} style={{padding:'6px 8px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}>{c}</th>)}</tr></thead>
-                            <tbody>{result.rows.slice(0,50).map((r,i)=><tr key={i} style={{borderBottom:'1px solid #f0f0f0'}}>{result.columns.map(c=><td key={c} style={{padding:'6px 8px'}}>{typeof r[c]==='number'&&r[c]>1000?fmtN(r[c]):r[c]??'-'}</td>)}</tr>)}</tbody>
-                        </table>
-                    </div>}
-                </SalesCard>}
-                {result?.error && <div style={{background:'#fef2f2',padding:14,borderRadius:8,color:'#dc2626',fontSize:'0.85rem'}}>{result.error}</div>}
+                result && !result.error && React.createElement(SalesCard, null,
+                    React.createElement('div', {style:{background:'#f0f7ff',padding:14,borderRadius:8,marginBottom:12,lineHeight:1.6,fontSize:'0.85rem'}}, React.createElement('strong', null, result.explanation)),
+                    result.rows && result.rows.length > 0 && React.createElement('div', {style:{maxHeight:400,overflowY:'auto'}},
+                        React.createElement('table', {style:{width:'100%',borderCollapse:'collapse',fontSize:'0.75rem'}},
+                            React.createElement('thead', null, React.createElement('tr', {style:{background:'#f8fafc'}}, result.columns.map(c => React.createElement('th', {key:c, style:{padding:'6px 8px',textAlign:'left',fontWeight:600,color:'#64748b',borderBottom:'2px solid #e5e7eb'}}, c)))),
+                            React.createElement('tbody', null, result.rows.slice(0,50).map((r,i) => React.createElement('tr', {key:i, style:{borderBottom:'1px solid #f0f0f0'}}, result.columns.map(c => React.createElement('td', {key:c, style:{padding:'6px 8px'}}, typeof r[c]==='number'&&r[c]>1000?fmtN(r[c]):r[c]!=null?String(r[c]):'-')))))
+                        )
+                    )
+                ),
+                result && result.error && React.createElement('div', {style:{background:'#fef2f2',padding:14,borderRadius:8,color:'#dc2626',fontSize:'0.85rem'}}, result.error),
 
-                <SalesCard title="이전 질문">
-                    <div style={{maxHeight:280,overflowY:'auto'}}>
-                        {history.map(h=><div key={h.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid #f0f0f0',cursor:'pointer',fontSize:'0.78rem'}} onClick={()=>setQuestion(h.question)}>
-                            <span style={{color:h.success?'#22c55e':'#ef4444'}}>{h.success?'OK':'ERR'}</span>
-                            <span style={{flex:1}}>{h.question}</span>
-                            <span style={{color:'#94a3b8',fontSize:'0.68rem'}}>{h.latency_ms}ms</span>
-                        </div>)}
-                        {!history.length && <div style={{padding:20,textAlign:'center',color:'#94a3b8',fontSize:'0.78rem'}}>아직 질문 이력이 없습니다.</div>}
-                    </div>
-                </SalesCard>
-            </>);
+                React.createElement(SalesCard, {title:'\uc548\ub0b4'},
+                    React.createElement('div', {style:{padding:12,color:'#64748b',fontSize:'0.8rem',lineHeight:1.7}},
+                        'AI \ub370\uc774\ud130 \uc870\ud68c \uae30\ub2a5\uc740 \uc11c\ubc84 DB\uc640 \uc5f0\ub3d9\ub418\uc5b4 \ub3d9\uc791\ud569\ub2c8\ub2e4. \ud604\uc7ac \uc815\uc801 \ub370\uc774\ud130 \ubaa8\ub4dc\uc5d0\uc11c\ub294 \ub300\uc2dc\ubcf4\ub4dc, RFM, \ucf54\ud638\ud2b8, \uc0c1\ud488, \uace0\uac1d \ud0ed\uc758 \ubd84\uc11d \ub370\uc774\ud130\ub97c \ud655\uc778\ud558\uc138\uc694.'
+                    )
+                )
+            );
         };
 
         // --- Main Analytics Container ---
         const SalesAnalyticsPage = ({view, setActiveTab}) => {
-            const titles = {salesDashboard:'매출 대시보드',salesRfm:'RFM 분석',salesCohort:'코호트 분석',salesProducts:'상품 분석',salesCustomers:'고객 탐색',salesAi:'AI 데이터 조회'};
-            return (<>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
-                    <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}>{titles[view]||'분석'}</h1>
-                    <div style={{display:'flex',gap:6}}>
-                        <button onClick={()=>{if(confirm('전체 분석을 재계산하시겠습니까?'))fetch('/api/analytics/recalculate',{method:'POST'}).then(r=>r.json()).then(d=>alert('재계산 시작: '+(d.pipeline||'processing'))).catch(e=>alert('실패: '+e.message));}} style={{padding:'6px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem',background:'white',cursor:'pointer'}}>데이터 재계산</button>
-                        <button onClick={()=>{const since=prompt('동기화 시작일 (YYYY-MM-DD):',new Date(Date.now()-30*86400000).toISOString().slice(0,10));if(since)fetch('/api/analytics/sync/shopify?since='+since,{method:'POST'}).then(()=>alert('Shopify 동기화 시작')).catch(e=>alert('실패: '+e.message));}} style={{padding:'6px 12px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:'0.75rem',background:'white',cursor:'pointer'}}>Shopify 동기화</button>
-                    </div>
-                </div>
-                {view === 'salesDashboard' && <SalesDashboardView setActiveTab={setActiveTab} />}
-                {view === 'salesRfm' && <SalesRfmView setActiveTab={setActiveTab} />}
-                {view === 'salesCohort' && <SalesCohortView />}
-                {view === 'salesProducts' && <SalesProductsView />}
-                {view === 'salesCustomers' && <SalesCustomersView />}
-                {view === 'salesAi' && <SalesAiView />}
-            </>);
+            const titles = {salesDashboard:'\ub9e4\ucd9c \ub300\uc2dc\ubcf4\ub4dc',salesRfm:'RFM \ubd84\uc11d',salesCohort:'\ucf54\ud638\ud2b8 \ubd84\uc11d',salesProducts:'\uc0c1\ud488 \ubd84\uc11d',salesCustomers:'\uace0\uac1d \ud0d0\uc0c9',salesAi:'AI \ub370\uc774\ud130 \uc870\ud68c'};
+            return React.createElement(React.Fragment, null,
+                React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}},
+                    React.createElement('h1', {style:{fontSize:'1.5rem',fontWeight:800,color:'#1e293b'}}, titles[view]||'\ubd84\uc11d'),
+                    React.createElement('div', {style:{fontSize:'0.72rem',color:'#94a3b8'}}, '\ub370\uc774\ud130 \uae30\uac04: 2022-01 ~ 2026-03')
+                ),
+                view === 'salesDashboard' && React.createElement(SalesDashboardView, {setActiveTab}),
+                view === 'salesRfm' && React.createElement(SalesRfmView, {setActiveTab}),
+                view === 'salesCohort' && React.createElement(SalesCohortView, null),
+                view === 'salesProducts' && React.createElement(SalesProductsView, null),
+                view === 'salesCustomers' && React.createElement(SalesCustomersView, null),
+                view === 'salesAi' && React.createElement(SalesAiView, null)
+            );
         };
 
         // ============= MAIN APP =============

@@ -4015,9 +4015,34 @@ _analytics_logger = logging.getLogger("ople.analytics")
 # ██  ANALYTICS DASHBOARD API
 # ═════════════════════════════════════════════════════════════════════
 
+def _load_static_json(name: str):
+    """Load pre-computed analytics JSON from static/data/analytics/."""
+    p = Path(__file__).parent.parent / "static" / "data" / "analytics" / name
+    if p.exists():
+        import json as _json
+        return _json.loads(p.read_text())
+    return None
+
+@app.get("/api/analytics/static/{name}")
+async def analytics_static_json(name: str):
+    """Serve pre-computed analytics JSON files."""
+    allowed = {"dashboard", "monthly", "rfm_segments", "tier_distribution",
+               "customers_top", "cohort", "products_top"}
+    if name not in allowed:
+        raise HTTPException(status_code=404, detail="Not found")
+    data = _load_static_json(f"{name}.json")
+    if data is None:
+        raise HTTPException(status_code=404, detail="Data not available")
+    return data
+
 @app.get("/api/analytics/dashboard")
 async def analytics_dashboard_kpi(db: Session = Depends(get_db)):
-    """대시보드 핵심 KPI — 이번달 vs 지난달."""
+    """대시보드 핵심 KPI — DB 우선, 없으면 정적 JSON 폴백."""
+    total_customers = db.query(func.count(AnalyticsCustomer.id)).scalar() or 0
+    if total_customers == 0:
+        static = _load_static_json("dashboard.json")
+        if static:
+            return static
     now = datetime.utcnow()
     this_month = now.strftime("%Y-%m")
     last_month = (now.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
@@ -4027,7 +4052,6 @@ async def analytics_dashboard_kpi(db: Session = Depends(get_db)):
     previous = db.query(AnalyticsMonthlyStats).filter(
         AnalyticsMonthlyStats.month == last_month).first()
 
-    total_customers = db.query(func.count(AnalyticsCustomer.id)).scalar() or 0
     total_revenue = db.query(func.sum(AnalyticsCustomer.total_revenue)).scalar() or 0
 
     tier_dist = dict(
@@ -4064,6 +4088,10 @@ async def analytics_monthly(
     rows = (db.query(AnalyticsMonthlyStats)
             .order_by(desc(AnalyticsMonthlyStats.month))
             .limit(months).all())
+    if not rows:
+        static = _load_static_json("monthly.json")
+        if static:
+            return {"months": static[-months:], "count": min(len(static), months)}
     return {"months": [_monthly_to_dict(r) for r in reversed(rows)], "count": len(rows)}
 
 
@@ -4081,6 +4109,10 @@ async def analytics_rfm(db: Session = Depends(get_db)):
         .filter(AnalyticsCustomer.rfm_segment.isnot(None))
         .group_by(AnalyticsCustomer.rfm_segment).all()
     )
+    if not current:
+        static = _load_static_json("rfm_segments.json")
+        if static:
+            return static
     return {
         "current": [
             {"segment": r[0], "count": r[1], "revenue": float(r[2] or 0),
@@ -4097,6 +4129,10 @@ async def analytics_cohort(db: Session = Depends(get_db)):
         AnalyticsCohortRetention.cohort_year,
         AnalyticsCohortRetention.period_year,
     ).all()
+    if not rows:
+        static = _load_static_json("cohort.json")
+        if static:
+            return static
     matrix = {}
     for r in rows:
         if r.cohort_year not in matrix:
@@ -4130,6 +4166,10 @@ async def analytics_top_products(
             q = q.filter(AnalyticsOrder.order_month.like(f"{period}%"))
 
     rows = q.group_by(AnalyticsOrderItem.it_id).order_by(desc("revenue")).limit(limit).all()
+    if not rows:
+        static = _load_static_json("products_top.json")
+        if static:
+            return {"products": static[:limit], "period": period or "all"}
     return {
         "products": [
             {"rank": i+1, "it_id": r[0], "revenue": float(r[1] or 0),
@@ -4156,6 +4196,10 @@ async def analytics_tier_summary(db: Session = Depends(get_db)):
             func.avg(AnalyticsCustomer.total_orders),
         ).group_by(AnalyticsCustomer.tier).all()
     )
+    if not rows:
+        static = _load_static_json("tier_distribution.json")
+        if static:
+            return static
     return {"tiers": [
         {"tier": r[0] or "general", "count": r[1],
          "revenue": float(r[2] or 0), "avg_aov": round(float(r[3] or 0)),
@@ -4199,6 +4243,16 @@ async def analytics_customers(
     }
     q = q.order_by(sort_map.get(sort_by, desc(AnalyticsCustomer.ltv)))
     total = q.count()
+    if total == 0 and not search:
+        static = _load_static_json("customers_top.json")
+        if static:
+            items = static
+            if tier:
+                items = [c for c in items if c.get("tier") == tier]
+            if segment:
+                items = [c for c in items if c.get("segment") == segment]
+            return {"total": len(items), "page": page, "page_size": page_size,
+                    "items": items[(page-1)*page_size : page*page_size]}
     rows = q.offset((page - 1) * page_size).limit(page_size).all()
 
     return {"total": total, "page": page, "page_size": page_size,

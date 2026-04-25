@@ -5774,7 +5774,7 @@
             return React.createElement('div', {style:{position:'relative',height}}, React.createElement('canvas', {ref}));
         };
 
-        const fetchJson = (path) => fetch('/static/data/analytics/' + path).then(r => r.json()).catch(() => null);
+        const fetchJson = (path) => fetch('/api/analytics/static/' + path.replace('.json','')).then(r => r.json()).catch(() => null);
 
         // --- Sales Dashboard View ---
         const SalesDashboardView = ({setActiveTab}) => {

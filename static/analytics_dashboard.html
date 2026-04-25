@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPLE Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --primary: #1B4F72;
+  --secondary: #2E86C1;
+  --accent: #E74C3C;
+  --green: #27AE60;
+  --gold: #F1C40F;
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --text: #2C3E50;
+  --text-light: #7f8c8d;
+  --border: #e0e4e8;
+  --radius: 10px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+/* Layout */
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: var(--primary); color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; }
+.sidebar h2 { padding: 0 20px; font-size: 18px; margin-bottom: 20px; opacity: 0.9; }
+.sidebar .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 20px; cursor: pointer; transition: background 0.2s; font-size: 14px; }
+.sidebar .nav-item:hover, .sidebar .nav-item.active { background: rgba(255,255,255,0.15); }
+.sidebar .nav-item .icon { font-size: 18px; }
+.main { margin-left: 220px; flex: 1; padding: 24px; }
+
+/* Page header */
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 24px; color: var(--primary); }
+.page-header p { color: var(--text-light); margin-top: 4px; font-size: 14px; }
+
+/* KPI Grid */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: var(--card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); }
+.kpi-card .icon { font-size: 24px; margin-bottom: 8px; }
+.kpi-card .label { font-size: 12px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-card .value { font-size: 24px; font-weight: 700; color: var(--primary); margin: 4px 0; }
+.kpi-card .change { font-size: 13px; }
+.kpi-card .change.up { color: var(--green); }
+.kpi-card .change.down { color: var(--accent); }
+.kpi-card.alert { border-color: var(--accent); border-width: 2px; }
+
+/* Cards */
+.card { background: var(--card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+.card h3 { font-size: 16px; margin-bottom: 16px; color: var(--primary); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Chart */
+.chart-container { position: relative; height: 300px; }
+
+/* Tables */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { background: var(--primary); color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
+.data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.data-table tr:hover { background: #f0f4f8; }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Tier badges */
+.tier-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 11px; font-weight: 700; }
+.tier-platinum { background: var(--primary); }
+.tier-gold { background: #D4AC0D; }
+.tier-silver { background: #95A5A6; }
+.tier-bronze { background: #CD6155; }
+.tier-general { background: #BDC3C7; color: #555; }
+
+.segment-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #EBF5FB; color: var(--secondary); font-size: 11px; }
+
+/* AI Query */
+.ai-input { display: flex; gap: 12px; margin-bottom: 16px; }
+.ai-input textarea { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: var(--radius); font-size: 14px; resize: none; font-family: inherit; }
+.ai-input textarea:focus { outline: none; border-color: var(--secondary); }
+.ai-input button { padding: 12px 24px; background: var(--secondary); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.ai-input button:hover { background: var(--primary); }
+.ai-input button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.example-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.example-chip { background: #EBF5FB; border: 1px solid #AED6F1; color: var(--secondary); padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.example-chip:hover { background: var(--secondary); color: white; }
+
+.ai-result { margin-top: 20px; }
+.ai-explanation { background: #EBF5FB; padding: 16px; border-radius: var(--radius); margin-bottom: 16px; line-height: 1.6; }
+.ai-explanation h3 { margin-bottom: 8px; }
+.sql-toggle { cursor: pointer; color: var(--secondary); font-size: 13px; margin-bottom: 8px; }
+.sql-code { background: #2C3E50; color: #ECF0F1; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; overflow-x: auto; white-space: pre-wrap; display: none; margin-bottom: 16px; }
+.sql-code.show { display: block; }
+.meta-info { color: var(--text-light); font-size: 12px; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-bar input, .filter-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+.filter-bar input { flex: 1; min-width: 200px; }
+
+/* Pagination */
+.pagination { display: flex; justify-content: center; gap: 12px; margin-top: 16px; align-items: center; }
+.pagination button { padding: 6px 16px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+
+/* Reports */
+.report-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; background: white; }
+.report-info h4 { margin-bottom: 4px; }
+.report-meta { font-size: 12px; color: var(--text-light); }
+.btn-primary { padding: 10px 20px; background: var(--secondary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.btn-primary:hover { background: var(--primary); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.status-ok { color: var(--green); }
+.status-err { color: var(--accent); }
+
+.loading { text-align: center; padding: 40px; color: var(--text-light); }
+.empty { text-align: center; padding: 40px; color: var(--text-light); font-size: 14px; }
+
+/* History */
+.history-list { max-height: 300px; overflow-y: auto; }
+.history-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px; }
+.history-item:hover { background: #f9f9f9; }
+.history-item .time { margin-left: auto; color: var(--text-light); font-size: 11px; }
+
+/* Customer detail panel */
+.detail-panel { position: fixed; right: 0; top: 0; width: 420px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.1); z-index: 100; overflow-y: auto; padding: 24px; }
+.detail-panel .close-btn { position: absolute; top: 12px; right: 16px; font-size: 20px; cursor: pointer; color: var(--text-light); }
+.detail-panel h2 { margin-bottom: 16px; }
+.detail-section { margin-bottom: 20px; }
+.detail-section h4 { margin-bottom: 8px; color: var(--primary); font-size: 14px; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.detail-item { font-size: 13px; }
+.detail-item .dl { color: var(--text-light); }
+.detail-item .dv { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <h2>OPLE Analytics</h2>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> 매출 대시보드</div>
+    <div class="nav-item" onclick="showPage('customers')"><span class="icon">👥</span> 고객 분석</div>
+    <div class="nav-item" onclick="showPage('ai')"><span class="icon">🤖</span> AI 데이터 조회</div>
+    <div class="nav-item" onclick="showPage('reports')"><span class="icon">📋</span> 자동 리포트</div>
+    <div style="border-top:1px solid rgba(255,255,255,0.2);margin:16px 20px"></div>
+    <div class="nav-item" onclick="triggerRecalculate()"><span class="icon">🔄</span> 데이터 재계산</div>
+    <div class="nav-item" onclick="triggerSync()"><span class="icon">☁️</span> Shopify 동기화</div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard">
+      <div class="page-header">
+        <h1>📊 매출 대시보드</h1>
+        <p>실시간 핵심 지표 모니터링</p>
+      </div>
+      <div id="kpi-grid" class="kpi-grid"><div class="loading">데이터 로딩 중...</div></div>
+      <div class="card">
+        <h3>월별 매출 추이</h3>
+        <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+      </div>
+      <div class="two-col">
+        <div class="card"><h3>고객 등급 분포</h3><canvas id="tierChart" height="250"></canvas></div>
+        <div class="card"><h3>RFM 세그먼트</h3><canvas id="rfmChart" height="250"></canvas></div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS PAGE -->
+    <div id="page-customers" style="display:none">
+      <div class="page-header">
+        <h1>👥 고객 분석</h1>
+        <p id="customer-count">전체 고객</p>
+      </div>
+      <div class="filter-bar">
+        <input type="text" id="cust-search" placeholder="고객 ID 또는 이메일 검색..." onkeyup="if(event.key==='Enter')loadCustomers()">
+        <select id="cust-tier" onchange="loadCustomers()">
+          <option value="">전체 등급</option>
+          <option value="platinum">플래티넘</option>
+          <option value="gold">골드</option>
+          <option value="silver">실버</option>
+          <option value="bronze">브론즈</option>
+          <option value="general">일반</option>
+        </select>
+        <select id="cust-segment" onchange="loadCustomers()">
+          <option value="">전체 세그먼트</option>
+          <option value="champion">챔피언</option>
+          <option value="loyal">충성고객</option>
+          <option value="potential">유망고객</option>
+          <option value="at_risk">이탈위험</option>
+          <option value="hibernating">휴면</option>
+        </select>
+        <select id="cust-sort" onchange="loadCustomers()">
+          <option value="ltv">LTV순</option>
+          <option value="orders">주문수순</option>
+          <option value="recency">최근구매순</option>
+          <option value="aov">AOV순</option>
+        </select>
+      </div>
+      <div id="customer-table-wrap"></div>
+    </div>
+
+    <!-- AI QUERY PAGE -->
+    <div id="page-ai" style="display:none">
+      <div class="page-header">
+        <h1>🤖 AI 데이터 조회</h1>
+        <p>자연어로 질문하면 AI가 데이터를 조회합니다</p>
+      </div>
+      <div class="ai-input">
+        <textarea id="ai-question" rows="2" placeholder="데이터에 대해 궁금한 것을 물어보세요..."
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI()}"></textarea>
+        <button onclick="askAI()" id="ai-btn">질문하기</button>
+      </div>
+      <div class="example-chips">
+        <span class="example-chip" onclick="setQ('이번달 매출은 얼마야?')">이번달 매출은?</span>
+        <span class="example-chip" onclick="setQ('플래티넘 고객 중 최근 3개월 미구매자는?')">플래티넘 미구매자</span>
+        <span class="example-chip" onclick="setQ('가장 많이 팔린 상품 TOP 10은?')">베스트셀러 TOP10</span>
+        <span class="example-chip" onclick="setQ('2024년 vs 2023년 매출 비교')">연도별 매출 비교</span>
+        <span class="example-chip" onclick="setQ('서울 지역 고객 평균 주문금액은?')">서울 평균 AOV</span>
+        <span class="example-chip" onclick="setQ('이탈위험 고객 중 LTV 상위 20명')">이탈위험 VIP</span>
+      </div>
+      <div id="ai-result"></div>
+      <div class="card" style="margin-top:20px">
+        <h3>이전 질문</h3>
+        <div id="ai-history" class="history-list"></div>
+      </div>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div id="page-reports" style="display:none">
+      <div class="page-header">
+        <h1>📋 자동 리포트</h1>
+        <p>주간/월간 분석 리포트 자동 발송 관리</p>
+      </div>
+      <button class="btn-primary" onclick="showCreateReport()">+ 새 리포트 만들기</button>
+      <div id="reports-list" style="margin-top:16px"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Detail Panel -->
+<div id="detail-panel" class="detail-panel" style="display:none"></div>
+
+<script>
+const API_BASE = '';  // same origin
+const TOKEN = localStorage.getItem('ople_token') || '';
+
+async function apiFetch(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (TOKEN) headers['Authorization'] = `Bearer ${TOKEN}`;
+  const r = await fetch(API_BASE + path, { headers, ...opts });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+function fmt(n) { return n ? Math.round(n).toLocaleString() : '0'; }
+function fmtCurrency(n) { return n ? '₩' + Math.round(n).toLocaleString() : '₩0'; }
+function fmtBig(n) {
+  if (!n) return '₩0';
+  if (n >= 1e8) return (n/1e8).toFixed(1) + '억';
+  if (n >= 1e4) return Math.round(n/1e4).toLocaleString() + '만';
+  return fmtCurrency(n);
+}
+function timeAgo(d) {
+  if (!d) return '';
+  const s = (Date.now() - new Date(d).getTime()) / 1000;
+  if (s < 60) return '방금'; if (s < 3600) return Math.floor(s/60) + '분 전';
+  if (s < 86400) return Math.floor(s/3600) + '시간 전';
+  return Math.floor(s/86400) + '일 전';
+}
+
+const TIER_LABELS = { platinum: '플래티넘', gold: '골드', silver: '실버', bronze: '브론즈', general: '일반' };
+const SEG_LABELS = { champion: '챔피언', loyal: '충성', potential: '유망', new: '신규',
+  need_attention: '관심필요', about_to_sleep: '이탈직전', at_risk: '이탈위험', cant_lose: '놓칠수없는', hibernating: '휴면' };
+
+// ── PAGE NAVIGATION ──
+function showPage(id) {
+  ['dashboard','customers','ai','reports'].forEach(p => {
+    document.getElementById('page-' + p).style.display = p === id ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach((el, i) => {
+    el.classList.toggle('active', i === ['dashboard','customers','ai','reports'].indexOf(id));
+  });
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'customers') loadCustomers();
+  if (id === 'ai') loadAiHistory();
+  if (id === 'reports') loadReports();
+}
+
+// ── DASHBOARD ──
+let dashLoaded = false;
+async function loadDashboard() {
+  if (dashLoaded) return;
+  try {
+    const [dash, trend] = await Promise.all([
+      apiFetch('/api/analytics/dashboard'),
+      apiFetch('/api/analytics/monthly?months=12'),
+    ]);
+    renderKPIs(dash);
+    renderRevenueChart(trend.months || []);
+    renderTierChart(dash.tier_distribution || {});
+    renderRfmChart(dash.rfm_distribution || {});
+    dashLoaded = true;
+  } catch (e) {
+    document.getElementById('kpi-grid').innerHTML = `<div class="empty">데이터가 없습니다. 먼저 데이터를 동기화하세요.</div>`;
+  }
+}
+
+function renderKPIs(d) {
+  const cur = d.current_month || {};
+  const kpis = [
+    { icon: '💰', label: '이번달 매출', value: fmtBig(cur.total_revenue), change: cur.revenue_change_pct },
+    { icon: '📦', label: '이번달 주문', value: fmt(cur.total_orders), change: cur.orders_change_pct },
+    { icon: '👥', label: '전체 고객', value: fmt(d.total_customers) },
+    { icon: '🏷️', label: '평균 AOV', value: fmtCurrency(cur.avg_order_value) },
+    { icon: '⚠️', label: '이탈위험', value: fmt(d.at_risk_customers), alert: d.at_risk_customers > 1000 },
+    { icon: '📈', label: '누적 매출', value: fmtBig(d.total_revenue) },
+  ];
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.alert ? 'alert' : ''}">
+      <div class="icon">${k.icon}</div>
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}</div>
+      ${k.change != null ? `<div class="change ${k.change > 0 ? 'up' : 'down'}">${k.change > 0 ? '▲' : '▼'} ${Math.abs(k.change).toFixed(1)}%</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderRevenueChart(months) {
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+      labels: months.map(m => m.month),
+      datasets: [
+        { label: '매출', data: months.map(m => m.total_revenue), backgroundColor: '#2E86C1aa', borderRadius: 4, yAxisID: 'y' },
+        { label: '주문수', data: months.map(m => m.total_orders), type: 'line', borderColor: '#E74C3C', pointRadius: 3, yAxisID: 'y1' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { position: 'left', ticks: { callback: v => fmtBig(v) } },
+        y1: { position: 'right', grid: { drawOnChartArea: false } },
+      }
+    }
+  });
+}
+
+function renderTierChart(tiers) {
+  const labels = Object.keys(tiers).map(t => TIER_LABELS[t] || t);
+  new Chart(document.getElementById('tierChart'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: Object.values(tiers), backgroundColor: ['#1B4F72','#D4AC0D','#95A5A6','#CD6155','#BDC3C7'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function renderRfmChart(segs) {
+  const labels = Object.keys(segs).map(s => SEG_LABELS[s] || s);
+  new Chart(document.getElementById('rfmChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: '고객수', data: Object.values(segs), backgroundColor: '#2E86C1' }]
+    },
+    options: {
+      responsive: true, indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { callback: v => fmt(v) } } }
+    }
+  });
+}
+
+// ── CUSTOMERS ──
+let custPage = 1;
+async function loadCustomers() {
+  const params = new URLSearchParams({ page: custPage, page_size: 50 });
+  const tier = document.getElementById('cust-tier')?.value;
+  const seg = document.getElementById('cust-segment')?.value;
+  const search = document.getElementById('cust-search')?.value;
+  const sort = document.getElementById('cust-sort')?.value;
+  if (tier) params.set('tier', tier);
+  if (seg) params.set('segment', seg);
+  if (search) params.set('search', search);
+  if (sort) params.set('sort_by', sort);
+
+  try {
+    const d = await apiFetch(`/api/analytics/customers?${params}`);
+    document.getElementById('customer-count').textContent = `전체 ${fmt(d.total)}명`;
+    const wrap = document.getElementById('customer-table-wrap');
+    if (!d.items?.length) { wrap.innerHTML = '<div class="empty">고객 데이터가 없습니다.</div>'; return; }
+    wrap.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>회원ID</th><th>등급</th><th>세그먼트</th><th>주문수</th><th>누적매출</th><th>AOV</th><th>마지막구매</th></tr></thead>
+        <tbody>${d.items.map(c => `
+          <tr onclick="showCustomerDetail('${c.mb_id}')" style="cursor:pointer">
+            <td>${c.mb_id}</td>
+            <td><span class="tier-badge tier-${c.tier}">${TIER_LABELS[c.tier] || c.tier}</span></td>
+            <td><span class="segment-badge">${SEG_LABELS[c.rfm_segment] || c.rfm_segment || '-'}</span></td>
+            <td class="num">${fmt(c.total_orders)}</td>
+            <td class="num">${fmtBig(c.total_revenue)}</td>
+            <td class="num">${fmtCurrency(c.avg_order_value)}</td>
+            <td>${c.last_order?.slice(0, 10) || '-'}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
+      <div class="pagination">
+        <button onclick="custPage--;loadCustomers()" ${custPage <= 1 ? 'disabled' : ''}>이전</button>
+        <span>${custPage} / ${Math.ceil(d.total / 50)}</span>
+        <button onclick="custPage++;loadCustomers()" ${custPage >= Math.ceil(d.total / 50) ? 'disabled' : ''}>다음</button>
+      </div>
+    `;
+  } catch (e) {
+    document.getElementById('customer-table-wrap').innerHTML = '<div class="empty">로딩 실패</div>';
+  }
+}
+
+async function showCustomerDetail(mb_id) {
+  try {
+    const d = await apiFetch(`/api/analytics/customers/${mb_id}`);
+    const c = d.customer;
+    const panel = document.getElementById('detail-panel');
+    panel.style.display = 'block';
+    panel.innerHTML = `
+      <span class="close-btn" onclick="document.getElementById('detail-panel').style.display='none'">✕</span>
+      <h2>${c.mb_id}</h2>
+      <div class="detail-section">
+        <div class="detail-grid">
+          <div class="detail-item"><div class="dl">등급</div><div class="dv"><span class="tier-badge tier-${c.tier}">${TIER_LABELS[c.tier]}</span></div></div>
+          <div class="detail-item"><div class="dl">세그먼트</div><div class="dv">${SEG_LABELS[c.rfm_segment] || '-'}</div></div>
+          <div class="detail-item"><div class="dl">LTV</div><div class="dv">${fmtBig(c.ltv)}</div></div>
+          <div class="detail-item"><div class="dl">총 주문</div><div class="dv">${fmt(c.total_orders)}건</div></div>
+          <div class="detail-item"><div class="dl">평균 AOV</div><div class="dv">${fmtCurrency(c.avg_order_value)}</div></div>
+          <div class="detail-item"><div class="dl">RFM</div><div class="dv">R${c.rfm_scores?.r || '-'} F${c.rfm_scores?.f || '-'} M${c.rfm_scores?.m || '-'}</div></div>
+          <div class="detail-item"><div class="dl">첫 구매</div><div class="dv">${c.first_order?.slice(0,10) || '-'}</div></div>
+          <div class="detail-item"><div class="dl">마지막 구매</div><div class="dv">${c.last_order?.slice(0,10) || '-'}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h4>최근 주문</h4>
+        <table class="data-table"><thead><tr><th>날짜</th><th>금액</th><th>상태</th></tr></thead>
+        <tbody>${(d.recent_orders || []).map(o => `
+          <tr><td>${o.date?.slice(0,10) || '-'}</td><td class="num">${fmtCurrency(o.amount)}</td><td>${o.status}</td></tr>
+        `).join('')}</tbody></table>
+      </div>
+      <div class="detail-section">
+        <h4>자주 구매한 상품</h4>
+        <table class="data-table"><thead><tr><th>상품ID</th><th>수량</th><th>매출</th></tr></thead>
+        <tbody>${(d.top_products || []).map(p => `
+          <tr><td>${p.it_id}</td><td class="num">${fmt(p.quantity)}</td><td class="num">${fmtBig(p.revenue)}</td></tr>
+        `).join('')}</tbody></table>
+      </div>
+    `;
+  } catch(e) { alert('고객 정보 로드 실패'); }
+}
+
+// ── AI QUERY ──
+function setQ(q) { document.getElementById('ai-question').value = q; }
+
+async function askAI() {
+  const q = document.getElementById('ai-question').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('ai-btn');
+  btn.disabled = true; btn.textContent = '분석 중...';
+
+  try {
+    const d = await apiFetch('/api/ai/query', {
+      method: 'POST', body: JSON.stringify({ question: q }),
+    });
+    let tableHtml = '';
+    if (d.rows?.length) {
+      tableHtml = `<table class="data-table"><thead><tr>${d.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${d.rows.slice(0, 50).map(r => `<tr>${d.columns.map(c => `<td class="num">${typeof r[c] === 'number' && r[c] > 1000 ? fmt(r[c]) : r[c] ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
+    document.getElementById('ai-result').innerHTML = `
+      <div class="ai-explanation"><h3>💡 ${d.explanation}</h3></div>
+      <div class="meta-info">${d.latency_ms}ms · ${d.total_rows}행</div>
+      <div class="sql-toggle" onclick="this.nextElementSibling.classList.toggle('show')">▶ SQL 보기</div>
+      <div class="sql-code">${d.sql}</div>
+      ${tableHtml}
+    `;
+    loadAiHistory();
+  } catch(e) {
+    document.getElementById('ai-result').innerHTML = `<div class="ai-explanation" style="background:#FDEDEC">⚠️ ${e.message}</div>`;
+  }
+  btn.disabled = false; btn.textContent = '질문하기';
+}
+
+async function loadAiHistory() {
+  try {
+    const d = await apiFetch('/api/ai/query/history?limit=10');
+    document.getElementById('ai-history').innerHTML = (d.history || []).map(h => `
+      <div class="history-item" onclick="setQ('${h.question.replace(/'/g,"\\'")}')">
+        <span class="${h.success ? 'status-ok' : 'status-err'}">${h.success ? '✓' : '✗'}</span>
+        <span>${h.question}</span>
+        <span class="time">${timeAgo(h.created_at)}</span>
+      </div>
+    `).join('') || '<div class="empty">아직 질문 이력이 없습니다.</div>';
+  } catch(e) {}
+}
+
+// ── REPORTS ──
+async function loadReports() {
+  try {
+    const d = await apiFetch('/api/analytics/reports');
+    const list = document.getElementById('reports-list');
+    if (!d.reports?.length) { list.innerHTML = '<div class="empty">아직 자동 리포트가 없습니다.</div>'; return; }
+    list.innerHTML = d.reports.map(r => `
+      <div class="report-card">
+        <div class="report-info">
+          <h4>${r.name}</h4>
+          <div class="report-meta">${r.type} · ${r.schedule} · ${r.is_active ? '활성' : '비활성'}</div>
+          ${r.last_run ? `<div class="report-meta">마지막: ${r.last_run.slice(0,16)} (${r.last_status})</div>` : ''}
+        </div>
+        <button class="btn-primary btn-sm" onclick="runReport(${r.id})">즉시 실행</button>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+async function runReport(id) {
+  try {
+    await apiFetch(`/api/analytics/reports/${id}/run`, { method: 'POST' });
+    alert('리포트 생성이 시작되었습니다.');
+  } catch(e) { alert('실행 실패: ' + e.message); }
+}
+
+function showCreateReport() {
+  const name = prompt('리포트 이름:');
+  if (!name) return;
+  apiFetch('/api/analytics/reports', {
+    method: 'POST',
+    body: JSON.stringify({ name, report_type: 'weekly', recipients: [], template: 'sales_weekly' }),
+  }).then(() => loadReports()).catch(e => alert(e.message));
+}
+
+// ── SYNC / RECALCULATE ──
+async function triggerRecalculate() {
+  if (!confirm('전체 분석을 재계산하시겠습니까? (수 분 소요)')) return;
+  try {
+    const d = await apiFetch('/api/analytics/recalculate', { method: 'POST' });
+    alert('재계산 시작: ' + d.pipeline);
+    dashLoaded = false;
+  } catch(e) { alert('실패: ' + e.message); }
+}
+
+async function triggerSync() {
+  const since = prompt('동기화 시작일 (YYYY-MM-DD):', new Date(Date.now() - 30*86400000).toISOString().slice(0,10));
+  if (!since) return;
+  try {
+    await apiFetch(`/api/analytics/sync/shopify?since=${since}`, { method: 'POST' });
+    alert('Shopify 동기화 시작');
+  } catch(e) { alert('실패: ' + e.message); }
+}
+
+// Init
+loadDashboard();
+</script>
+</body>
+</html>

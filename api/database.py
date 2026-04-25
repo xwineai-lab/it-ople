@@ -6,8 +6,8 @@ SQLAlchemy + SQLite (dev) / PostgreSQL (prod)
 import os
 from datetime import datetime
 from sqlalchemy import (
-    create_engine, Column, Integer, String, Float, Text, DateTime, Boolean,
-    ForeignKey, JSON, Index
+    create_engine, Column, Integer, BigInteger, String, Float, Text, DateTime,
+    Date, Boolean, ForeignKey, JSON, Index
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -376,3 +376,226 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# ── Analytics System Models ─────────────────────────────
+
+class AnalyticsOrder(Base):
+    """주문 원본 (Shopify + ZIP 통합)"""
+    __tablename__ = "analytics_orders"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    order_id = Column(String(64), unique=True, index=True, nullable=False)
+    source = Column(String(20), default="zip", index=True)        # zip | shopify | webhook
+    mb_id = Column(String(100), index=True)
+    shopify_customer_id = Column(String(64), index=True)
+
+    order_date = Column(DateTime, index=True)
+    order_month = Column(String(7), index=True)
+
+    total_amount = Column(Float, default=0)
+    card_amount = Column(Float, default=0)
+    bank_amount = Column(Float, default=0)
+    point_amount = Column(Float, default=0)
+    discount_amount = Column(Float, default=0)
+    shipping_cost = Column(Float, default=0)
+
+    settle_case = Column(String(50))
+    province = Column(String(50))
+    item_count = Column(Integer, default=0)
+    status = Column(String(20), default="completed")
+    raw_json = Column(JSON)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    items = relationship("AnalyticsOrderItem", back_populates="order",
+                         cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("idx_ao_mb_date", "mb_id", "order_date"),
+        Index("idx_ao_month_source", "order_month", "source"),
+    )
+
+
+class AnalyticsOrderItem(Base):
+    """주문 상세 아이템"""
+    __tablename__ = "analytics_order_items"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    order_id = Column(BigInteger,
+                      ForeignKey("analytics_orders.id", ondelete="CASCADE"),
+                      index=True)
+    it_id = Column(String(64), index=True)
+    item_name = Column(String(500))
+    quantity = Column(Integer, default=0)
+    actual_amount = Column(Float, default=0)
+    status = Column(String(20), default="normal")
+
+    order = relationship("AnalyticsOrder", back_populates="items")
+
+
+class AnalyticsCustomer(Base):
+    """고객 마스터 (LTV, 등급, RFM 포함)"""
+    __tablename__ = "analytics_customers"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    mb_id = Column(String(100), unique=True, index=True, nullable=False)
+    shopify_customer_id = Column(String(64), index=True)
+    email = Column(String(255), index=True)
+    name = Column(String(200))
+    phone = Column(String(50))
+
+    total_orders = Column(Integer, default=0)
+    total_revenue = Column(Float, default=0)
+    total_items = Column(Integer, default=0)
+    avg_order_value = Column(Float, default=0)
+    ltv = Column(Float, default=0)
+
+    tier = Column(String(20), default="general", index=True)
+    tier_updated_at = Column(DateTime)
+
+    rfm_recency = Column(Integer)
+    rfm_frequency = Column(Integer)
+    rfm_monetary = Column(Float)
+    rfm_r_score = Column(Integer)
+    rfm_f_score = Column(Integer)
+    rfm_m_score = Column(Integer)
+    rfm_segment = Column(String(30), index=True)
+
+    first_order_date = Column(DateTime)
+    last_order_date = Column(DateTime)
+    avg_purchase_cycle = Column(Float)
+    province = Column(String(50))
+
+    points_balance = Column(Integer, default=0)
+    points_earned_total = Column(Integer, default=0)
+
+    shopify_synced_at = Column(DateTime)
+    shopify_tags = Column(Text)
+    shopify_metafields_json = Column(JSON)
+
+    is_churned = Column(Boolean, default=False, index=True)
+    churn_risk_score = Column(Float)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_ac_tier_seg", "tier", "rfm_segment"),
+        Index("idx_ac_ltv", "ltv"),
+        Index("idx_ac_last_order", "last_order_date"),
+    )
+
+
+class AnalyticsMonthlyStats(Base):
+    """월별 집계 캐시"""
+    __tablename__ = "analytics_monthly_stats"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    month = Column(String(7), unique=True, index=True, nullable=False)
+
+    total_orders = Column(Integer, default=0)
+    total_revenue = Column(Float, default=0)
+    total_customers = Column(Integer, default=0)
+    new_customers = Column(Integer, default=0)
+    returning_customers = Column(Integer, default=0)
+    avg_order_value = Column(Float, default=0)
+    avg_frequency = Column(Float, default=0)
+
+    revenue_change_pct = Column(Float)
+    orders_change_pct = Column(Float)
+    customers_change_pct = Column(Float)
+
+    top_products_json = Column(JSON)
+    province_dist_json = Column(JSON)
+    hourly_dist_json = Column(JSON)
+    settle_dist_json = Column(JSON)
+
+    cancel_count = Column(Integer, default=0)
+    refund_count = Column(Integer, default=0)
+    point_used = Column(Float, default=0)
+    discount_total = Column(Float, default=0)
+
+    calculated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AnalyticsRfmSnapshot(Base):
+    """RFM 스냅샷 (월별 재계산)"""
+    __tablename__ = "analytics_rfm_snapshots"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    snapshot_date = Column(Date, index=True, nullable=False)
+    segment = Column(String(30), index=True)
+    customer_count = Column(Integer, default=0)
+    total_revenue = Column(Float, default=0)
+    avg_order_value = Column(Float, default=0)
+    avg_frequency = Column(Float, default=0)
+    calculated_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_arfm_date_seg", "snapshot_date", "segment"),
+    )
+
+
+class AnalyticsCohortRetention(Base):
+    """코호트 잔존율 캐시"""
+    __tablename__ = "analytics_cohort_retention"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cohort_year = Column(Integer, index=True)
+    cohort_size = Column(Integer)
+    period_year = Column(Integer)
+    active_count = Column(Integer)
+    retention_rate = Column(Float)
+    calculated_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_acr_yr", "cohort_year", "period_year"),
+    )
+
+
+class AnalyticsCache(Base):
+    """범용 분석 결과 캐시"""
+    __tablename__ = "analytics_cache"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cache_key = Column(String(100), unique=True, index=True, nullable=False)
+    data_json = Column(JSON, nullable=False)
+    ttl_hours = Column(Integer, default=24)
+    calculated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AnalyticsAiQueryLog(Base):
+    """AI 자연어 조회 로그"""
+    __tablename__ = "analytics_ai_query_logs"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, index=True)
+    question = Column(Text, nullable=False)
+    generated_sql = Column(Text)
+    result_summary = Column(Text)
+    result_json = Column(JSON)
+    tokens_used = Column(Integer)
+    latency_ms = Column(Integer)
+    success = Column(Boolean, default=True)
+    error_message = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AnalyticsScheduledReport(Base):
+    """자동 리포트 설정"""
+    __tablename__ = "analytics_scheduled_reports"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(200), nullable=False)
+    report_type = Column(String(30), index=True)
+    schedule_cron = Column(String(50))
+    recipients_json = Column(JSON)
+    template = Column(String(50))
+    filters_json = Column(JSON)
+    is_active = Column(Boolean, default=True)
+    last_run_at = Column(DateTime)
+    last_run_status = Column(String(20))
+    last_run_error = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

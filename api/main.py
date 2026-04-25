@@ -20,7 +20,13 @@ from sqlalchemy import func, desc, case
 import httpx
 from jose import jwt, JWTError
 
-from database import init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob, User, SessionLocal, ShopifyProduct
+from database import (
+    init_db, get_db, Product, Review, IHerbMapping, IHerbProduct, ScrapeJob,
+    User, SessionLocal, ShopifyProduct,
+    AnalyticsOrder, AnalyticsOrderItem, AnalyticsCustomer,
+    AnalyticsMonthlyStats, AnalyticsRfmSnapshot, AnalyticsCohortRetention,
+    AnalyticsCache, AnalyticsAiQueryLog, AnalyticsScheduledReport,
+)
 
 # Add scraper module to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scraper"))
@@ -80,6 +86,8 @@ def startup():
     if db.query(Product).count() == 0:
         seed_demo_data(db)
     db.close()
+    # ── Analytics scheduler ──
+    _start_analytics_scheduler()
 
 # ── WMS Description Data (lazy-loaded) ──────────────────
 _wms_desc_cache = None
@@ -158,6 +166,14 @@ async def ingredients_page():
     if spec_path.exists():
         return spec_path.read_text(encoding="utf-8")
     return "<h1>Ingredients viewer not found</h1>"
+
+
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_dashboard():
+    dashboard_path = static_dir / "analytics_dashboard.html"
+    if dashboard_path.exists():
+        return dashboard_path.read_text(encoding="utf-8")
+    return "<h1>Analytics Dashboard not found</h1><p>Place analytics_dashboard.html in /static/</p>"
 
 
 @app.get("/ops-dashboard")
@@ -3954,6 +3970,980 @@ loadData();
 </script>
 </body>
 </html>""")
+
+
+
+# =====================================================================
+# PATCH FOR: api/main.py
+#
+# 1) IMPORT 수정 (라인 23):
+#    기존:
+#      from database import init_db, get_db, Product, Review, IHerbMapping, \
+#                           IHerbProduct, ScrapeJob, User, SessionLocal, ShopifyProduct
+#    변경:
+#      from database import init_db, get_db, Product, Review, IHerbMapping, \
+#                           IHerbProduct, ScrapeJob, User, SessionLocal, ShopifyProduct, \
+#                           AnalyticsOrder, AnalyticsOrderItem, AnalyticsCustomer, \
+#                           AnalyticsMonthlyStats, AnalyticsRfmSnapshot, \
+#                           AnalyticsCohortRetention, AnalyticsCache, \
+#                           AnalyticsAiQueryLog, AnalyticsScheduledReport
+#
+# 2) startup 이벤트(라인 76-82) 마지막에 스케줄러 시작 1줄 추가:
+#      _start_analytics_scheduler()
+#
+# 3) 아래 코드 전체를 main.py 끝 (if __name__ ... 직전) 에 붙여넣기.
+# =====================================================================
+
+import time as _time
+import re as _re
+import json
+import os
+import logging
+from datetime import datetime, timedelta
+from typing import Optional, List
+from collections import Counter, defaultdict
+
+from fastapi import HTTPException, Depends, Query, BackgroundTasks, Request
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from sqlalchemy import func, desc, or_, text
+
+_analytics_logger = logging.getLogger("ople.analytics")
+
+
+# ═════════════════════════════════════════════════════════════════════
+# ██  ANALYTICS DASHBOARD API
+# ═════════════════════════════════════════════════════════════════════
+
+@app.get("/api/analytics/dashboard")
+async def analytics_dashboard(db: Session = Depends(get_db)):
+    """대시보드 핵심 KPI — 이번달 vs 지난달."""
+    now = datetime.utcnow()
+    this_month = now.strftime("%Y-%m")
+    last_month = (now.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+
+    current = db.query(AnalyticsMonthlyStats).filter(
+        AnalyticsMonthlyStats.month == this_month).first()
+    previous = db.query(AnalyticsMonthlyStats).filter(
+        AnalyticsMonthlyStats.month == last_month).first()
+
+    total_customers = db.query(func.count(AnalyticsCustomer.id)).scalar() or 0
+    total_revenue = db.query(func.sum(AnalyticsCustomer.total_revenue)).scalar() or 0
+
+    tier_dist = dict(
+        db.query(AnalyticsCustomer.tier, func.count(AnalyticsCustomer.id))
+        .group_by(AnalyticsCustomer.tier).all()
+    )
+    rfm_dist = dict(
+        db.query(AnalyticsCustomer.rfm_segment, func.count(AnalyticsCustomer.id))
+        .filter(AnalyticsCustomer.rfm_segment.isnot(None))
+        .group_by(AnalyticsCustomer.rfm_segment).all()
+    )
+    at_risk = db.query(func.count(AnalyticsCustomer.id)).filter(
+        AnalyticsCustomer.rfm_segment.in_(["at_risk", "cant_lose", "about_to_sleep"])
+    ).scalar() or 0
+
+    return {
+        "current_month": _monthly_to_dict(current) if current else None,
+        "previous_month": _monthly_to_dict(previous) if previous else None,
+        "total_customers": total_customers,
+        "total_revenue": total_revenue,
+        "tier_distribution": tier_dist,
+        "rfm_distribution": rfm_dist,
+        "at_risk_customers": at_risk,
+        "generated_at": now.isoformat(),
+    }
+
+
+@app.get("/api/analytics/monthly")
+async def analytics_monthly(
+    months: int = Query(12, ge=1, le=60),
+    db: Session = Depends(get_db),
+):
+    """최근 N개월 월별 트렌드."""
+    rows = (db.query(AnalyticsMonthlyStats)
+            .order_by(desc(AnalyticsMonthlyStats.month))
+            .limit(months).all())
+    return {"months": [_monthly_to_dict(r) for r in reversed(rows)], "count": len(rows)}
+
+
+@app.get("/api/analytics/rfm")
+async def analytics_rfm(db: Session = Depends(get_db)):
+    """RFM 세그먼트 분포."""
+    current = (
+        db.query(
+            AnalyticsCustomer.rfm_segment,
+            func.count(AnalyticsCustomer.id).label("count"),
+            func.sum(AnalyticsCustomer.total_revenue).label("revenue"),
+            func.avg(AnalyticsCustomer.avg_order_value).label("avg_aov"),
+            func.avg(AnalyticsCustomer.total_orders).label("avg_orders"),
+        )
+        .filter(AnalyticsCustomer.rfm_segment.isnot(None))
+        .group_by(AnalyticsCustomer.rfm_segment).all()
+    )
+    return {
+        "current": [
+            {"segment": r[0], "count": r[1], "revenue": float(r[2] or 0),
+             "avg_aov": round(float(r[3] or 0)), "avg_orders": round(float(r[4] or 0), 1)}
+            for r in current
+        ]
+    }
+
+
+@app.get("/api/analytics/cohort")
+async def analytics_cohort(db: Session = Depends(get_db)):
+    """코호트 잔존율 매트릭스."""
+    rows = db.query(AnalyticsCohortRetention).order_by(
+        AnalyticsCohortRetention.cohort_year,
+        AnalyticsCohortRetention.period_year,
+    ).all()
+    matrix = {}
+    for r in rows:
+        if r.cohort_year not in matrix:
+            matrix[r.cohort_year] = {"cohort_size": r.cohort_size, "retention": {}}
+        matrix[r.cohort_year]["retention"][r.period_year] = {
+            "active": r.active_count, "rate": r.retention_rate,
+        }
+    return {"cohorts": matrix}
+
+
+@app.get("/api/analytics/products/top")
+async def analytics_top_products(
+    limit: int = Query(20, ge=1, le=100),
+    period: str = Query(None),
+    db: Session = Depends(get_db),
+):
+    """상품 매출 랭킹."""
+    q = (db.query(
+            AnalyticsOrderItem.it_id,
+            func.sum(AnalyticsOrderItem.actual_amount).label("revenue"),
+            func.sum(AnalyticsOrderItem.quantity).label("total_qty"),
+            func.count(func.distinct(AnalyticsOrder.mb_id)).label("buyer_count"),
+         )
+         .join(AnalyticsOrder, AnalyticsOrder.id == AnalyticsOrderItem.order_id)
+         .filter(AnalyticsOrder.status != "cancelled"))
+
+    if period:
+        if len(period) == 7:
+            q = q.filter(AnalyticsOrder.order_month == period)
+        elif len(period) == 4:
+            q = q.filter(AnalyticsOrder.order_month.like(f"{period}%"))
+
+    rows = q.group_by(AnalyticsOrderItem.it_id).order_by(desc("revenue")).limit(limit).all()
+    return {
+        "products": [
+            {"rank": i+1, "it_id": r[0], "revenue": float(r[1] or 0),
+             "total_qty": int(r[2] or 0), "buyer_count": int(r[3] or 0)}
+            for i, r in enumerate(rows)
+        ],
+        "period": period or "all",
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════
+# ██  CUSTOMER API
+# ═════════════════════════════════════════════════════════════════════
+
+@app.get("/api/analytics/customers/tiers")
+async def analytics_tier_summary(db: Session = Depends(get_db)):
+    """등급별 고객 요약."""
+    rows = (
+        db.query(
+            AnalyticsCustomer.tier,
+            func.count(AnalyticsCustomer.id),
+            func.sum(AnalyticsCustomer.total_revenue),
+            func.avg(AnalyticsCustomer.avg_order_value),
+            func.avg(AnalyticsCustomer.total_orders),
+        ).group_by(AnalyticsCustomer.tier).all()
+    )
+    return {"tiers": [
+        {"tier": r[0] or "general", "count": r[1],
+         "revenue": float(r[2] or 0), "avg_aov": round(float(r[3] or 0)),
+         "avg_orders": round(float(r[4] or 0), 1)}
+        for r in rows
+    ]}
+
+
+@app.get("/api/analytics/customers")
+async def analytics_customers(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    tier: str = Query(None),
+    segment: str = Query(None),
+    search: str = Query(None),
+    sort_by: str = Query("ltv"),
+    churned: Optional[bool] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """고객 목록 (필터/검색/페이징)."""
+    q = db.query(AnalyticsCustomer)
+    if tier:
+        q = q.filter(AnalyticsCustomer.tier == tier)
+    if segment:
+        q = q.filter(AnalyticsCustomer.rfm_segment == segment)
+    if search:
+        like = f"%{search}%"
+        q = q.filter(or_(
+            AnalyticsCustomer.mb_id.ilike(like),
+            AnalyticsCustomer.email.ilike(like),
+            AnalyticsCustomer.name.ilike(like),
+        ))
+    if churned is not None:
+        q = q.filter(AnalyticsCustomer.is_churned == churned)
+
+    sort_map = {
+        "ltv": desc(AnalyticsCustomer.ltv),
+        "orders": desc(AnalyticsCustomer.total_orders),
+        "recency": AnalyticsCustomer.rfm_recency,
+        "aov": desc(AnalyticsCustomer.avg_order_value),
+    }
+    q = q.order_by(sort_map.get(sort_by, desc(AnalyticsCustomer.ltv)))
+    total = q.count()
+    rows = q.offset((page - 1) * page_size).limit(page_size).all()
+
+    return {"total": total, "page": page, "page_size": page_size,
+            "items": [_customer_to_dict(c) for c in rows]}
+
+
+@app.get("/api/analytics/customers/{mb_id}")
+async def analytics_customer_detail(mb_id: str, db: Session = Depends(get_db)):
+    """고객 상세 + 최근 주문."""
+    customer = db.query(AnalyticsCustomer).filter(
+        AnalyticsCustomer.mb_id == mb_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    recent = (db.query(AnalyticsOrder)
+              .filter(AnalyticsOrder.mb_id == mb_id)
+              .order_by(desc(AnalyticsOrder.order_date)).limit(10).all())
+
+    monthly = (
+        db.query(AnalyticsOrder.order_month,
+                 func.count(AnalyticsOrder.id),
+                 func.sum(AnalyticsOrder.total_amount))
+        .filter(AnalyticsOrder.mb_id == mb_id, AnalyticsOrder.status != "cancelled")
+        .group_by(AnalyticsOrder.order_month)
+        .order_by(AnalyticsOrder.order_month).all()
+    )
+
+    top_items = (
+        db.query(AnalyticsOrderItem.it_id,
+                 func.sum(AnalyticsOrderItem.quantity),
+                 func.sum(AnalyticsOrderItem.actual_amount))
+        .join(AnalyticsOrder, AnalyticsOrder.id == AnalyticsOrderItem.order_id)
+        .filter(AnalyticsOrder.mb_id == mb_id)
+        .group_by(AnalyticsOrderItem.it_id)
+        .order_by(desc(func.sum(AnalyticsOrderItem.actual_amount))).limit(10).all()
+    )
+
+    return {
+        "customer": _customer_to_dict(customer),
+        "recent_orders": [
+            {"order_id": o.order_id, "date": o.order_date.isoformat() if o.order_date else None,
+             "amount": o.total_amount, "items": o.item_count, "status": o.status}
+            for o in recent
+        ],
+        "monthly_trend": [
+            {"month": r[0], "orders": r[1], "revenue": float(r[2] or 0)}
+            for r in monthly
+        ],
+        "top_products": [
+            {"it_id": r[0], "quantity": int(r[1] or 0), "revenue": float(r[2] or 0)}
+            for r in top_items
+        ],
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════
+# ██  AI 자연어 데이터 조회
+# ═════════════════════════════════════════════════════════════════════
+
+_AI_SCHEMA_PROMPT = """
+당신은 OPLE 이커머스의 데이터 분석 전문가입니다.
+아래 PostgreSQL 테이블을 참조하여 사용자 질문에 SQL 쿼리로 답하세요.
+
+테이블:
+- analytics_orders: id, order_id, mb_id, order_date, order_month(YYYY-MM), total_amount, card_amount, point_amount, discount_amount, shipping_cost, province, item_count, status(completed/cancelled/refunded), source(zip/shopify)
+- analytics_order_items: id, order_id(FK→analytics_orders.id), it_id, item_name, quantity, actual_amount, status
+- analytics_customers: id, mb_id, email, name, total_orders, total_revenue, avg_order_value, ltv, tier(platinum/gold/silver/bronze/general), rfm_segment(champion/loyal/potential/new/need_attention/about_to_sleep/at_risk/cant_lose/hibernating), rfm_recency, first_order_date, last_order_date, is_churned, points_balance
+- analytics_monthly_stats: month(YYYY-MM), total_orders, total_revenue, total_customers, avg_order_value, cancel_count
+
+규칙:
+1. SELECT 문만 생성하세요 (INSERT/UPDATE/DELETE 금지)
+2. 반드시 LIMIT 100 포함
+3. 금액 단위는 원(KRW)
+4. mb_id가 'storefarm' 또는 'storefarm2' 인 것은 제외
+5. SQL과 함께 결과를 해석하는 한국어 설명도 제공하세요
+
+응답 형식 (JSON):
+{"sql": "SELECT ...", "explanation": "한국어 설명", "chart_type": "bar|line|pie|table|number"}
+"""
+
+
+class AiQueryBody(BaseModel):
+    question: str
+    language: str = "ko"
+
+
+@app.post("/api/ai/query")
+async def ai_data_query(body: AiQueryBody, db: Session = Depends(get_db)):
+    """자연어 질문 → Claude → SQL → 결과."""
+    start = _time.time()
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Anthropic API init failed: {e}")
+
+    # 1) Claude로 SQL 생성
+    try:
+        resp = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            system=_AI_SCHEMA_PROMPT,
+            messages=[{"role": "user", "content": body.question}],
+        )
+        ai_text = resp.content[0].text
+        parsed = _parse_ai_json(ai_text)
+        sql = parsed.get("sql", "")
+        explanation = parsed.get("explanation", "")
+        chart_type = parsed.get("chart_type", "table")
+    except Exception as e:
+        db.add(AnalyticsAiQueryLog(
+            question=body.question, success=False,
+            error_message=str(e)[:500],
+            latency_ms=int((_time.time() - start) * 1000),
+        ))
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"AI 응답 실패: {e}")
+
+    # 2) SQL 실행 (읽기 전용 검증)
+    if not sql or not sql.strip().upper().startswith("SELECT"):
+        raise HTTPException(status_code=400, detail="유효한 SELECT 쿼리가 생성되지 않았습니다")
+
+    try:
+        result = db.execute(text(sql))
+        columns = list(result.keys())
+        rows = [dict(zip(columns, row)) for row in result.fetchall()]
+        for row in rows:
+            for k, v in row.items():
+                if isinstance(v, datetime):
+                    row[k] = v.isoformat()
+                elif isinstance(v, float):
+                    row[k] = round(v, 2)
+    except Exception as e:
+        db.add(AnalyticsAiQueryLog(
+            question=body.question, generated_sql=sql,
+            success=False, error_message=f"SQL error: {e}",
+            latency_ms=int((_time.time() - start) * 1000),
+        ))
+        db.commit()
+        raise HTTPException(status_code=400, detail=f"SQL 실행 오류: {e}")
+
+    latency = int((_time.time() - start) * 1000)
+    db.add(AnalyticsAiQueryLog(
+        question=body.question, generated_sql=sql,
+        result_summary=explanation,
+        result_json={"columns": columns, "rows": rows[:100], "total": len(rows)},
+        tokens_used=(resp.usage.input_tokens + resp.usage.output_tokens) if resp.usage else 0,
+        latency_ms=latency, success=True,
+    ))
+    db.commit()
+
+    return {
+        "question": body.question, "sql": sql,
+        "explanation": explanation, "chart_type": chart_type,
+        "columns": columns, "rows": rows[:100],
+        "total_rows": len(rows), "latency_ms": latency,
+    }
+
+
+@app.get("/api/ai/query/history")
+async def ai_query_history(
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """AI 조회 이력."""
+    logs = (db.query(AnalyticsAiQueryLog)
+            .order_by(desc(AnalyticsAiQueryLog.created_at))
+            .limit(limit).all())
+    return {"history": [
+        {"id": l.id, "question": l.question, "sql": l.generated_sql,
+         "summary": l.result_summary, "success": l.success,
+         "latency_ms": l.latency_ms,
+         "created_at": l.created_at.isoformat() if l.created_at else None}
+        for l in logs
+    ]}
+
+
+def _parse_ai_json(text_body: str) -> dict:
+    """Claude 응답에서 JSON 추출."""
+    m = _re.search(r'\{[^{}]*"sql"[^{}]*\}', text_body, _re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group())
+        except json.JSONDecodeError:
+            pass
+    m2 = _re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text_body, _re.DOTALL)
+    if m2:
+        try:
+            return json.loads(m2.group(1))
+        except json.JSONDecodeError:
+            pass
+    sql_m = _re.search(r'(SELECT\s+.+?)(?:;|\Z)', text_body, _re.DOTALL | _re.IGNORECASE)
+    return {"sql": sql_m.group(1).strip() if sql_m else "", "explanation": text_body[:500], "chart_type": "table"}
+
+
+# ═════════════════════════════════════════════════════════════════════
+# ██  ETL: SYNC & RECALCULATE
+# ═════════════════════════════════════════════════════════════════════
+
+@app.post("/api/analytics/sync/shopify")
+async def analytics_sync_shopify(
+    background_tasks: BackgroundTasks,
+    since: str = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Shopify 주문 동기화 트리거."""
+    if not since:
+        since = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+    background_tasks.add_task(_bg_shopify_sync, since)
+    return {"status": "queued", "since": since}
+
+
+async def _bg_shopify_sync(since: str):
+    """백그라운드: Shopify 주문 → DB."""
+    db = SessionLocal()
+    try:
+        query_filter = f"created_at:>={since}"
+        cursor = None
+        total = 0
+        ORDERS_GQL = """
+        query($cursor: String, $query: String) {
+          orders(first: 50, after: $cursor, query: $query, sortKey: CREATED_AT) {
+            pageInfo { hasNextPage endCursor }
+            edges { node {
+              id legacyResourceId name createdAt
+              totalPriceSet { shopMoney { amount } }
+              totalDiscountsSet { shopMoney { amount } }
+              totalShippingPriceSet { shopMoney { amount } }
+              customer { id legacyResourceId email firstName lastName phone }
+              shippingAddress { province city }
+              lineItems(first: 50) { edges { node {
+                sku title quantity
+                originalTotalSet { shopMoney { amount } }
+              }}}
+              displayFinancialStatus
+            }}
+          }
+        }
+        """
+        while True:
+            data = await _shopify_graphql(ORDERS_GQL, {"cursor": cursor, "query": query_filter})
+            edges = data.get("data", {}).get("orders", {}).get("edges", [])
+            for edge in edges:
+                node = edge["node"]
+                oid = node["legacyResourceId"]
+                if db.query(AnalyticsOrder).filter(AnalyticsOrder.order_id == str(oid)).first():
+                    continue
+                cust = node.get("customer") or {}
+                ship = node.get("shippingAddress") or {}
+                fin = node.get("displayFinancialStatus", "PAID")
+                status_map = {"PAID": "completed", "REFUNDED": "refunded", "VOIDED": "cancelled"}
+                order = AnalyticsOrder(
+                    order_id=str(oid), source="shopify",
+                    mb_id=cust.get("email", ""),
+                    shopify_customer_id=cust.get("legacyResourceId"),
+                    order_date=datetime.fromisoformat(node["createdAt"].replace("Z", "+00:00")),
+                    order_month=node["createdAt"][:7],
+                    total_amount=float(node["totalPriceSet"]["shopMoney"]["amount"]),
+                    discount_amount=float((node.get("totalDiscountsSet") or {}).get("shopMoney", {}).get("amount", 0)),
+                    shipping_cost=float((node.get("totalShippingPriceSet") or {}).get("shopMoney", {}).get("amount", 0)),
+                    province=ship.get("province", ""),
+                    status=status_map.get(fin, "completed"),
+                    item_count=len(node.get("lineItems", {}).get("edges", [])),
+                )
+                for li in node.get("lineItems", {}).get("edges", []):
+                    n = li["node"]
+                    order.items.append(AnalyticsOrderItem(
+                        it_id=n.get("sku", ""), item_name=n.get("title", ""),
+                        quantity=n.get("quantity", 0),
+                        actual_amount=float(n.get("originalTotalSet", {}).get("shopMoney", {}).get("amount", 0)),
+                    ))
+                db.add(order)
+                total += 1
+            db.commit()
+            pi = data.get("data", {}).get("orders", {}).get("pageInfo", {})
+            if not pi.get("hasNextPage"):
+                break
+            cursor = pi.get("endCursor")
+        _analytics_logger.info(f"Shopify sync: {total} new orders since {since}")
+    except Exception as e:
+        _analytics_logger.error(f"Shopify sync error: {e}")
+    finally:
+        db.close()
+
+
+@app.post("/api/analytics/sync/zip")
+async def analytics_sync_zip(
+    background_tasks: BackgroundTasks,
+    year: int = Query(..., ge=2020, le=2030),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """ZIP 파일 ETL 트리거."""
+    zip_dir = os.getenv("ZIP_DATA_DIR", "/data/orders")
+    zip_path = os.path.join(zip_dir, f"ople_order_{year}.zip")
+    background_tasks.add_task(_bg_zip_etl, zip_path, year)
+    return {"status": "queued", "year": year}
+
+
+def _bg_zip_etl(zip_path: str, year: int):
+    """백그라운드: ZIP → DB."""
+    import zipfile
+    db = SessionLocal()
+    total = 0
+    try:
+        if not os.path.exists(zip_path):
+            _analytics_logger.warning(f"ZIP not found: {zip_path}")
+            return
+        with zipfile.ZipFile(zip_path) as zf:
+            json_files = sorted([f for f in zf.namelist() if f.endswith('.json')])
+            for jf in json_files:
+                raw = zf.read(jf).decode('utf-8')
+                try:
+                    orders = json.loads(raw)
+                except json.JSONDecodeError:
+                    try:
+                        from json_repair import repair_json
+                        orders = repair_json(raw, return_objects=True)
+                    except Exception:
+                        continue
+                if not isinstance(orders, list):
+                    continue
+                flat = []
+                for item in orders:
+                    if isinstance(item, list): flat.extend(item)
+                    elif isinstance(item, dict): flat.append(item)
+                orders = flat
+                batch = []
+                for o in orders:
+                    if not isinstance(o, dict): continue
+                    od_id = o.get("od_id", "")
+                    if not od_id: continue
+                    if db.query(AnalyticsOrder.id).filter(AnalyticsOrder.order_id == od_id).first():
+                        continue
+                    card = float(o.get("od_receipt_card", 0) or 0)
+                    bank = float(o.get("od_receipt_bank", 0) or 0)
+                    point = float(o.get("od_receipt_point", 0) or 0)
+                    od_time = o.get("od_time", "")
+                    addr = o.get("od_b_addr1", "") or ""
+                    prov = addr.split()[0] if addr.split() else ""
+                    month_key = jf.replace('migration_', '').replace('.json', '')
+
+                    order = AnalyticsOrder(
+                        order_id=od_id, source="zip",
+                        mb_id=o.get("mb_id", ""),
+                        order_date=_parse_dt(od_time),
+                        order_month=od_time[:7] if len(od_time) >= 7 else month_key,
+                        total_amount=card + bank + point,
+                        card_amount=card, bank_amount=bank, point_amount=point,
+                        discount_amount=float(o.get("od_cart_discount", 0) or 0) + float(o.get("od_coupon", 0) or 0),
+                        shipping_cost=float(o.get("od_send_cost", 0) or 0),
+                        settle_case=o.get("od_settle_case", ""),
+                        province=prov,
+                        item_count=len(o.get("items", [])),
+                        status="completed",
+                    )
+                    for it in o.get("items", []):
+                        if not isinstance(it, dict): continue
+                        order.items.append(AnalyticsOrderItem(
+                            it_id=it.get("it_id", ""), item_name=it.get("it_name", ""),
+                            quantity=int(it.get("ct_qty", 0) or 0),
+                            actual_amount=float(it.get("ct_actual_amount", 0) or 0),
+                            status=it.get("ct_status", "normal"),
+                        ))
+                    batch.append(order)
+                    total += 1
+                    if len(batch) >= 1000:
+                        db.add_all(batch); db.commit(); batch = []
+                if batch:
+                    db.add_all(batch); db.commit()
+        _analytics_logger.info(f"ZIP ETL: {zip_path} → {total} orders")
+    except Exception as e:
+        _analytics_logger.error(f"ZIP ETL error: {e}")
+    finally:
+        db.close()
+
+
+def _parse_dt(s: str):
+    if not s: return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s[:19], fmt)
+        except ValueError:
+            continue
+    return None
+
+
+@app.post("/api/analytics/recalculate")
+async def analytics_recalculate(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """전체 분석 재계산 트리거."""
+    background_tasks.add_task(_bg_recalculate)
+    return {"status": "queued", "pipeline": "monthly → customers → rfm → tiers → cohort"}
+
+
+def _bg_recalculate():
+    """백그라운드: 전체 분석 파이프라인."""
+    db = SessionLocal()
+    try:
+        _recalc_monthly(db)
+        _recalc_customers(db)
+        _recalc_rfm(db)
+        _recalc_tiers(db)
+        _recalc_cohort(db)
+        _analytics_logger.info("Full analytics recalculation complete")
+    except Exception as e:
+        _analytics_logger.error(f"Recalculate error: {e}")
+    finally:
+        db.close()
+
+
+def _recalc_monthly(db: Session):
+    rows = db.execute(text("""
+        SELECT order_month, COUNT(*), SUM(total_amount),
+               COUNT(DISTINCT mb_id), AVG(total_amount),
+               SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END),
+               SUM(point_amount), SUM(discount_amount)
+        FROM analytics_orders
+        WHERE order_month IS NOT NULL
+        GROUP BY order_month ORDER BY order_month
+    """)).fetchall()
+    prev_rev, prev_ord, prev_cust = None, None, None
+    for r in rows:
+        m = r[0]
+        s = db.query(AnalyticsMonthlyStats).filter(AnalyticsMonthlyStats.month == m).first()
+        if not s:
+            s = AnalyticsMonthlyStats(month=m); db.add(s)
+        s.total_orders = r[1]; s.total_revenue = float(r[2] or 0)
+        s.total_customers = r[3]; s.avg_order_value = float(r[4] or 0)
+        s.cancel_count = r[5]; s.point_used = float(r[6] or 0)
+        s.discount_total = float(r[7] or 0)
+        if prev_rev and prev_rev > 0:
+            s.revenue_change_pct = ((s.total_revenue - prev_rev) / prev_rev) * 100
+        if prev_ord and prev_ord > 0:
+            s.orders_change_pct = ((s.total_orders - prev_ord) / prev_ord) * 100
+        s.calculated_at = datetime.utcnow()
+        prev_rev, prev_ord, prev_cust = s.total_revenue, s.total_orders, s.total_customers
+    db.commit()
+
+
+def _recalc_customers(db: Session):
+    rows = db.execute(text("""
+        SELECT mb_id, COUNT(*), SUM(total_amount), SUM(item_count),
+               AVG(total_amount), MIN(order_date), MAX(order_date)
+        FROM analytics_orders
+        WHERE mb_id IS NOT NULL AND mb_id != ''
+          AND mb_id NOT IN ('storefarm','storefarm2')
+          AND status != 'cancelled'
+        GROUP BY mb_id
+    """)).fetchall()
+    now = datetime.utcnow()
+    for r in rows:
+        c = db.query(AnalyticsCustomer).filter(AnalyticsCustomer.mb_id == r[0]).first()
+        if not c:
+            c = AnalyticsCustomer(mb_id=r[0]); db.add(c)
+        c.total_orders = r[1]; c.total_revenue = float(r[2] or 0)
+        c.total_items = int(r[3] or 0); c.avg_order_value = float(r[4] or 0)
+        c.ltv = float(r[2] or 0)
+        c.first_order_date = r[5]; c.last_order_date = r[6]
+        if r[6]:
+            c.rfm_recency = (now - r[6]).days if isinstance(r[6], datetime) else None
+        c.is_churned = (c.rfm_recency or 9999) > 365
+    db.commit()
+
+
+def _classify_rfm_seg(r, f, m):
+    if r >= 4 and f >= 4 and m >= 4: return "champion"
+    if f >= 4 and m >= 4: return "loyal"
+    if r >= 4 and f >= 2: return "potential"
+    if r >= 4: return "new"
+    if r == 3 and f >= 3: return "need_attention"
+    if r == 2 and f >= 3: return "about_to_sleep"
+    if r <= 2 and f >= 4: return "at_risk"
+    if r <= 2 and f >= 2 and m >= 4: return "cant_lose"
+    return "hibernating"
+
+
+def _recalc_rfm(db: Session):
+    custs = db.query(AnalyticsCustomer).filter(AnalyticsCustomer.total_orders > 0).all()
+    n = len(custs)
+    if n == 0: return
+    by_r = sorted(custs, key=lambda c: c.rfm_recency or 9999, reverse=True)
+    by_f = sorted(custs, key=lambda c: c.total_orders)
+    by_m = sorted(custs, key=lambda c: c.total_revenue)
+    for i, c in enumerate(by_r): c.rfm_r_score = int(i / n * 5) + 1
+    for i, c in enumerate(by_f): c.rfm_f_score = int(i / n * 5) + 1
+    for i, c in enumerate(by_m): c.rfm_m_score = int(i / n * 5) + 1
+    for c in custs:
+        c.rfm_segment = _classify_rfm_seg(c.rfm_r_score, c.rfm_f_score, c.rfm_m_score)
+    db.commit()
+    today = datetime.utcnow().date()
+    segs = Counter(c.rfm_segment for c in custs)
+    for seg, cnt in segs.items():
+        sc = [c for c in custs if c.rfm_segment == seg]
+        db.add(AnalyticsRfmSnapshot(
+            snapshot_date=today, segment=seg, customer_count=cnt,
+            total_revenue=sum(c.total_revenue for c in sc),
+            avg_order_value=sum(c.avg_order_value for c in sc) / cnt if cnt else 0,
+            avg_frequency=sum(c.total_orders for c in sc) / cnt if cnt else 0,
+        ))
+    db.commit()
+
+
+def _recalc_tiers(db: Session):
+    thresholds = [(5_000_000, "platinum"), (2_000_000, "gold"),
+                  (500_000, "silver"), (100_000, "bronze")]
+    for c in db.query(AnalyticsCustomer).filter(AnalyticsCustomer.total_orders > 0).all():
+        new_tier = "general"
+        for th, tn in thresholds:
+            if c.ltv >= th: new_tier = tn; break
+        if c.tier != new_tier:
+            c.tier = new_tier; c.tier_updated_at = datetime.utcnow()
+    db.commit()
+
+
+def _recalc_cohort(db: Session):
+    cohorts = db.execute(text("""
+        SELECT EXTRACT(YEAR FROM first_order_date)::int, COUNT(*)
+        FROM analytics_customers
+        WHERE first_order_date IS NOT NULL
+        GROUP BY 1 ORDER BY 1
+    """)).fetchall()
+    for cy, cs in cohorts:
+        if not cy or cs == 0: continue
+        for py in range(int(cy), datetime.utcnow().year + 1):
+            active = db.execute(text("""
+                SELECT COUNT(DISTINCT o.mb_id)
+                FROM analytics_orders o
+                JOIN analytics_customers c ON o.mb_id = c.mb_id
+                WHERE EXTRACT(YEAR FROM c.first_order_date)::int = :cy
+                  AND EXTRACT(YEAR FROM o.order_date)::int = :py
+                  AND o.status != 'cancelled'
+            """), {"cy": int(cy), "py": py}).scalar()
+            rate = round(active / cs * 100, 2) if cs > 0 else 0
+            row = db.query(AnalyticsCohortRetention).filter(
+                AnalyticsCohortRetention.cohort_year == int(cy),
+                AnalyticsCohortRetention.period_year == py,
+            ).first()
+            if not row:
+                row = AnalyticsCohortRetention(cohort_year=int(cy), period_year=py); db.add(row)
+            row.cohort_size = cs; row.active_count = active
+            row.retention_rate = rate; row.calculated_at = datetime.utcnow()
+    db.commit()
+
+
+# ═════════════════════════════════════════════════════════════════════
+# ██  AUTO REPORTS
+# ═════════════════════════════════════════════════════════════════════
+
+class ReportCreateBody(BaseModel):
+    name: str
+    report_type: str = "weekly"
+    schedule_cron: str = "0 9 * * 1"
+    recipients: list = []
+    template: str = "sales_weekly"
+    filters: dict = {}
+
+
+@app.get("/api/analytics/reports")
+async def analytics_list_reports(db: Session = Depends(get_db)):
+    reports = db.query(AnalyticsScheduledReport).order_by(
+        desc(AnalyticsScheduledReport.updated_at)).all()
+    return {"reports": [
+        {"id": r.id, "name": r.name, "type": r.report_type,
+         "schedule": r.schedule_cron, "template": r.template,
+         "is_active": r.is_active,
+         "last_run": r.last_run_at.isoformat() if r.last_run_at else None,
+         "last_status": r.last_run_status}
+        for r in reports
+    ]}
+
+
+@app.post("/api/analytics/reports")
+async def analytics_create_report(
+    body: ReportCreateBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    rpt = AnalyticsScheduledReport(
+        name=body.name, report_type=body.report_type,
+        schedule_cron=body.schedule_cron,
+        recipients_json=body.recipients,
+        template=body.template, filters_json=body.filters,
+    )
+    db.add(rpt); db.commit()
+    return {"ok": True, "id": rpt.id}
+
+
+@app.post("/api/analytics/reports/{report_id}/run")
+async def analytics_run_report(
+    report_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    rpt = db.query(AnalyticsScheduledReport).filter(
+        AnalyticsScheduledReport.id == report_id).first()
+    if not rpt:
+        raise HTTPException(status_code=404, detail="Report not found")
+    background_tasks.add_task(_bg_run_report, report_id)
+    return {"ok": True, "status": "generating"}
+
+
+async def _bg_run_report(report_id: int):
+    """백그라운드: 리포트 생성 + 이메일."""
+    db = SessionLocal()
+    try:
+        rpt = db.query(AnalyticsScheduledReport).filter(
+            AnalyticsScheduledReport.id == report_id).first()
+        if not rpt: return
+
+        # 데이터 수집
+        stats = (db.query(AnalyticsMonthlyStats)
+                 .order_by(desc(AnalyticsMonthlyStats.month)).limit(2).all())
+        tier_summary = dict(
+            db.query(AnalyticsCustomer.tier, func.count(AnalyticsCustomer.id))
+            .group_by(AnalyticsCustomer.tier).all()
+        )
+        data = {
+            "type": rpt.template,
+            "stats": [{"month": s.month, "revenue": s.total_revenue,
+                       "orders": s.total_orders, "customers": s.total_customers}
+                      for s in stats],
+            "tiers": tier_summary,
+        }
+
+        # AI 요약
+        summary = ""
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            r = client.messages.create(
+                model="claude-haiku-4-5-20251001", max_tokens=512,
+                messages=[{"role": "user",
+                           "content": f"OPLE 이커머스 {rpt.template} 리포트 데이터를 3-5줄 한국어로 요약해주세요:\n{json.dumps(data, ensure_ascii=False)[:2000]}"}],
+            )
+            summary = r.content[0].text
+        except Exception as e:
+            summary = f"AI 요약 생성 실패: {e}"
+
+        # 이메일 발송
+        recipients = rpt.recipients_json or []
+        if recipients:
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            smtp_user = os.getenv("SMTP_USER", "")
+            smtp_pass = os.getenv("SMTP_PASS", "")
+            if smtp_user and smtp_pass:
+                html = f"""<html><body style="font-family:Arial;max-width:600px;margin:0 auto">
+                <div style="background:#1B4F72;color:white;padding:20px;text-align:center">
+                  <h1>OPLE 분석 리포트</h1><p>{rpt.name}</p></div>
+                <div style="padding:20px"><h2>AI 인사이트</h2>
+                <div style="background:#EBF5FB;padding:15px;border-radius:8px">{summary}</div>
+                </div></body></html>"""
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = f"[OPLE] {rpt.name} — {datetime.utcnow().strftime('%Y-%m-%d')}"
+                msg["From"] = smtp_user
+                msg["To"] = ", ".join(recipients)
+                msg.attach(MIMEText(html, "html"))
+                with smtplib.SMTP(os.getenv("SMTP_HOST", "smtp.gmail.com"), 587) as s:
+                    s.starttls(); s.login(smtp_user, smtp_pass)
+                    s.sendmail(smtp_user, recipients, msg.as_string())
+
+        rpt.last_run_at = datetime.utcnow()
+        rpt.last_run_status = "success"
+        rpt.last_run_error = None
+        db.commit()
+    except Exception as e:
+        _analytics_logger.error(f"Report run error: {e}")
+        try:
+            rpt.last_run_at = datetime.utcnow()
+            rpt.last_run_status = "error"
+            rpt.last_run_error = str(e)[:500]
+            db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
+
+
+# ═════════════════════════════════════════════════════════════════════
+# ██  ANALYTICS SCHEDULER
+# ═════════════════════════════════════════════════════════════════════
+
+_analytics_sched = None
+
+def _start_analytics_scheduler():
+    """startup 이벤트에서 호출. 일/주/월 배치 등록."""
+    global _analytics_sched
+    if _analytics_sched is not None: return
+    if os.getenv("DISABLE_ANALYTICS_CRON") == "1": return
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from apscheduler.triggers.cron import CronTrigger
+    except ImportError:
+        _analytics_logger.warning("apscheduler not installed — analytics scheduler skipped")
+        return
+    _analytics_sched = AsyncIOScheduler(timezone="Asia/Seoul")
+
+    async def _daily_sync():
+        since = (datetime.utcnow() - timedelta(days=2)).strftime("%Y-%m-%d")
+        await _bg_shopify_sync(since)
+
+    _analytics_sched.add_job(_daily_sync, CronTrigger(hour=2, minute=0),
+                              id="analytics_daily_sync")
+    _analytics_sched.add_job(_bg_recalculate, CronTrigger(hour=3, minute=0),
+                              id="analytics_daily_recalc")
+    _analytics_sched.start()
+    _analytics_logger.info("Analytics scheduler started (sync@02:00, recalc@03:00)")
+
+
+# ═════════════════════════════════════════════════════════════════════
+# ██  HELPERS
+# ═════════════════════════════════════════════════════════════════════
+
+def _monthly_to_dict(s):
+    return {
+        "month": s.month, "total_orders": s.total_orders,
+        "total_revenue": s.total_revenue, "total_customers": s.total_customers,
+        "avg_order_value": round(s.avg_order_value or 0),
+        "revenue_change_pct": round(s.revenue_change_pct or 0, 1),
+        "orders_change_pct": round(s.orders_change_pct or 0, 1),
+        "cancel_count": s.cancel_count,
+        "point_used": s.point_used, "discount_total": s.discount_total,
+    }
+
+def _customer_to_dict(c):
+    return {
+        "mb_id": c.mb_id, "email": c.email, "name": c.name,
+        "tier": c.tier, "rfm_segment": c.rfm_segment,
+        "total_orders": c.total_orders, "total_revenue": c.total_revenue,
+        "avg_order_value": round(c.avg_order_value or 0),
+        "ltv": c.ltv,
+        "first_order": c.first_order_date.isoformat() if c.first_order_date else None,
+        "last_order": c.last_order_date.isoformat() if c.last_order_date else None,
+        "rfm_recency": c.rfm_recency,
+        "rfm_scores": {"r": c.rfm_r_score, "f": c.rfm_f_score, "m": c.rfm_m_score},
+        "is_churned": c.is_churned, "points_balance": c.points_balance,
+    }
 
 
 # ── Run ──────────────────────────────────────────────────
